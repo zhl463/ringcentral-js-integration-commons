@@ -69,7 +69,7 @@ gulp.task('pre-coverage', () => (
     .pipe(istanbul.hookRequire())
 ));
 
-gulp.task('coverage', ['pre-coverage'], () => (
+gulp.task('test', ['pre-coverage'], () => (
   gulp.src('test/**/*.js')
     .pipe(mocha({
       timeout: TIMEOUT,
@@ -77,7 +77,7 @@ gulp.task('coverage', ['pre-coverage'], () => (
     .pipe(istanbul.writeReports())
 ));
 
-gulp.task('test', () => (
+gulp.task('quick-test', () => (
   gulp.src(getTestSources())
     .pipe(mocha({
       timeout: TIMEOUT,
