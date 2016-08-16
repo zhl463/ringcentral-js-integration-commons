@@ -5,10 +5,8 @@ git clone "https://$RELEASE_USER:$RELEASE_TOKEN@github.com/ringcentral/ringcentr
 npm run release
 
 cd release
-GIT_STATUS=$(git status -s)
-EMPTY_STATUS=' '
 
-if [ "$GIT_STATUS" -ne "$EMPTY_STATUS" ]
+if [[ $(git status -s) != '' ]]
   then
   git config user.email "integrations@ringcentral.com"
   git config user.name "RingCentral Integrations Team"
