@@ -10,6 +10,8 @@ EMPTY_STATUS=' '
 
 if [ $GIT_STATUS -ne $EMPTY_STATUS ]
   then
+  git config user.email "integrations@ringcentral.com"
+  git config user.name "RingCentral Integrations Team"
   git add .
   git commit -m "released at $(date)"
   git push origin latest
