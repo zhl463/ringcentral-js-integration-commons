@@ -250,10 +250,7 @@ async function spawn(cmd, opts = {}) {
 
 gulp.task('release-clean', async () => {
   if (!await fs.exists('release')) {
-    logger.fatal('Release folder not found');
-    logger.info('Please clone the `latest` branch of your repo into `release` folder');
-    logger.info('by running `git clone ${url to your repo} -b latest release`');
-    throw new Error('Release folder not found');
+    await fs.mkdir('release');
   }
   const files = (await fs.readdir('release')).filter(file => !/^\./.test(file));
   for (const file of files) {
@@ -266,68 +263,77 @@ gulp.task('release-copy', ['build', 'release-clean'], () => (
     .pipe(gulp.dest('release'))
 ));
 
-async function bumpVersion(type) {
+gulp.task('release', ['release-copy'], async () => {
   const packageInfo = JSON.parse(await fs.readFile('package.json'));
-  packageInfo.version = semver.inc(packageInfo.version, type);
-
-  const releaseInfo = {};
-  Object.assign(releaseInfo, packageInfo);
-  delete releaseInfo.scripts;
-
-  await fs.writeFile('package.json', JSON.stringify(packageInfo, null, 2), 'utf8');
-  await fs.writeFile('release/package.json', JSON.stringify(releaseInfo, null, 2), 'utf8');
-  return packageInfo.version;
-}
-async function tagSource(version) {
-  await spawn('git add .');
-  await spawn(`git commit -m 'version ${version}'`);
-  await spawn(`git tag -a ${version} -m 'version ${version}'`);
-}
-async function tagRelease(version) {
-  const opts = {
-    cwd: path.resolve('release'),
-  };
-  await spawn('git add .', opts);
-  await spawn(`git commit -m 'version ${version}'`, opts);
-}
-async function checkForChanges(gitPath = __dirname) {
-  const res = cp.execSync('git status -s', {
-    cwd: path.resolve(gitPath),
-  })
-    .toString()
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(line => (
-      line !== ''
-  ));
-  return res.length > 0;
-}
-
-gulp.task('release-package-patch', ['release-copy'], async () => {
-  if (await checkForChanges(path.resolve('release'))) {
-    const version = await bumpVersion('patch');
-    await tagSource(version);
-    await tagRelease(version);
-  } else {
-    logger.info('No changes found in build...');
-  }
+  delete packageInfo.scripts;
+  packageInfo.main = 'rc-phone.js';
+  await fs.writeFile('release/package.json', JSON.stringify(packageInfo, null, 2));
 });
-gulp.task('release-package-minor', ['release-copy'], async () => {
-  if (await checkForChanges(path.resolve('release'))) {
-    const version = await bumpVersion('minor');
-    await tagSource(version);
-    await tagRelease(version);
-  } else {
-    logger.info('No changes found in build...');
-  }
-});
-gulp.task('release-package-major', ['release-copy'], async () => {
-  if (await checkForChanges(path.resolve('release'))) {
-    const version = await bumpVersion('major');
-    await tagSource(version);
-    await tagRelease(version);
-  } else {
-    logger.info('No changes found in build...');
-  }
-});
+
+
+
+// async function bumpVersion(type) {
+//   const packageInfo = JSON.parse(await fs.readFile('package.json'));
+//   packageInfo.version = semver.inc(packageInfo.version, type);
+
+//   const releaseInfo = {};
+//   Object.assign(releaseInfo, packageInfo);
+//   delete releaseInfo.scripts;
+
+//   await fs.writeFile('package.json', JSON.stringify(packageInfo, null, 2), 'utf8');
+//   await fs.writeFile('release/package.json', JSON.stringify(releaseInfo, null, 2), 'utf8');
+//   return packageInfo.version;
+// }
+// async function tagSource(version) {
+//   await spawn('git add .');
+//   await spawn(`git commit -m 'version ${version}'`);
+//   await spawn(`git tag -a ${version} -m 'version ${version}'`);
+// }
+// async function tagRelease(version) {
+//   const opts = {
+//     cwd: path.resolve('release'),
+//   };
+//   await spawn('git add .', opts);
+//   await spawn(`git commit -m 'version ${version}'`, opts);
+// }
+// async function checkForChanges(gitPath = __dirname) {
+//   const res = cp.execSync('git status -s', {
+//     cwd: path.resolve(gitPath),
+//   })
+//     .toString()
+//     .split(/\r?\n/)
+//     .map(line => line.trim())
+//     .filter(line => (
+//       line !== ''
+//   ));
+//   return res.length > 0;
+// }
+
+// gulp.task('release-package-patch', ['release-copy'], async () => {
+//   if (await checkForChanges(path.resolve('release'))) {
+//     const version = await bumpVersion('patch');
+//     await tagSource(version);
+//     await tagRelease(version);
+//   } else {
+//     logger.info('No changes found in build...');
+//   }
+// });
+// gulp.task('release-package-minor', ['release-copy'], async () => {
+//   if (await checkForChanges(path.resolve('release'))) {
+//     const version = await bumpVersion('minor');
+//     await tagSource(version);
+//     await tagRelease(version);
+//   } else {
+//     logger.info('No changes found in build...');
+//   }
+// });
+// gulp.task('release-package-major', ['release-copy'], async () => {
+//   if (await checkForChanges(path.resolve('release'))) {
+//     const version = await bumpVersion('major');
+//     await tagSource(version);
+//     await tagRelease(version);
+//   } else {
+//     logger.info('No changes found in build...');
+//   }
+// });
 
