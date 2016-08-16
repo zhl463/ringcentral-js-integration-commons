@@ -265,6 +265,7 @@ export default class Webphone extends RcModule {
     });
     this.emit(webphoneEvents.callConnecting);
     this.currentSession = this[symbols.phoneInstance].userAgent.invite(toNumber, {
+      fromNumber,
       media: {
         render: media,
       },
