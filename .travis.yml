@@ -10,4 +10,7 @@ deploy:
   skip_cleanup: true
   script: scripts/release.sh
   on:
-    branch: master
+    branches:
+      only:
+        - master
+        - dev

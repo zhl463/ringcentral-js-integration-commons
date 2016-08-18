@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #clone latest branch
-git clone "https://$RELEASE_USER:$RELEASE_TOKEN@github.com/ringcentral/ringcentral-js-integration-commons.git" -b latest release
+git clone "https://$RELEASE_USER:$RELEASE_TOKEN@github.com/$REPO" -b latest release
 npm run release
 
 cd release
