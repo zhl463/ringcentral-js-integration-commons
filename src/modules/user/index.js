@@ -48,6 +48,7 @@ async function loadData(dataType, loadFunction) {
   } catch (error) {
     this.store.dispatch({
       type: this.actions[`load${dataType}Failed`],
+      error,
     });
     this.emit(userEvents[`load${dataType}Failed`]);
     throw error;

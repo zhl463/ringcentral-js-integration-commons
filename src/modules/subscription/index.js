@@ -4,7 +4,7 @@ import subscriptionActions from './subscription-actions';
 import getSubscriptionReducer from './subscription-reducer';
 import { subscriptionEvents, subscriptionEventTypes } from './subscription-events';
 import subscriptionStatus from './subscription-status';
-import KeyValueMap from 'data-types/key-value-map';
+import KeyValueMap, { hasValue } from 'data-types/key-value-map';
 import { emit } from '../../lib/utils';
 
 const symbols = new SymbolMap([
@@ -206,7 +206,7 @@ export default class Subscription extends RcModule {
 
   subscribe(event) {
     // TODO normalized error
-    if (!subscriptionEvents::KeyValueMap.hasValue(event)) {
+    if (!subscriptionEvents::hasValue(event)) {
       throw new Error('event is not recognized');
     }
 
