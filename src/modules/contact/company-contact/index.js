@@ -66,7 +66,7 @@ export default class CompanyContact extends RcModule {
       });
     } catch (error) {
       this.store.dispatch({
-        type: this.actions.loadAddressBookFailed,
+        type: this.actions.loadCompanyContactFailed,
         error,
       });
     }
