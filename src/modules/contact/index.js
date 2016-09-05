@@ -1,5 +1,4 @@
-import RcModule from '../../lib/rc-module';
-import addModule from '../../lib/add-module';
+import RcModule, { addModule } from '../../lib/rc-module';
 
 import SymbolMap from 'data-types/symbol-map';
 import KeyValueMap from 'data-types/key-value-map';
@@ -30,7 +29,6 @@ export default class Contact extends RcModule {
       api,
       platform,
       settings,
-      promiseForStore,
       prefix,
     } = options;
 
@@ -39,7 +37,6 @@ export default class Contact extends RcModule {
     this[symbols.settings] = settings;
 
     this::addModule('companyContact', new CompanyContact({
-      promiseForStore,
       getState: () => this.state.companyContact,
       prefix,
       api,
@@ -48,7 +45,6 @@ export default class Contact extends RcModule {
     }));
 
     this::addModule('addressBook', new AddressBook({
-      promiseForStore,
       getState: () => this.state.addressBook,
       prefix,
       api,

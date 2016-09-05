@@ -1,8 +1,8 @@
 import RcPhone from '../src/rc-phone';
+import { initializeModule } from '../src/lib/rc-module';
 import config from '../config';
 import { createStore } from 'redux';
 
-let resolver = null;
 let store = null;
 const phone = new RcPhone({
   sdkSettings: {
@@ -11,19 +11,11 @@ const phone = new RcPhone({
   defaultBrand: {
     ...config.brand,
   },
-  promiseForStore: new Promise((resolve) => {
-    resolver = resolve;
-  }),
   getState: () => store.getState(),
 });
 store = createStore(phone.reducer);
-resolver(store);
+phone::initializeModule(store);
 
-phone.subscription.subscribe(phone.subscription.events.telephony);
-
-phone.subscription.on(phone.subscription.events.telephony, msg => {
-  console.log('check: ', msg);
-});
 (async () => {
   if (! await phone.auth.isLoggedIn()) {
     phone.auth.login({
@@ -32,8 +24,8 @@ phone.subscription.on(phone.subscription.events.telephony, msg => {
   }
 })();
 
-store.subscribe(() => {
-  console.log(phone.store.getState());
-});
+// store.subscribe(() => {
+//   console.log(phone.store.getState());
+// });
 
 window.phone = phone;

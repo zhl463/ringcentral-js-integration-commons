@@ -1,8 +1,7 @@
-import addModule from './lib/add-module';
 import RingCentral from 'ringcentral';
 import RingCentralClient from 'ringcentral-client';
 
-import RcModule from './lib/rc-module';
+import RcModule, { addModule } from './lib/rc-module';
 
 import Settings from './modules/settings';
 import Brand from './modules/brand';
@@ -11,7 +10,7 @@ import Subscription from './modules/subscription';
 import User from './modules/user';
 import Webphone from './modules/webphone';
 import Contact from './modules/contact';
-import { combineReducers, createStore } from 'redux';
+import { combineReducers } from 'redux';
 
 const REDUCER = Symbol();
 
@@ -24,17 +23,7 @@ export default class RcPhone extends RcModule {
       sdkSettings,
       defaultBrand,
     } = options;
-    let {
-      promiseForStore,
-    } = options;
-    let resolver;
-    if (!promiseForStore) {
-      promiseForStore = new Promise((resolve) => {
-        resolver = resolve;
-      });
-    }
     super({
-      promiseForStore,
       getState,
     });
     this::addModule('sdk', new RingCentral({
@@ -48,26 +37,22 @@ export default class RcPhone extends RcModule {
     this::addModule('api', new RingCentralClient(this.sdk));
 
     this::addModule('auth', new Auth({
-      promiseForStore,
       getState: () => this.state.auth,
       prefix,
       platform: this.platform,
     }));
 
     this::addModule('settings', new Settings({
-      promiseForStore,
       getState: () => this.state.settings,
     }));
 
     this::addModule('defaultBrand', new Brand({
-      promiseForStore,
       prefix: `${prefix}-default`,
       getState: () => this.state.defaultBrand,
       ...defaultBrand,
     }));
 
     this::addModule('subscription', new Subscription({
-      promiseForStore,
       getState: () => this.state.subscription,
       prefix,
       api: this.api,
@@ -77,7 +62,6 @@ export default class RcPhone extends RcModule {
     }));
 
     this::addModule('user', new User({
-      promiseForStore,
       getState: () => this.state.user,
       prefix,
       api: this.api,
@@ -86,7 +70,6 @@ export default class RcPhone extends RcModule {
     }));
 
     this::addModule('webphone', new Webphone({
-      promiseForStore,
       getState: () => this.state.webphone,
       prefix,
       api: this.api,
@@ -95,14 +78,13 @@ export default class RcPhone extends RcModule {
       auth: this.auth,
     }));
 
-    this::addModule('contact', new Contact({
-      promiseForStore,
-      getState: () => this.state.contact,
-      prefix,
-      api: this.api,
-      platform: this.platform,
-      settings: this.settings,
-    }));
+    // this::addModule('contact', new Contact({
+    //   getState: () => this.state.contact,
+    //   prefix,
+    //   api: this.api,
+    //   platform: this.platform,
+    //   settings: this.settings,
+    // }));
 
     // combine reducers
     this[REDUCER] = combineReducers({
@@ -111,12 +93,9 @@ export default class RcPhone extends RcModule {
       subscription: this.subscription.reducer,
       user: this.user.reducer,
       webphone: this.webphone.reducer,
-      contact: this.contact.reducer,
+      // contact: this.contact.reducer,
       settings: this.settings.reducer,
     });
-    if (resolver) {
-      resolver(createStore(this.reducer));
-    }
   }
   get reducer() {
     return this[REDUCER];

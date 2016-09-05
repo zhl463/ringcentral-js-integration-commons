@@ -25,6 +25,7 @@ describe('auth-reducer', () => {
       expect(reducer()).to.deep.equal({
         status: loginStatus.pending,
         error: null,
+        token: null,
       });
     });
     it('should handle init', () => {
@@ -33,12 +34,15 @@ describe('auth-reducer', () => {
           expect(reducer({
             status: loginStatus.pending,
             error: null,
+            token: null,
           }, {
             type: authActions.init,
             status: loginStatus[key],
+            token: 'test',
           })).to.deep.equal({
             status: loginStatus[key],
             error: null,
+            token: 'test',
           });
         }
       }
@@ -50,15 +54,18 @@ describe('auth-reducer', () => {
       })).to.deep.equal({
         status: loginStatus.loggingIn,
         error: null,
+        token: null,
       });
     });
     it('should handle loginSuccess', () => {
       const initialState = reducer();
       expect(reducer(initialState, {
         type: authActions.loginSuccess,
+        token: 'test',
       })).to.deep.equal({
         status: loginStatus.loggedIn,
         error: null,
+        token: 'test',
       });
     });
     it('should handle loginError', () => {
@@ -70,6 +77,7 @@ describe('auth-reducer', () => {
       })).to.deep.equal({
         status: loginStatus.notLoggedIn,
         error,
+        token: null,
       });
     });
     it('should handle logout', () => {
@@ -79,6 +87,7 @@ describe('auth-reducer', () => {
       })).to.deep.equal({
         status: loginStatus.loggingOut,
         error: null,
+        token: null,
       });
     });
     it('should handle logoutSuccess', () => {
@@ -88,6 +97,7 @@ describe('auth-reducer', () => {
       })).to.deep.equal({
         status: loginStatus.notLoggedIn,
         error: null,
+        token: null,
       });
     });
     it('should handle logoutError', () => {
@@ -99,6 +109,7 @@ describe('auth-reducer', () => {
       })).to.deep.equal({
         status: loginStatus.loggedIn,
         error,
+        token: null,
       });
     });
     it('should return original state if no action was supplied', () => {

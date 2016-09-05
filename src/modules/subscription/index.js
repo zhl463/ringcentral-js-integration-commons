@@ -1,29 +1,18 @@
-import RcModule from '../../lib/rc-module';
+import RcModule, { initFunction } from '../../lib/rc-module';
 import SymbolMap from 'data-types/symbol-map';
 import subscriptionActions from './subscription-actions';
 import getSubscriptionReducer from './subscription-reducer';
 import { subscriptionEvents, subscriptionEventTypes } from './subscription-events';
 import subscriptionStatus from './subscription-status';
-import KeyValueMap, { hasValue } from 'data-types/key-value-map';
 import { emit } from '../../lib/utils';
+import { proxify } from '../proxy';
 
 const symbols = new SymbolMap([
   'auth',
   'sdk',
   'platform',
   'subscription',
-  'filterCache',
 ]);
-
-
-const filterRegex = {
-  message: /message-store$/,
-  presence: /presence(\?detailedTelephonyState=true)?$/,
-  telephony: /presence\?detailedTelephonyState=true$/,
-  line: /presence\/line$/,
-  linePresence: /presence\/line\/presence(\?detailedTelephonyState=true)?$/,
-  lineTelephony: /presence\/line\/presence\?detailedTelephonyState=true$/,
-};
 
 /**
  * @function
@@ -31,31 +20,16 @@ const filterRegex = {
  * @description Handles messages delivered by the subscripton
  */
 function messageHandler(message) {
-  // determine which events the message falls under
-  const events = [];
-  if (filterRegex.message.test(message.event)) {
-    events.push('message');
-  } else if (filterRegex.line.test(message.event)) {
-    events.push('line');
-  } else if (filterRegex.linePresence.test(message.event)) {
-    events.push('linePresence');
-    if (filterRegex.lineTelephony.test(message.event)) events.push('lineTelephony');
-  } else if (filterRegex.presence.test(message.event)) {
-    events.push('presence');
-    if (filterRegex.telephony.test(message.event)) events.push('telephony');
-  }
   // dispatch the message in redux manner
   this.store.dispatch({
     type: this.actions.notification,
-    eventTypes: events,
-    payload: message,
-  });
-  // emit the messages as events
-  events.forEach(event => {
-    this::emit(subscriptionEventTypes.notification, subscriptionEvents[event], message);
+    message,
   });
 }
-function init() {
+async function init() {
+  if (this.base) {
+    await this.reset();
+  }
   const platform = this[symbols.platform];
   this[symbols.subscription] = this[symbols.sdk].createSubscription();
   const ownerId = platform.auth().data().owner_id;
@@ -71,10 +45,7 @@ function init() {
       }
     }
   }
-
-
   this.base.setEventFilters(this.filters);
-
   this.base.on(this.base.events.notification, message => {
     this::messageHandler(message);
   });
@@ -84,7 +55,7 @@ function init() {
       status: subscriptionStatus.notSubscribed,
       subscription: null,
     });
-    this::emit(subscriptionEventTypes.statusChanged, this.status);
+    // this::emit(subscriptionEventTypes.statusChanged, this.status);
   });
   this.base.on(this.base.events.removeError, () => {
     // TODO
@@ -93,15 +64,12 @@ function init() {
     if (cacheKey) {
       localStorage.setItem(cacheKey, JSON.stringify(this.base.subscription()));
     }
-    const oldStatus = this.status;
+    // const oldStatus = this.status;
     this.store.dispatch({
       type: this.actions.updateStatus,
       status: subscriptionStatus.subscribed,
       subscription: this.base.subscription(),
     });
-    if (oldStatus !== this.status) {
-      this::emit(subscriptionEventTypes.statusChanged, this.status);
-    }
   });
   this.base.on(this.base.events.renewError, error => {
     // TODO handle 429
@@ -110,7 +78,6 @@ function init() {
       status: subscriptionStatus.notSubscribed,
       subscription: null,
     });
-    this::emit(subscriptionEventTypes.statusChanged, this.status);
     this.base.reset().setEventFilters(this.filters).register().catch(e => { });
   });
   this.base.on(this.base.events.subscribeSuccess, () => {
@@ -122,7 +89,6 @@ function init() {
       status: subscriptionStatus.subscribed,
       subscription: this.base.subscription(),
     });
-    this::emit(subscriptionEventTypes.statusChanged, this.status);
   });
   this.base.on(this.base.events.subscribeError, error => {
     // TODO
@@ -131,7 +97,12 @@ function init() {
   });
 
   if (this.filters.length) {
-    this.base.register().catch(() => { /* do nothing */ });
+    await this.base.register().catch(() => { /* do nothing */ });
+  } else {
+    this.store.dispatch({
+      type: this.actions.updateStatus,
+      status: subscriptionStatus.notSubscribed,
+    });
   }
 }
 
@@ -146,25 +117,25 @@ export default class Subscription extends RcModule {
       auth,
       platform,
       sdk,
-      promiseForStore,
     } = options;
     this[symbols.auth] = auth;
     this[symbols.platform] = platform;
     this[symbols.sdk] = sdk;
     this[symbols.subscription] = null;
 
-    // caches filters before redux store is created
-    this[symbols.filterCache] = [];
-
-    promiseForStore.then(() => {
-      // update store with cachedFitlers
-      this.store.dispatch({
-        type: this.actions.updateFilters,
-        filters: this.filters,
-      });
-      this[symbols.filterCache] = null;
+    // send events based on state change
+    this.on('state-change', ({ oldState, newState }) => {
+      if (!oldState || oldState.status !== newState.status) {
+        this::emit(this.eventTypes.statusChanged, newState.status);
+      }
+      if (newState.lastMessage && (!oldState || newState.lastMessage !== oldState.lastMessage)) {
+        this.emit(this.eventTypes.notification, newState.lastMessage);
+      }
     });
-
+  }
+  @initFunction
+  init() {
+    const auth = this[symbols.auth];
     auth.on(auth.events.loggedIn, () => {
       this::init();
     });
@@ -189,7 +160,7 @@ export default class Subscription extends RcModule {
   }
 
   get filters() {
-    return this[symbols.filterCache] || this.state.filters;
+    return this.state.filters;
   }
 
   get base() {
@@ -204,54 +175,44 @@ export default class Subscription extends RcModule {
     return subscriptionEventTypes;
   }
 
-  subscribe(event) {
-    // TODO normalized error
-    if (!subscriptionEvents::hasValue(event)) {
-      throw new Error('event is not recognized');
-    }
-
+  @proxify
+  async subscribe(event) {
     if (this.filters.indexOf(event) === -1) {
       const newFilters = this.filters.slice();
       newFilters.push(event);
+      this.store.dispatch({
+        type: this.actions.updateFilters,
+        filters: newFilters,
+      });
       if (this.base) {
         this.base.setEventFilters(newFilters);
-        this.store.dispatch({
-          type: this.actions.updateFilters,
-          filters: newFilters,
-        });
-        this.base.register().catch(() => { /* do nothing */ });
-      } else {
-        this[symbols.filterCache] = newFilters;
+        await this.base.register().catch(() => { /* do nothing */ });
       }
     }
   }
 
-  unsubscribe(event) {
-    // TODO normalized error
-    if (!subscriptionEvents::KeyValueMap.hasValue(event)) {
-      throw new Error('event is not recognized');
-    }
+  @proxify
+  async unsubscribe(event) {
     const idx = this.filters.indexOf(event);
     if (this.filters.indexOf(event) > -1) {
       const newFilters = this.filters.slice();
       newFilters.splice(idx, 1);
+      this.store.dispatch({
+        type: this.actions.updateFilters,
+        filters: newFilters,
+      });
       if (this.base) {
         this.base.setEventFilters(newFilters);
-        this.store.dispatch({
-          type: this.actions.updateFilters,
-          filters: newFilters,
-        });
         if (newFilters.length) {
           this.base.register().catch(() => { /* do nothing */ });
         } else {
           this.base.remove();
         }
-      } else {
-        this[symbols.filterCache] = newFilters;
       }
     }
   }
 
+  @proxify
   async reset() {
     try {
       if (this.base) {
@@ -265,16 +226,8 @@ export default class Subscription extends RcModule {
       // TODO
     }
     this[symbols.subscription] = null;
-    const oldStatus = this.status;
     this.store.dispatch({
-      type: this.actions.updateStatus,
-      status: subscriptionStatus.notSubscribed,
-      subscription: null,
+      type: this.actions.reset,
     });
-    if (oldStatus !== this.status) {
-      this::emit(subscriptionEventTypes.statusChanged, this.status);
-    }
   }
-
-
 }
