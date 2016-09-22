@@ -59,7 +59,7 @@ export default class RcModule extends Emitter {
   }
 
   get state() {
-    return this[symbols.getState]();
+    return this::this[symbols.getState]();
   }
   get reducer() {
     return defaultReducer;

@@ -4,6 +4,7 @@ import storageStatus from './storage-status';
 
 export default function getStorageReducer(prefix) {
   const actions = prefixActions(storageActions, prefix);
+  let tmp = null;
   return (state, action) => {
     if (!state) {
       return {
@@ -33,6 +34,17 @@ export default function getStorageReducer(prefix) {
             ...state.data,
             ...action.data,
           },
+          status: storageStatus.dirty,
+        };
+
+      case actions.remove:
+        tmp = {
+          ...state.data,
+        };
+        delete tmp[action.key];
+        return {
+          ...state,
+          data: tmp,
           status: storageStatus.dirty,
         };
 

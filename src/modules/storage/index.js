@@ -3,6 +3,7 @@ import Loganberry from 'loganberry';
 import KeyValueMap from 'data-types/key-value-map';
 import RcModule, { initFunction } from '../../lib/rc-module';
 import { proxify } from '../../modules/proxy';
+import NamedStorage from '../../lib/named-storage';
 import getStorageReducer from './get-storage-reducer';
 import storageActions from './storage-actions';
 import storageStatus from './storage-status';
@@ -15,6 +16,8 @@ const logger = new Loganberry({
 
 const symbols = new SymbolMap([
   'storage',
+  'storageProvider',
+  'unsubscribeStorage',
 ]);
 
 const CONSTANTS = new KeyValueMap({
@@ -29,18 +32,22 @@ export default class Storage extends RcModule {
       actions: storageActions,
     });
     const {
-      storage = localStorage,
+      StorageProvider = NamedStorage,
       auth,
     } = options;
-    this[symbols.storage] = storage;
+    this[symbols.storage] = null;
+    this[symbols.storageProvider] = StorageProvider;
     this[symbols.auth] = auth;
 
-    this.on('state-update', ({ oldState, newState }) => {
+    this.on('state-change', ({ oldState, newState }) => {
       if (!oldState || oldState.status !== newState.status) {
         this::emit(storageEvents.statusChanged, newState.status);
       }
       if (!oldState || oldState.data !== newState.data) {
         this.emit(storageEvents.dataChanged, newState.data);
+      }
+      if (newState.key && (!oldState || !oldState.key)) {
+        this.emit(storageEvents.ready);
       }
     });
   }
@@ -64,21 +71,19 @@ export default class Storage extends RcModule {
   init() {
     this[symbols.auth].on(this[symbols.auth].events.loggedIn, async () => {
       const key = `${this.prefix ? `${this.prefix}-` : ''}storage-${this[symbols.auth].ownerId}`;
+      this[symbols.storage] = new this[symbols.storageProvider]({ key });
 
       let data = null;
       let error = null;
       let status = storageStatus.saved;
-      if (this[symbols.storage]) {
-        try {
-          const json = await (async () => this[symbols.storage].getItem(key))();
-          if (json) {
-            data = JSON.parse(json);
-          }
-        } catch (e) {
-          status = storageStatus.dirty;
-          error = e;
-        }
+
+      try {
+        data = await (async () => this[symbols.storage].getData())();
+      } catch (e) {
+        status = storageStatus.dirty;
+        error = e;
       }
+
       if (!data) data = {};
 
       this.store.dispatch({
@@ -88,27 +93,30 @@ export default class Storage extends RcModule {
         error,
         status,
       });
+
+      this[symbols.unsubscribeStorage] = this[symbols.storage].subscribe(newData => {
+        this.store.dispatch({
+          type: this.actions.load,
+          data: newData,
+        });
+      });
     });
 
     this[symbols.auth].on(this[symbols.auth].events.notLoggedIn, () => {
       this.store.dispatch({
         type: this.actions.reset,
       });
+      this[symbols.unsubscribeStorage]();
+      this[symbols.storage].destroy();
+      this[symbols.storage] = null;
     });
   }
 
   @proxify
   async setItem(key, value) {
-    if (!this.state || this.state.status === storageStatus.pending) {
-      throw new Error('Storage is not ready');
-    }
-    this.store.dispatch({
-      type: this.actions.update,
-      data: {
-        [key]: value,
-      },
+    await this.setData({
+      [key]: value,
     });
-    await this.save();
   }
 
   @proxify
@@ -117,17 +125,25 @@ export default class Storage extends RcModule {
       throw new Error('Storage is not ready');
     }
     this.store.dispatch({
-      type: this.action.update,
+      type: this.actions.update,
       data,
     });
-    if (this[symbols.storage]) {
-      await (
-        async () => this[symbols.storage].setItem(this.key, JSON.stringify(this.getData()))
+    try {
+      this.store.dispatch({
+        type: this.actions.save,
+      });
+      await(
+        async () => this[symbols.storage].setData(this.getData())
       )();
+      this.store.dispatch({
+        type: this.actions.saveSuccess,
+      });
+    } catch (error) {
+      this.store.dispatch({
+        type: this.actions.saveError,
+        error,
+      });
     }
-    this.store.dispatch({
-      type: this.action.save,
-    });
   }
 
   @proxify
@@ -136,28 +152,25 @@ export default class Storage extends RcModule {
       throw new Error('Storage is not ready');
     }
     this.store.dispatch({
-      type: this.action.remove,
+      type: this.actions.remove,
       key,
     });
-    if (this[symbols.storage]) {
-      await (
-        async () => this[symbols.storage].removeItem(this.key)
+    try {
+      this.store.dispatch({
+        type: this.actions.save,
+      });
+      await(
+        async () => this[symbols.storage].setData(this.getData())
       )();
+      this.store.dispatch({
+        type: this.actions.saveSuccess,
+      });
+    } catch (error) {
+      this.store.dispatch({
+        type: this.actions.saveError,
+        error,
+      });
     }
-    this.store.dispatch({
-      type: this.action.save,
-    });
-  }
-
-  @proxify
-  async removeData() {
-    if (!this.state || this.state.status === storageStatus.pending) {
-      throw new Error('Storage is not ready');
-    }
-    if (!this[symbols.storage]) {
-      throw new Error('No storage option was supplied');
-    }
-    await (async () => this[symbols.storage].removeItem(this.key))();
   }
 
   getItem(key) {

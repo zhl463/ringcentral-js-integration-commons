@@ -99,6 +99,8 @@ setTimeout(() => {
         logger.info(message);
       }
     );
+    console.log(proxy.storage.getItem('test'));
+    proxy.storage.setItem('test', new Date());
     if (!loggedIn) {
       proxy.auth.login({
         ...config.user,
