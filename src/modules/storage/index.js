@@ -128,6 +128,7 @@ export default class Storage extends RcModule {
       type: this.actions.update,
       data,
     });
+    const version = this.state.version;
     try {
       this.store.dispatch({
         type: this.actions.save,
@@ -137,10 +138,12 @@ export default class Storage extends RcModule {
       )();
       this.store.dispatch({
         type: this.actions.saveSuccess,
+        version,
       });
     } catch (error) {
       this.store.dispatch({
         type: this.actions.saveError,
+        version,
         error,
       });
     }
@@ -155,6 +158,7 @@ export default class Storage extends RcModule {
       type: this.actions.remove,
       key,
     });
+    const version = this.state.version;
     try {
       this.store.dispatch({
         type: this.actions.save,
@@ -164,10 +168,12 @@ export default class Storage extends RcModule {
       )();
       this.store.dispatch({
         type: this.actions.saveSuccess,
+        version,
       });
     } catch (error) {
       this.store.dispatch({
         type: this.actions.saveError,
+        version,
         error,
       });
     }

@@ -34,9 +34,10 @@ export default class NamedStorage extends Subscribable {
           try {
             const {
               setter,
+              data,
             } = JSON.parse(event.newValue);
             if (setter && setter !== this.id) {
-              this.trigger();
+              this.trigger(data);
             }
           } catch (e) {
             /* ignore error */

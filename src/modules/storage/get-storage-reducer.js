@@ -11,6 +11,7 @@ export default function getStorageReducer(prefix) {
         data: {},
         key: null,
         status: storageStatus.pending,
+        version: 0,
         error: null,
       };
     }
@@ -25,6 +26,7 @@ export default function getStorageReducer(prefix) {
           key: action.key,
           status: action.status,
           error: action.error,
+          version: state.version + 1,
         };
 
       case actions.update:
@@ -34,6 +36,7 @@ export default function getStorageReducer(prefix) {
             ...state.data,
             ...action.data,
           },
+          version: state.version + 1,
           status: storageStatus.dirty,
         };
 
@@ -45,6 +48,7 @@ export default function getStorageReducer(prefix) {
         return {
           ...state,
           data: tmp,
+          version: state.version + 1,
           status: storageStatus.dirty,
         };
 
@@ -55,35 +59,29 @@ export default function getStorageReducer(prefix) {
         };
 
       case actions.saveSuccess:
-        return {
-          ...state,
-          status: storageStatus.saved,
-        };
+        return action.version === state.version ?
+          {
+            ...state,
+            status: storageStatus.saved,
+          } :
+          state;
 
       case actions.saveError:
-        return {
-          ...state,
-          status: storageStatus.dirty,
-        };
+        return action.version === state.version ?
+          {
+            ...state,
+            status: storageStatus.dirty,
+            error: action.error,
+          } :
+          state;
 
-      case actions.reload:
-        return {
-          ...state,
-          status: storageStatus.reloading,
-        };
-
-      case actions.reloadSuccess:
+      case actions.load:
         return {
           ...state,
           data: action.data,
           status: storageStatus.saved,
-        };
-
-      case actions.reloadError:
-        return {
-          ...state,
-          error: action.error,
-          status: storageStatus.dirty,
+          version: state.version + 1,
+          error: null,
         };
 
       case actions.reset:
@@ -91,6 +89,7 @@ export default function getStorageReducer(prefix) {
           status: storageStatus.pending,
           data: {},
           key: null,
+          version: state.version + 1,
           error: null,
         };
 

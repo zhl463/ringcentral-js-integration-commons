@@ -7,8 +7,6 @@ export default new ActionMap([
   'save',
   'saveSuccess',
   'saveError',
-  'reload',
-  'reloadSuccess',
-  'reloadError',
+  'load',
   'reset',
 ], 'storage');

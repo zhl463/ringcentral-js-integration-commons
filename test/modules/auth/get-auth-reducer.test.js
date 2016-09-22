@@ -10,10 +10,7 @@ describe('auth-reducer', () => {
       expect(getAuthReducer).to.be.a('function');
     });
     it('should return a reducer', () => {
-      expect(getAuthReducer()).to.be.a('function');
-    });
-    it('should return a prefixed-reducer', () => {
-      expect(getAuthReducer('test')).to.be.a('function');
+      expect(getAuthReducer()).to.exist;
     });
   });
   describe('reducer', () => {
