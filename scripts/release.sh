@@ -12,5 +12,5 @@ if [[ $(git status -s) != '' ]]
   git config user.name "RingCentral Integrations Team"
   git add --all .
   git commit -m "released at $(date)"
-  git push origin latest
+  git push origin latest -f
 fi
