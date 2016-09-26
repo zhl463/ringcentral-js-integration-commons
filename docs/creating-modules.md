@@ -344,7 +344,7 @@ class DemoPhone extends RcModule {
 const phone = new DemoPhone();
 
 // We then create a store with the reducers. Note that you may
-// furthur combine the phone reducer with more reducers before creating the store.
+// further combine the phone reducer with more reducers before creating the store.
 // You may have UI states that you want to manage with redux as well, or other kind of
 // states.
 const store = createStore(phone.reducer);
@@ -380,7 +380,7 @@ if (typeof window !== 'undefined') {
 
 ```
 
-Furthor Reading
+Further Reading
 ---
 
 - [Local Development](local-development.md)

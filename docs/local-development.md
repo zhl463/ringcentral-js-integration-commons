@@ -31,7 +31,7 @@ export default {
 
 The dev-server folder is ignore in git, so you can do whatever you want to test your code here.
 
-Furthur Reading
+Further Reading
 ---
 
 - [Dev Build](dev-build.md)
