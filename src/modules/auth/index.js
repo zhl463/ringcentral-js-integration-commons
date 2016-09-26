@@ -1,12 +1,10 @@
 import RcModule, { initFunction } from '../../lib/rc-module';
 import { proxify, throwOnProxy } from '../proxy';
 import SymbolMap from 'data-types/symbol-map';
-import KeyValueMap from 'data-types/key-value-map';
-import loginStatus from './login-status';
+import authStatus from './auth-status';
 import authActions from './auth-actions';
-import getAuthReducer from './auth-reducer';
-import { authEvents, authEventTypes } from './auth-events';
-import { emit } from '../../lib/utils';
+import getAuthReducer from './get-auth-reducer';
+import authEvents from './auth-events';
 import Loganberry from 'loganberry';
 
 const logger = new Loganberry({
@@ -14,15 +12,11 @@ const logger = new Loganberry({
 });
 
 const symbols = new SymbolMap([
-  'platform',
+  'sdk',
   'emitter',
   'beforeLogoutHandlers',
   'init',
 ]);
-
-const CONSTANTS = new KeyValueMap({
-  loginStatus,
-});
 
 /**
  * @class
@@ -39,19 +33,25 @@ export default class Auth extends RcModule {
     });
 
     const {
-      platform,
+      sdk,
     } = options;
     this.on('state-change', ({ oldState, newState }) => {
-      // loginStatusChanged
       if (!oldState || oldState.status !== newState.status) {
-        this::emit(authEventTypes.loginStatusChanged, newState.status);
+        this.emit(
+          authEvents.authStatusChange,
+          {
+            oldStatus: oldState && oldState.status,
+            newStatus: newState.status,
+          }
+        );
+        this.emit(newState.status);
       }
     });
-    this[symbols.platform] = platform;
+    this[symbols.sdk] = sdk;
   }
   @initFunction
   init() {
-    const platform = this[symbols.platform];
+    const platform = this[symbols.sdk].platform();
     this[symbols.beforeLogoutHandlers] = new Set();
 
     // load info on login
@@ -99,7 +99,7 @@ export default class Auth extends RcModule {
       const loggedIn = await platform.loggedIn();
       this.store.dispatch({
         type: this.actions.init,
-        status: loggedIn ? loginStatus.loggedIn : loginStatus.notLoggedIn,
+        status: loggedIn ? authStatus.loggedIn : authStatus.notLoggedIn,
         token: loggedIn ? platform.auth().data() : null,
       });
     })();
@@ -125,7 +125,7 @@ export default class Auth extends RcModule {
         remember,
       },
     });
-    return await this[symbols.platform].login({
+    return await this[symbols.sdk].platform().login({
       username,
       password,
       extension,
@@ -138,7 +138,7 @@ export default class Auth extends RcModule {
    * @description get OAuth page url
    */
   loginUrl({ redirectUri, state, brandId, display, prompt }) {
-    return this[symbols.platform].loginUrl({
+    return this[symbols.sdk].platform().loginUrl({
       redirectUri,
       state,
       brandId,
@@ -153,7 +153,7 @@ export default class Auth extends RcModule {
    * @return {Object}
    */
   parseLoginUrl(url) {
-    return this[symbols.platform].parseLoginRedirectUrl(url);
+    return this[symbols.sdk].platform().parseLoginRedirectUrl(url);
   }
 
   /**
@@ -170,7 +170,7 @@ export default class Auth extends RcModule {
         redirectUri,
       },
     });
-    return await this[symbols.platform].login({
+    return await this[symbols.sdk].platform().login({
       code,
       redirectUri,
     });
@@ -197,7 +197,7 @@ export default class Auth extends RcModule {
         // TODO: should emit error
       }
     }
-    return await this[symbols.platform].logout();
+    return await this[symbols.sdk].platform().logout();
   }
   /**
    * @function
@@ -224,16 +224,12 @@ export default class Auth extends RcModule {
     return this.state.status;
   }
 
-  get events() {
+  get authEvents() {
     return authEvents;
   }
 
-  get eventTypes() {
-    return authEventTypes;
-  }
-
-  get constants() {
-    return CONSTANTS;
+  get authStatus() {
+    return authStatus;
   }
 
   get ownerId() {
@@ -242,7 +238,7 @@ export default class Auth extends RcModule {
 
   @proxify
   async isLoggedIn() {
-    return await this[symbols.platform].loggedIn();
+    return await this[symbols.sdk].platform().loggedIn();
   }
 }
 

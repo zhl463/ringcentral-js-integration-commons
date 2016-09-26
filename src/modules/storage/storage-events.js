@@ -3,8 +3,8 @@ import storageStatus from './storage-status';
 
 const eventDefinition = {
   ...storageStatus,
-  statusChanged: 'STATUS_CHANGED',
-  dataChanged: 'DATA_CHANGED',
+  statusChange: 'STATUS_CHANGE',
+  dataChange: 'DATA_CHANGE',
   ready: 'READY',
 };
 export default new KeyValueMap(eventDefinition);

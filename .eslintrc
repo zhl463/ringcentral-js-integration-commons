@@ -9,11 +9,12 @@
       2,
       "DebuggerStatement",
       "LabeledStatement",
-      "WithStatement",
+      "WithStatement"
     ],
     "no-console": 0,
     "no-unused-vars": 1,
     "no-underscore-dangle": 1, // because ringcentral-js has underscore prefixed variables,
     "no-empty-function": 1,
+    "max-len": [ 2, { "code": 100 }]
   }
 }

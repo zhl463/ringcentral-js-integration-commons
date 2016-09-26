@@ -1,17 +1,17 @@
 import { prefixActions } from '../../lib/redux-helper';
 import authActions from './auth-actions';
-import loginStatus from './login-status';
-
-const initialState = {
-  status: loginStatus.pending,
-  token: null,
-  error: null,
-};
+import authStatus from './auth-status';
 
 export default function getAuthReducer(prefix) {
   const actions = prefixActions(authActions, prefix);
   return (state, action) => {
-    if (typeof state === 'undefined') return Object.assign({}, initialState);
+    if (typeof state === 'undefined') {
+      return {
+        status: authStatus.pending,
+        token: null,
+        error: null,
+      };
+    }
     if (!action) return state;
     switch (action.type) {
 
@@ -25,27 +25,27 @@ export default function getAuthReducer(prefix) {
       case actions.login:
         return {
           ...state,
-          status: loginStatus.loggingIn,
+          status: authStatus.loggingIn,
           error: null,
         };
 
       case actions.logout:
         return {
           ...state,
-          status: loginStatus.loggingOut,
+          status: authStatus.loggingOut,
           error: null,
         };
 
       case actions.loginSuccess:
         return {
-          status: loginStatus.loggedIn,
+          status: authStatus.loggedIn,
           token: action.token,
           error: null,
         };
 
       case actions.logoutSuccess:
         return {
-          status: loginStatus.notLoggedIn,
+          status: authStatus.notLoggedIn,
           token: null,
           error: null,
         };
@@ -53,14 +53,14 @@ export default function getAuthReducer(prefix) {
       case actions.loginError:
         return {
           ...state,
-          status: loginStatus.notLoggedIn,
+          status: authStatus.notLoggedIn,
           error: action.error,
         };
 
       case actions.logoutError:
         return {
           ...state,
-          status: loginStatus.loggedIn,
+          status: authStatus.loggedIn,
           error: action.error,
         };
 
@@ -72,7 +72,7 @@ export default function getAuthReducer(prefix) {
 
       case actions.refreshError:
         return {
-          status: loginStatus.notLoggedIn,
+          status: authStatus.notLoggedIn,
           token: null,
           error: actions.error,
         };

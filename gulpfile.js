@@ -123,6 +123,33 @@ function ensurePosixPath(str) {
 //     });
 // });
 
+gulp.task('dev-server', async () => {
+  if (!(await fs.exists('dev-server'))) {
+    await new Promise(resolve => {
+      gulp.src('dev-server-template/**')
+        .pipe(gulp.dest('dev-server'))
+        .on('end', resolve);
+    });
+  }
+  const devWebpackConfig = require('./dev-server/webpack.config').default;
+  await new Promise((resolve, reject) => {
+    const compiler = webpack(devWebpackConfig, err => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      const devServer = new WebpackDevServer(compiler, {
+        contentBase: path.resolve('dev-server'),
+        publicPath: '/build',
+        hot: true,
+        inline: true,
+      });
+      devServer.listen(8190);
+      resolve();
+    });
+  });
+});
+
 async function rm(filepath) {
   if (await fs.exists(filepath)) {
     if ((await fs.stat(filepath)).isDirectory()) {

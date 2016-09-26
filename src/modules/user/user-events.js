@@ -32,7 +32,7 @@ const eventDefinitions = {
 export const userEvents = new KeyValueMap(eventDefinitions);
 
 const eventTypeDefinitions = {
-  userInfoChanged: 'USER_INFO_CHANGED',
+  userInfoChange: 'USER_INFO_CHANGE',
 };
 
 export const userEventTypes = new KeyValueMap(eventTypeDefinitions);

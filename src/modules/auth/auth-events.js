@@ -1,14 +1,9 @@
 import KeyValueMap from 'data-types/key-value-map';
-import loginStatus from './login-status';
+import authStatus from './auth-status';
 
 const eventDefinitions = {
-  ...loginStatus,
+  ...authStatus,
+  authStatusChange: 'AUTH_STATUS_CHANGE',
 };
 
-export const authEvents = new KeyValueMap(eventDefinitions);
-
-const eventTypeDefinitions = {
-  loginStatusChanged: 'LOGIN_STATUS_CHANGED',
-};
-
-export const authEventTypes = new KeyValueMap(eventTypeDefinitions);
+export default new KeyValueMap(eventDefinitions);

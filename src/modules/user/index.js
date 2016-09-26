@@ -44,7 +44,7 @@ async function loadData(dataType, loadFunction) {
       type: this.actions[`load${dataType}Success`],
       payload,
     });
-    this::emit(userEventTypes.userInfoChanged, userEvents[`load${dataType}Success`]);
+    this::emit(userEventTypes.userInfoChange, userEvents[`load${dataType}Success`]);
   } catch (error) {
     this.store.dispatch({
       type: this.actions[`load${dataType}Failed`],

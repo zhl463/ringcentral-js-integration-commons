@@ -4,13 +4,8 @@ import subscriptionStatus from './subscription-status';
 
 const eventDefinition = {
   ...subscriptionStatus,
-};
-
-export const subscriptionEvents = new KeyValueMap(eventDefinition);
-
-const eventTypeDefinition = {
   notification: 'NOTIFICATION',
-  statusChanged: 'STATUS_CHANGED',
+  statusChange: 'STATUS_CHANGE',
 };
 
-export const subscriptionEventTypes = new KeyValueMap(eventTypeDefinition);
+export default new KeyValueMap(eventDefinition);

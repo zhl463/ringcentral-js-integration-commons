@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import getAuthReducer from '../../../src/modules/auth/auth-reducer';
+import getAuthReducer from '../../../src/modules/auth/get-auth-reducer';
 import authActions from '../../../src/modules/auth/auth-actions';
-import loginStatus from '../../../src/modules/auth/login-status';
+import authStatus from '../../../src/modules/auth/auth-status';
 import { prefixActions } from '../../../src/lib/redux-helper';
 
 describe('auth-reducer', () => {
@@ -20,24 +20,24 @@ describe('auth-reducer', () => {
     });
     it('should return a initial state', () => {
       expect(reducer()).to.deep.equal({
-        status: loginStatus.pending,
+        status: authStatus.pending,
         error: null,
         token: null,
       });
     });
     it('should handle init', () => {
-      for (const key in loginStatus) {
-        if (loginStatus.hasOwnProperty(key)) {
+      for (const key in authStatus) {
+        if (authStatus.hasOwnProperty(key)) {
           expect(reducer({
-            status: loginStatus.pending,
+            status: authStatus.pending,
             error: null,
             token: null,
           }, {
             type: authActions.init,
-            status: loginStatus[key],
+            status: authStatus[key],
             token: 'test',
           })).to.deep.equal({
-            status: loginStatus[key],
+            status: authStatus[key],
             error: null,
             token: 'test',
           });
@@ -49,7 +49,7 @@ describe('auth-reducer', () => {
       expect(reducer(initialState, {
         type: authActions.login,
       })).to.deep.equal({
-        status: loginStatus.loggingIn,
+        status: authStatus.loggingIn,
         error: null,
         token: null,
       });
@@ -60,7 +60,7 @@ describe('auth-reducer', () => {
         type: authActions.loginSuccess,
         token: 'test',
       })).to.deep.equal({
-        status: loginStatus.loggedIn,
+        status: authStatus.loggedIn,
         error: null,
         token: 'test',
       });
@@ -72,7 +72,7 @@ describe('auth-reducer', () => {
         type: authActions.loginError,
         error,
       })).to.deep.equal({
-        status: loginStatus.notLoggedIn,
+        status: authStatus.notLoggedIn,
         error,
         token: null,
       });
@@ -82,7 +82,7 @@ describe('auth-reducer', () => {
       expect(reducer(initialState, {
         type: authActions.logout,
       })).to.deep.equal({
-        status: loginStatus.loggingOut,
+        status: authStatus.loggingOut,
         error: null,
         token: null,
       });
@@ -92,7 +92,7 @@ describe('auth-reducer', () => {
       expect(reducer(initialState, {
         type: authActions.logoutSuccess,
       })).to.deep.equal({
-        status: loginStatus.notLoggedIn,
+        status: authStatus.notLoggedIn,
         error: null,
         token: null,
       });
@@ -104,7 +104,7 @@ describe('auth-reducer', () => {
         type: authActions.logoutError,
         error,
       })).to.deep.equal({
-        status: loginStatus.loggedIn,
+        status: authStatus.loggedIn,
         error,
         token: null,
       });
@@ -128,19 +128,19 @@ describe('auth-reducer', () => {
     const rogueActions = prefixActions(authActions, roguePrefix);
     it('should handle an action with the same prefix', () => {
       const initialState = {
-        status: loginStatus.loggedIn,
+        status: authStatus.loggedIn,
         error: null,
       };
       expect(reducer(initialState, {
         type: prefixedActions.logout,
       })).to.deep.equal({
-        status: loginStatus.loggingOut,
+        status: authStatus.loggingOut,
         error: null,
       });
     });
     it('should ignore actions with the wrong prefix', () => {
       const initialState = {
-        status: loginStatus.loggedIn,
+        status: authStatus.loggedIn,
         error: null,
       };
       expect(reducer(initialState, {

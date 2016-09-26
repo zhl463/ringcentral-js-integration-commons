@@ -1,3 +1,7 @@
+/**
+ * @deprecated
+ */
+
 import RcModule from '../../lib/rc-module';
 import { ActionMap, prefixActions } from '../../lib/redux-helper';
 import { combineReducers } from 'redux';

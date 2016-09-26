@@ -20,11 +20,6 @@ const symbols = new SymbolMap([
   'unsubscribeStorage',
 ]);
 
-const CONSTANTS = new KeyValueMap({
-  status: storageStatus,
-  events: storageEvents,
-});
-
 export default class Storage extends RcModule {
   constructor(options) {
     super({
@@ -40,14 +35,29 @@ export default class Storage extends RcModule {
     this[symbols.auth] = auth;
 
     this.on('state-change', ({ oldState, newState }) => {
-      if (!oldState || oldState.status !== newState.status) {
-        this::emit(storageEvents.statusChanged, newState.status);
-      }
-      if (!oldState || oldState.data !== newState.data) {
-        this.emit(storageEvents.dataChanged, newState.data);
-      }
-      if (newState.key && (!oldState || !oldState.key)) {
-        this.emit(storageEvents.ready);
+      if (oldState) {
+        if (oldState.status !== newState.status) {
+          this.emit(
+            storageEvents.statusChange,
+            {
+              oldStatus: oldState.status,
+              newStatus: newState.status,
+            },
+          );
+          this.emit(newState.status);
+        }
+        if (oldState.data !== newState.data) {
+          this.emit(
+            storageEvents.dataChange,
+            {
+              oldData: oldState.data,
+              newData: newState.data,
+            },
+          );
+        }
+        if (newState.key && !oldState.key) {
+          this.emit(storageEvents.ready);
+        }
       }
     });
   }
@@ -63,13 +73,18 @@ export default class Storage extends RcModule {
     return this.state.status;
   }
 
-  get constants() {
-    return CONSTANTS;
+  get storageStatus() {
+    return storageStatus;
+  }
+
+  get storageEvents() {
+    return storageEvents;
   }
 
   @initFunction
   init() {
-    this[symbols.auth].on(this[symbols.auth].events.loggedIn, async () => {
+    this[symbols.auth].on(this[symbols.auth].authEvents.loggedIn, async () => {
+      console.log('storage init');
       const key = `${this.prefix ? `${this.prefix}-` : ''}storage-${this[symbols.auth].ownerId}`;
       this[symbols.storage] = new this[symbols.storageProvider]({ key });
 
@@ -102,7 +117,7 @@ export default class Storage extends RcModule {
       });
     });
 
-    this[symbols.auth].on(this[symbols.auth].events.notLoggedIn, () => {
+    this[symbols.auth].on(this[symbols.auth].authEvents.notLoggedIn, () => {
       this.store.dispatch({
         type: this.actions.reset,
       });

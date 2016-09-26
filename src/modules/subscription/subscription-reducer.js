@@ -1,11 +1,11 @@
 import { prefixActions } from '../../lib/redux-helper';
 import subscriptionActions from './subscription-actions';
-import { subscriptionEvents } from './subscription-events';
+import subscriptionStatus from './subscription-status';
 
 const initialState = {
   cacheKey: null,
   filters: [],
-  status: subscriptionEvents.pending,
+  status: subscriptionStatus.pending,
   lastMessage: null,
 };
 
@@ -50,7 +50,7 @@ export default function getSubscriptionReducer(prefix) {
           {
             lastMessage: null,
             notification: null,
-            status: subscriptionEvents.notSubscribed,
+            status: subscriptionStatus.notSubscribed,
           },
         );
 

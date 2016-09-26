@@ -4,7 +4,6 @@ import subscriptionActions from './subscription-actions';
 import getSubscriptionReducer from './subscription-reducer';
 import { subscriptionEvents, subscriptionEventTypes } from './subscription-events';
 import subscriptionStatus from './subscription-status';
-import { emit } from '../../lib/utils';
 import { proxify } from '../proxy';
 
 const symbols = new SymbolMap([
@@ -55,7 +54,6 @@ async function init() {
       status: subscriptionStatus.notSubscribed,
       subscription: null,
     });
-    // this::emit(subscriptionEventTypes.statusChanged, this.status);
   });
   this.base.on(this.base.events.removeError, () => {
     // TODO
@@ -125,11 +123,20 @@ export default class Subscription extends RcModule {
 
     // send events based on state change
     this.on('state-change', ({ oldState, newState }) => {
-      if (!oldState || oldState.status !== newState.status) {
-        this::emit(this.eventTypes.statusChanged, newState.status);
-      }
-      if (newState.lastMessage && (!oldState || newState.lastMessage !== oldState.lastMessage)) {
-        this.emit(this.eventTypes.notification, newState.lastMessage);
+      if (oldState) {
+        if (oldState.status !== newState.status) {
+          this.emit(
+            subscriptionEvents.statusChange,
+            {
+              oldStatus: oldState.status,
+              newStatus: newState.status,
+            },
+          );
+          this.emit(newState.status);
+        }
+        if (newState.lastMessage && oldState.lastMessage !== newState.lastMessage) {
+          this.emit(subscriptionEvents.notification, newState.lastMessage);
+        }
       }
     });
   }

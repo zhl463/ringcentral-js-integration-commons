@@ -11,14 +11,13 @@ Also refer to .eslintrc for our own overrides.
 Linting
 ---
 
-Run linter from commandline:
----
+**Run linter from commandline:**
+
 
 ```bash
 npm run eslint
 ```
-Linter in Editors:
----
+**Linter in Editors:**
 
 ```bash
 npm install -g eslint babel-eslint eslint-config-airbnb eslint-plugin-import eslint-plugin-jsx-a11y eslint-plugin-react
@@ -66,15 +65,18 @@ npm run quick-test -- --file test/lib/add-module.test.js
 ```
 Both multiple --folder/--file declaration, or comma-delimmated list will work too.
 
-#Test in Browsers
+To Contribute
+---
 
-```bash
-npm run test-Browser
-```
+1. Fork the project
+2. Submit code via PR
+3. Make sure to write tests to fully test reducers
 
-Open localhost:8190 in your browser to run the tests.
+At current state, we require all reducers to be tested.
 
-#Contribution
+More Guides
+---
+- [Creating Modules](creating-modules.md)
+- [Local Development](local-development.md)
 
-Please fork and contribute via PR.
 

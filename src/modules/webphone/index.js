@@ -8,7 +8,7 @@ import RingCentralWebphone from 'ringcentral-web-phone';
 import webphoneStatus from './webphone-status';
 import callStatus from './call-status';
 
-import { authEventTypes } from '../auth/auth-events';
+import authEvents from '../auth/auth-events';
 import { webphoneEvents } from './webphone-events';
 
 const symbols = new SymbolMap([
@@ -192,7 +192,7 @@ export default class Webphone extends RcModule {
 
     // TODO: commented out until setting module completed
     // settings.registerReducer('webphone', getWebphoneReducer())
-    this[symbols.auth].on(authEventTypes.loginStatusChanged, async () => {
+    this[symbols.auth].on(authEvents.AuthStatusChange, async () => {
       this[symbols.phoneInstance] = await this::initPhoneInstance();
       this[symbols.phoneInstance].userAgent.on('registered', () => {
         // sip will fire multiple registered events, only dispatch one register action to state.
