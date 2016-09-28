@@ -115,7 +115,6 @@ export default class Auth extends RcModule {
    */
   @proxify
   async login({ username, password, extension, remember }) {
-    logger.trace('login()');
     this.store.dispatch({
       type: this.actions.login,
       payload: {

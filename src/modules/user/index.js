@@ -1,219 +1,145 @@
-import RcModule from '../../lib/rc-module';
 import SymbolMap from 'data-types/symbol-map';
-import { extractData, fetchList, emit } from '../../lib/utils';
-import userActions from './user-actions';
-import getUserReducer from './user-reducer';
-import { userEvents, userEventTypes } from './user-events';
+import { combineReducers } from 'redux';
+import RcModule, { addModule } from '../../lib/rc-module';
+import userStatus from './user-status';
+import userEvents from './user-events';
+
+import AccountInfo from '../account-info';
+import ExtensionInfo from '../extension-info';
+import DialingPlan from '../dialing-plan';
+import ExtensionPhoneNumber from '../extension-phone-number';
+import ForwardingNumber from '../forwarding-number';
+import BlockedNumber from '../blocked-number';
 
 const symbols = new SymbolMap([
   'api',
-  'platform',
-  'settings',
+  'auth',
+  'storage',
+  'reducer',
 ]);
 
-// const initialState = {
-//   test: true,
-// };
-
-// function getUserSettingsReducer(prefix) {
-//   return (state, action) => {
-//     if (typeof state === 'undefined') return Object.assign({}, initialState);
-//     if (!action) return state;
-//     switch (action.type) {
-//       default:
-//         return state;
-//     }
-//   };
-// }
-
-/**
- * @function
- * @param {String} dataType
- * @param {function} loadFunction - async loader function returning a promise
- * @return {Promise}
- * @description Generic data loading logic with events
- */
-async function loadData(dataType, loadFunction) {
-  this.store.dispatch({
-    type: this.actions[`load${dataType}`],
-  });
-  this.emit(userEvents[`load${dataType}`]);
-  try {
-    const payload = await this::loadFunction();
-    this.store.dispatch({
-      type: this.actions[`load${dataType}Success`],
-      payload,
-    });
-    this::emit(userEventTypes.userInfoChange, userEvents[`load${dataType}Success`]);
-  } catch (error) {
-    this.store.dispatch({
-      type: this.actions[`load${dataType}Failed`],
-      error,
-    });
-    this.emit(userEvents[`load${dataType}Failed`]);
-    throw error;
+function calculateStatus(state) {
+  if (
+    state.accountInfo.status === AccountInfo.accountInfoStatus.fetching ||
+    state.extensionInfo.status === ExtensionInfo.extensionInfoStatus.fetching ||
+    state.dialingPlan.status === DialingPlan.dialingPlanStatus.fetching ||
+    state.phoneNumber.status === ExtensionPhoneNumber.extensionPhoneNumberStatus.fetching ||
+    state.forwardingNumber.status === ForwardingNumber.forwardingNumberStatus.fetching ||
+    state.blockedNumber.status === BlockedNumber.blockedNumberStatus.fetching
+  ) {
+    return userStatus.fetching;
+  } else if (
+    state.accountInfo.status === AccountInfo.accountInfoStatus.pending ||
+    state.extensionInfo.status === ExtensionInfo.extensionInfoStatus.pending ||
+    state.dialingPlan.status === DialingPlan.dialingPlanStatus.pending ||
+    state.phoneNumber.status === ExtensionPhoneNumber.extensionPhoneNumberStatus.pending ||
+    state.forwardingNumber.status === ForwardingNumber.forwardingNumberStatus.pending ||
+    state.blockedNumber.status === BlockedNumber.blockedNumberStatus.pending
+  ) {
+    return userStatus.pending;
   }
+  return userStatus.ready;
 }
 
-/**
- * @function
- * @return {Promise<Object>}
- * @description Fetch account info and extract the data
- */
-async function extractAccountInfo() {
-  return extractData(await this[symbols.api].account().get());
-}
-async function loadAccountInfo() {
-  return await this::loadData('AccountInfo', extractAccountInfo);
-}
-
-async function extractExtensionInfo() {
-  return extractData(await this[symbols.api].account().extension().get());
-}
-async function loadExtensionInfo() {
-  return await this::loadData('ExtensionInfo', extractExtensionInfo);
-}
-
-async function extractDialingPlans() {
-  // TODO: js-client have dialing-plan?
-  return extractData(await this::fetchList(options => (
-    this[symbols.api].account().listDialingPlans(options)
-  )));
-}
-async function loadDialingPlans() {
-  return await this::loadData('DialingPlans', extractDialingPlans);
-}
-
-async function extractPhoneNumbers() {
-  return extractData(await this::fetchList(options => (
-    this[symbols.api].account().extension().phoneNumber().list(options)
-  )));
-}
-async function loadPhoneNumbers() {
-  return await this::loadData('PhoneNumbers', extractPhoneNumbers);
-}
-
-async function extractForwardingNumbers() {
-  return extractData(await this::fetchList(options => (
-    this[symbols.api].account().extension().forwardingNumber().list()
-  )));
-}
-async function loadForwardingNumbers() {
-  return await this::loadData('ForwardingNumbers', extractForwardingNumbers);
-}
-
-async function extractBlockedNumbers() {
-  return extractData(await this::fetchList(options => (
-    this[symbols.api].account().extension().blockedNumber().list(options)
-  )));
-}
-async function loadBlockedNumbers() {
-  return await this::loadData('BlockedNumbers', extractBlockedNumbers);
-}
-
-/**
- * @function
- * @return {Promise}
- */
-async function loadInfo() {
-  try {
-    await Promise.all([
-      this::loadAccountInfo(),
-      this::loadExtensionInfo(),
-      // this::loadDialingPlans(),
-      this::loadPhoneNumbers(),
-      this::loadForwardingNumbers(),
-      this::loadBlockedNumbers(),
-    ]);
-    // this.emit(userEvents.userInfoLoaded);
-  } catch (e) {
-    // TODO send error out
-    console.error(e);
-  }
-}
-
-/**
- * @class User
- * @extends RcModule
- * @default
- * @export
- */
 export default class User extends RcModule {
-  /**
-   * @function
-   * @param {Object} options
-   */
-  constructor(options) {
+  constructor(options = {}) {
     super({
       ...options,
-      actions: userActions,
     });
+
     const {
       api,
-      platform,
-      settings,
+      auth,
+      storage,
     } = options;
     this[symbols.api] = api;
-    this[symbols.platform] = platform;
-    this[symbols.settings] = settings;
+    this[symbols.auth] = auth;
+    this[symbols.storage] = storage;
 
-    // settings.registerReducer('user', getUserSettingsReducer());
+    this::addModule('accountInfo', new AccountInfo({
+      ...options,
+      getState: () => this.state.accountInfo,
+    }));
+    this::addModule('extensionInfo', new ExtensionInfo({
+      ...options,
+      getState: () => this.state.extensionInfo,
+    }));
+    this::addModule('dialingPlan', new DialingPlan({
+      ...options,
+      getState: () => this.state.dialingPlan,
+    }));
+    this::addModule('phoneNumber', new ExtensionPhoneNumber({
+      ...options,
+      getState: () => this.state.phoneNumber,
+    }));
+    this::addModule('forwardingNumber', new ForwardingNumber({
+      ...options,
+      getState: () => this.state.forwardingNumber,
+    }));
+    this::addModule('blockedNumber', new BlockedNumber({
+      ...options,
+      getState: () => this.state.blockedNumber,
+    }));
 
-    // load info on login
-    platform.on(platform.events.loginSuccess, () => {
-      this::loadInfo();
+    this[symbols.reducer] = combineReducers({
+      accountInfo: this.accountInfo.reducer,
+      extensionInfo: this.extensionInfo.reducer,
+      dialingPlan: this.dialingPlan.reducer,
+      phoneNumber: this.phoneNumber.reducer,
+      forwardingNumber: this.forwardingNumber.reducer,
+      blockedNumber: this.blockedNumber.reducer,
     });
-    // unload info on logout
-    platform.on(platform.events.logoutSuccess, () => {
-      this.store.dispatch({
-        type: this.actions.clearUserInfo,
-      });
-      // this.emit(userEvents.userInfoCleared);
-    });
 
-
-    // load info if already logged in
-    (async () => {
-      if (await platform.loggedIn()) {
-        await this::loadInfo();
+    this.on('state-change', ({ oldState, newState }) => {
+      const oldStatus = oldState && calculateStatus(oldState);
+      const newStatus = calculateStatus(newState);
+      if (oldStatus !== newStatus) {
+        this.emit(userEvents.statusChange, {
+          oldStatus,
+          newStatus,
+        });
+        this.emit(newStatus);
       }
-    })();
-
-    /**
-     * TODO:
-     *   1. Dialing Plan Checking
-     */
+    });
+    this.accountInfo.on(this.accountInfo.accountInfoEvents.error, error => {
+      this.emit(userEvents.error, error);
+    });
+    this.extensionInfo.on(this.extensionInfo.extensionInfoEvents.error, error => {
+      this.emit(userEvents.error, error);
+    });
+    this.dialingPlan.on(this.dialingPlan.dialingPlanEvents.error, error => {
+      this.emit(userEvents.error, error);
+    });
+    this.phoneNumber.on(this.phoneNumber.extensionPhoneNumberEvents.error, error => {
+      this.emit(userEvents.error, error);
+    });
+    this.forwardingNumber.on(this.forwardingNumber.forwardingNumberEvents.error, error => {
+      this.emit(userEvents.error, error);
+    });
+    this.blockedNumber.on(this.blockedNumber.blockedNumberEvents.error, error => {
+      this.emit(userEvents.error, error);
+    });
   }
-  get reducer() {
-    return getUserReducer(this.prefix);
+
+  get userStatus() {
+    return userStatus;
+  }
+  static get userStatus() {
+    return userStatus;
   }
 
-  get events() {
+  get userEvents() {
+    return userEvents;
+  }
+  static get userEvents() {
     return userEvents;
   }
 
-  get eventTypes() {
-    return userEventTypes;
+  get reducer() {
+    return this[symbols.reducer];
   }
 
-  get directNumbers() {
-    return this.state.phoneNumbers.filter(n => n.usageType === 'DirectNumber');
+  get status() {
+    return calculateStatus(this.state);
   }
-
-  get mainCompanyNumber() {
-    return this.state.phoneNumbers.find(n => n.usageType === 'MainCompanyNumber');
-  }
-
-  get dialingPlans() {
-    return this.state.dialingPlans;
-  }
-
-  get extensionNumber() {
-    return this.state.extensionInfo.extensionNumber;
-  }
-
-  get smsNumbers() {
-    return this.state.phoneNumbers.filter(n => n.features.indexOf('SmsSender') > -1);
-  }
-
 }

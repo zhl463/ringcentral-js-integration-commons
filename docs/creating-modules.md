@@ -1,6 +1,6 @@
 #Creating Modules
 
-All integration modules are based on RcModule base class. Which is deeply tied to redux. Here we'll use the DialingPlan module as an example to walk through the basics of module creation.
+All integration modules are based on RcModule base class. Which is deeply tied to redux. Here we'll use the DialingPlan module as an example to walk through the basics of module creation. Please note that the code shown here may not be the latest implementation of DialingPlan module.
 
 Typical Folder Structure
 ---
@@ -166,6 +166,9 @@ export default class DialingPlan extends RcModule {
             newStatus: newState.status,
           });
         }
+        if (newState.error && newState.error !== oldState.error) {
+          this.emit(accountInfoEvents.error, newState.error);
+        }
       }
     });
     // The dialing plans are actually persisted in storage,
@@ -202,14 +205,27 @@ export default class DialingPlan extends RcModule {
     // Any code that can only be run after the store has been created should be here.
     // Later we'll also talk about how any code that should not be run in proxies
     // should be placed here as well.
+
+    // For example, we want to start loading dialing plan data when storage module is ready.
     this[symbols.storage].on(this[symbols.storage].storageEvents.ready, async () => {
       await this.loadDialingPlans();
       this.store.dispatch({
         type: this.actions.ready,
       });
     });
+
+    // Don't forget to do clean up work if your module has to do something
+    // before or after the log out events
+    this[symbols.storage].on(this[symbols.storage].storageEvents.pending, () => {
+      this.store.dispatch({
+        type: this.actions.reset,
+      });
+    });
+
+    // Generally speaking, any handlers that would attempt to dispatch actions
+    // must be done after store is created and module is initialized.
   }
-  get dialingPlans() {
+  get data() {
     return this[symbols.storage].getItem(keys.storage);
   }
   // The proxify decorator will be explained in the proxy guide.
@@ -257,8 +273,17 @@ export default class DialingPlan extends RcModule {
     return dialingPlanStatus;
   }
 
+  // Sometimes is beneficial to bind a getter to status definitions
+  // on the constructor function itself.
+  static get dialingPlanStatus() {
+    return dialingPlanStatus;
+  }
+
   // Similarly we provide getters to the dialingPlanEvents definition.
   get dialingPlanEvents() {
+    return dialingPlanEvents;
+  }
+  static get dialingPlanEvents() {
     return dialingPlanEvents;
   }
 

@@ -3,13 +3,13 @@ import KeyValueMap from 'data-types/key-value-map';
 import RcModule, { initFunction } from '../../lib/rc-module';
 import { proxify } from '../proxy';
 import fetchList from '../../lib/fetch-list';
-import dialingPlanStatus from './dialing-plan-status';
-import dialingPlanActions from './dialing-plan-actions';
-import getDialingPlanReducer from './get-dialing-plan-reducer';
-import dialingPlanEvents from './dialing-plan-events';
+import extensionPhoneNumberStatus from './extension-phone-number-status';
+import extensionPhoneNumberActions from './extension-phone-number-actions';
+import getExtensionPhoneNumberReducer from './get-extension-phone-number-reducer';
+import extensionPhoneNumberEvents from './extension-phone-number-events';
 
 const keys = new KeyValueMap({
-  storage: 'dialing-plan-data',
+  storage: 'extension-phone-number-data',
 });
 
 const DEFAULT_TTL = 30 * 60 * 1000;
@@ -21,11 +21,11 @@ const symbols = new SymbolMap([
   'ttl',
 ]);
 
-export default class DialingPlan extends RcModule {
+export default class ExtensionPhoneNumber extends RcModule {
   constructor(options = {}) {
     super({
       ...options,
-      actions: dialingPlanActions,
+      actions: extensionPhoneNumberActions,
     });
     const {
       api,
@@ -41,13 +41,13 @@ export default class DialingPlan extends RcModule {
     this.on('state-change', ({ oldState, newState }) => {
       if (oldState) {
         if (oldState.status !== newState.status) {
-          this.emit(dialingPlanEvents.statusChange, {
+          this.emit(extensionPhoneNumberEvents.statusChange, {
             oldStatus: oldState.status,
             newStatus: newState.status,
           });
         }
         if (newState.error && newState.error !== oldState.error) {
-          this.emit(dialingPlanEvents.error, newState.error);
+          this.emit(extensionPhoneNumberEvents.error, newState.error);
         }
       }
     });
@@ -59,10 +59,13 @@ export default class DialingPlan extends RcModule {
           oldData[keys.storage] && !newData[keys.storage] ||
           !oldData[keys.storage] && newData[keys.storage] ||
           oldData[keys.storage] !== newData[keys.storage] &&
-          oldData[keys.storage].dialingPlans.map(plan => plan.id).sort().join(',') !==
-          newData[keys.storage].dialingPlans.map(plan => plan.id).sort().join(',')
+          oldData[keys.storage].phoneNumbers.map(p => p.id).sort().join(',') !==
+          newData[keys.storage].phoneNumbers.map(p => p.id).sort().join(',')
         ) {
-          this.emit(dialingPlanEvents.dialingPlanChange, newData[keys.storage].dialingPlans);
+          this.emit(
+            extensionPhoneNumberEvents.extensionPhoneNumberChange,
+            newData[keys.storage].extensionPhoneNumbers,
+          );
         }
       },
     );
@@ -71,7 +74,7 @@ export default class DialingPlan extends RcModule {
   @initFunction
   init() {
     this[symbols.storage].on(this[symbols.storage].storageEvents.ready, async () => {
-      await this.loadDialingPlans();
+      await this.loadExtensionPhoneNumbers();
       this.store.dispatch({
         type: this.actions.ready,
       });
@@ -86,7 +89,7 @@ export default class DialingPlan extends RcModule {
     return this[symbols.storage].getItem(keys.storage);
   }
   @proxify
-  async loadDialingPlans(options = {}) {
+  async loadExtensionPhoneNumbers(options = {}) {
     const {
       force = false,
     } = options;
@@ -97,8 +100,8 @@ export default class DialingPlan extends RcModule {
           type: this.actions.fetch,
         });
         data = {
-          dialingPlans: await fetchList(params => (
-            this[symbols.api].account().dialingPlan().list(params)
+          phoneNumbers: await fetchList(params => (
+            this[symbols.api].account().extension().phoneNumber().list(params)
           )),
           timestamp: Date.now(),
         };
@@ -117,24 +120,64 @@ export default class DialingPlan extends RcModule {
     return data;
   }
   get reducer() {
-    return getDialingPlanReducer(this.prefix);
+    return getExtensionPhoneNumberReducer(this.prefix);
   }
 
-  get dialingPlanStatus() {
-    return dialingPlanStatus;
-  }
-  static get dialingPlanStatus() {
-    return dialingPlanStatus;
+  get extensionPhoneNumberStatus() {
+    return extensionPhoneNumberStatus;
   }
 
-  get dialingPlanEvents() {
-    return dialingPlanEvents;
+  static get extensionPhoneNumberStatus() {
+    return extensionPhoneNumberStatus;
   }
-  static get dialingPlanEvents() {
-    return dialingPlanEvents;
+
+  get extensionPhoneNumberEvents() {
+    return extensionPhoneNumberEvents;
+  }
+
+  static get extensionPhoneNumberEvents() {
+    return extensionPhoneNumberEvents;
   }
 
   get status() {
     return this.state.status;
+  }
+
+  get phoneNumbers() {
+    return this.data.phoneNumbers;
+  }
+
+  get directNumbers() {
+    return this.phoneNumbers.filter(p => p.usageType === 'DirectNumber');
+  }
+
+  get companyNumbers() {
+    return this.phoneNumbers.filter(p => p.usageType === 'CompanyNumber');
+  }
+
+  get companyFaxNumbers() {
+    return this.phoneNumbers.filter(p => p.usageType === 'CompanyFaxNumber');
+  }
+
+  get mainCompanyNumber() {
+    return this.phoneNumbers.find(p => p.usageType === 'MainCompanyNumber');
+  }
+
+  get smsNumbers() {
+    return this.phoneNumbers.filter(p => p.features.indexOf('SmsSender') > -1);
+  }
+
+  // get callerIds() {
+  //   return this.phoneNumbers.filter(p => p.features.indexOf('CallerId') > -1);
+  // }
+
+  filter(usageTypes) {
+    if (!usageTypes) return this.phoneNumbers;
+    let types = usageTypes;
+    if (!Array.isArray(types)) {
+      types = [types];
+    }
+    types = types.map(t => t.toLowerCase());
+    return this.phoneNumber.filter(p => types.indexOf(p.usageType.toLowerCase()) > -1);
   }
 }

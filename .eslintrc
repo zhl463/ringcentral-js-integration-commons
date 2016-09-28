@@ -3,6 +3,9 @@
   "parserOptions": {
     "ecmaVersion": 7
   },
+  "env": {
+    "mocha": true
+  },
   "parser": "babel-eslint",
   "rules": {
     "no-restricted-syntax": [
@@ -15,6 +18,7 @@
     "no-unused-vars": 1,
     "no-underscore-dangle": 1, // because ringcentral-js has underscore prefixed variables,
     "no-empty-function": 1,
-    "max-len": [ 2, { "code": 100 }]
+    "max-len": [ 2, { "code": 100 }],
+    "no-unused-expressions": 1
   }
 }

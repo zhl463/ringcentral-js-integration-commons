@@ -1,6 +1,4 @@
 import SymbolMap from 'data-types/symbol-map';
-import Loganberry from 'loganberry';
-import KeyValueMap from 'data-types/key-value-map';
 import RcModule, { initFunction } from '../../lib/rc-module';
 import { proxify } from '../../modules/proxy';
 import NamedStorage from '../../lib/named-storage';
@@ -8,11 +6,6 @@ import getStorageReducer from './get-storage-reducer';
 import storageActions from './storage-actions';
 import storageStatus from './storage-status';
 import storageEvents from './storage-events';
-import { emit } from '../../lib/utils';
-
-const logger = new Loganberry({
-  prefix: 'storage',
-});
 
 const symbols = new SymbolMap([
   'storage',
@@ -84,7 +77,7 @@ export default class Storage extends RcModule {
   @initFunction
   init() {
     this[symbols.auth].on(this[symbols.auth].authEvents.loggedIn, async () => {
-      console.log('storage init');
+      console.log('check');
       const key = `${this.prefix ? `${this.prefix}-` : ''}storage-${this[symbols.auth].ownerId}`;
       this[symbols.storage] = new this[symbols.storageProvider]({ key });
 
@@ -117,13 +110,25 @@ export default class Storage extends RcModule {
       });
     });
 
+    this[symbols.auth].addBeforeLogoutHandler(async () => {
+      if (this.status !== storageStatus.pending) {
+        this.store.dispatch({
+          type: this.actions.reset,
+        });
+        this[symbols.unsubscribeStorage]();
+        this[symbols.storage].destroy();
+        this[symbols.storage] = null;
+      }
+    });
     this[symbols.auth].on(this[symbols.auth].authEvents.notLoggedIn, () => {
-      this.store.dispatch({
-        type: this.actions.reset,
-      });
-      this[symbols.unsubscribeStorage]();
-      this[symbols.storage].destroy();
-      this[symbols.storage] = null;
+      if (this.status !== storageStatus.pending) {
+        this.store.dispatch({
+          type: this.actions.reset,
+        });
+        this[symbols.unsubscribeStorage]();
+        this[symbols.storage].destroy();
+        this[symbols.storage] = null;
+      }
     });
   }
 

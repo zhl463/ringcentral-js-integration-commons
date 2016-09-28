@@ -26,12 +26,12 @@ function getTestSources() {
     if (Array.isArray(argv.folder)) {
       argv.folder.forEach(str => {
         str.split(',').forEach(f => {
-          src.add(`${f}/**/*.js`);
+          src.add(`${f}/**/*.test.js`);
         });
       });
     } else {
       argv.folder.split(',').forEach(f => {
-        src.add(`${f}/**/*.js`);
+        src.add(`${f}/**/*.test.js`);
       });
     }
   }
@@ -52,7 +52,7 @@ function getTestSources() {
   }
 
   if (!src.size) {
-    src.add('test/**/*.js');
+    src.add('src/**/*.test.js');
   }
 
   return [...src];
@@ -62,9 +62,9 @@ function getTestSources() {
 gulp.task('pre-coverage', () => {
   const testSources = getTestSources();
 
-  return gulp.src('src/**/*.js')
+  return gulp.src(['src/**/*.js', '!src/**/*.test.js'])
     .pipe(istanbul({
-      includeUntested: testSources.length === 1 && testSources[0] === 'test/**/*.js',
+      includeUntested: testSources.length === 1 && testSources[0] === 'src/**/*.test.js',
       instrumenter: babelIstanbul.Instrumenter,
     }))
     .pipe(istanbul.hookRequire());
@@ -131,6 +131,7 @@ gulp.task('dev-server', async () => {
         .on('end', resolve);
     });
   }
+  // eslint-disable-next-line global-require
   const devWebpackConfig = require('./dev-server/webpack.config').default;
   await new Promise((resolve, reject) => {
     const compiler = webpack(devWebpackConfig, err => {
@@ -169,7 +170,7 @@ gulp.task('clean', async () => (
 ));
 
 gulp.task('build', ['clean'], () => (
-  gulp.src('src/**/*.js')
+  gulp.src(['src/**/*.js', '!src/**/*.test.js'])
     .pipe(sourcemaps.init())
     .pipe(babel())
     .pipe(sourcemaps.write('.'))

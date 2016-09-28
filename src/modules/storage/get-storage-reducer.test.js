@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import getStorageReducer from '../../../src/modules/storage/get-storage-reducer';
-import storageActions from '../../../src/modules/storage/storage-actions';
-import storageStatus from '../../../src/modules/storage/storage-status';
-import { prefixActions } from '../../../src/lib/redux-helper';
+import getStorageReducer from './get-storage-reducer';
+import storageActions from './storage-actions';
+import storageStatus from './storage-status';
 
 describe('storage-reducer', () => {
   describe('getStorageReducer', () => {
@@ -18,7 +17,7 @@ describe('storage-reducer', () => {
     it('should be a function', () => {
       expect(reducer).to.be.a('function');
     });
-    it('should return a initial state', () => {
+    it('should return an initial state', () => {
       expect(reducer()).to.deep.equal({
         data: {},
         key: null,

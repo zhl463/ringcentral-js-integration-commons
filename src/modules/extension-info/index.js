@@ -2,14 +2,13 @@ import SymbolMap from 'data-types/symbol-map';
 import KeyValueMap from 'data-types/key-value-map';
 import RcModule, { initFunction } from '../../lib/rc-module';
 import { proxify } from '../proxy';
-import fetchList from '../../lib/fetch-list';
-import dialingPlanStatus from './dialing-plan-status';
-import dialingPlanActions from './dialing-plan-actions';
-import getDialingPlanReducer from './get-dialing-plan-reducer';
-import dialingPlanEvents from './dialing-plan-events';
+import extensionInfoStatus from './extension-info-status';
+import extensionInfoActions from './extension-info-actions';
+import getExtensionInfoReducer from './get-extension-info-reducer';
+import extensionInfoEvents from './extension-info-events';
 
 const keys = new KeyValueMap({
-  storage: 'dialing-plan-data',
+  storage: 'extension-info-data',
 });
 
 const DEFAULT_TTL = 30 * 60 * 1000;
@@ -21,11 +20,11 @@ const symbols = new SymbolMap([
   'ttl',
 ]);
 
-export default class DialingPlan extends RcModule {
+export default class ExtensionInfo extends RcModule {
   constructor(options = {}) {
     super({
       ...options,
-      actions: dialingPlanActions,
+      actions: extensionInfoActions,
     });
     const {
       api,
@@ -41,13 +40,10 @@ export default class DialingPlan extends RcModule {
     this.on('state-change', ({ oldState, newState }) => {
       if (oldState) {
         if (oldState.status !== newState.status) {
-          this.emit(dialingPlanEvents.statusChange, {
+          this.emit(extensionInfoEvents.statusChange, {
             oldStatus: oldState.status,
             newStatus: newState.status,
           });
-        }
-        if (newState.error && newState.error !== oldState.error) {
-          this.emit(dialingPlanEvents.error, newState.error);
         }
       }
     });
@@ -59,10 +55,9 @@ export default class DialingPlan extends RcModule {
           oldData[keys.storage] && !newData[keys.storage] ||
           !oldData[keys.storage] && newData[keys.storage] ||
           oldData[keys.storage] !== newData[keys.storage] &&
-          oldData[keys.storage].dialingPlans.map(plan => plan.id).sort().join(',') !==
-          newData[keys.storage].dialingPlans.map(plan => plan.id).sort().join(',')
+          JSON.stringify(oldData[keys.storage]) !== JSON.stringify(newData[keys.storage])
         ) {
-          this.emit(dialingPlanEvents.dialingPlanChange, newData[keys.storage].dialingPlans);
+          this.emit(extensionInfoEvents.extensionInfoChange, newData[keys.storage].extensionInfo);
         }
       },
     );
@@ -71,7 +66,7 @@ export default class DialingPlan extends RcModule {
   @initFunction
   init() {
     this[symbols.storage].on(this[symbols.storage].storageEvents.ready, async () => {
-      await this.loadDialingPlans();
+      await this.loadExtensionInfo();
       this.store.dispatch({
         type: this.actions.ready,
       });
@@ -86,7 +81,7 @@ export default class DialingPlan extends RcModule {
     return this[symbols.storage].getItem(keys.storage);
   }
   @proxify
-  async loadDialingPlans(options = {}) {
+  async loadExtensionInfo(options = {}) {
     const {
       force = false,
     } = options;
@@ -97,9 +92,7 @@ export default class DialingPlan extends RcModule {
           type: this.actions.fetch,
         });
         data = {
-          dialingPlans: await fetchList(params => (
-            this[symbols.api].account().dialingPlan().list(params)
-          )),
+          extensionInfo: await this[symbols.api].account().extension().get(),
           timestamp: Date.now(),
         };
         this[symbols.storage].setItem(keys.storage, data);
@@ -117,21 +110,21 @@ export default class DialingPlan extends RcModule {
     return data;
   }
   get reducer() {
-    return getDialingPlanReducer(this.prefix);
+    return getExtensionInfoReducer(this.prefix);
   }
 
-  get dialingPlanStatus() {
-    return dialingPlanStatus;
+  get extensionInfoStatus() {
+    return extensionInfoStatus;
   }
-  static get dialingPlanStatus() {
-    return dialingPlanStatus;
+  static get extensionInfoStatus() {
+    return extensionInfoStatus;
   }
 
-  get dialingPlanEvents() {
-    return dialingPlanEvents;
+  get extensionInfoEvents() {
+    return extensionInfoEvents;
   }
-  static get dialingPlanEvents() {
-    return dialingPlanEvents;
+  static get extensionInfoEvents() {
+    return extensionInfoEvents;
   }
 
   get status() {

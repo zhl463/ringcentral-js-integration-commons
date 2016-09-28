@@ -69,7 +69,7 @@ if (typeof window !== 'undefined') {
       ...config.user,
     });
   }
-  console.log(phone.dialingPlan.dialingPlans);
+  console.log(phone.dialingPlan.data);
   console.log(await phone.dialingPlan.loadDialingPlans());
-  console.log(phone.dialingPlan.dialingPlans);
+  console.log(phone.dialingPlan.data);
 })();

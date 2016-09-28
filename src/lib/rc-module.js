@@ -11,6 +11,7 @@ const symbols = new SymbolMap([
   'modulePath',
   'oldState',
   'initFunction',
+  'isInitialized',
   'suppressInit',
 ]);
 
@@ -160,11 +161,13 @@ function setStore(store) {
     store.subscribe(() => {
       const oldState = this[symbols.oldState];
       const newState = this.state;
-      this[symbols.oldState] = newState;
-      this.emit('state-change', {
-        oldState,
-        newState,
-      });
+      if (newState !== oldState) {
+        this[symbols.oldState] = newState;
+        this.emit('state-change', {
+          oldState,
+          newState,
+        });
+      }
     });
     for (const subModule in this) {
       if (this.hasOwnProperty(subModule) && this[subModule] instanceof RcModule) {
@@ -175,7 +178,12 @@ function setStore(store) {
 }
 
 function callInit() {
-  if (!this[symbols.suppressInit] && typeof this[symbols.initFunction] === 'function') {
+  if (
+    !this[symbols.suppressInit] &&
+    !this[symbols.isInitialized] &&
+    typeof this[symbols.initFunction] === 'function'
+  ) {
+    this[symbols.isInitialized] = true;
     this[symbols.initFunction]();
   }
   for (const subModule in this) {

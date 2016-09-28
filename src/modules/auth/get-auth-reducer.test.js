@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import getAuthReducer from '../../../src/modules/auth/get-auth-reducer';
-import authActions from '../../../src/modules/auth/auth-actions';
-import authStatus from '../../../src/modules/auth/auth-status';
-import { prefixActions } from '../../../src/lib/redux-helper';
+import getAuthReducer from './get-auth-reducer';
+import authActions from './auth-actions';
+import authStatus from './auth-status';
+import { prefixActions } from '../../lib/redux-helper';
 
 describe('auth-reducer', () => {
   describe('getAuthReducer', () => {

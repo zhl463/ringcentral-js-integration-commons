@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { ActionMap, prefixActions } from '../../src/lib/redux-helper';
+import { ActionMap, prefixActions } from './redux-helper';
 
 describe('ActionMap', () => {
   it('should be a constructor functon', () => {

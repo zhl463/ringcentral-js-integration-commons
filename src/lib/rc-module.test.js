@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import RcModule, { addModule, initFunction, suppressInit, initializeModule } from '../../src/lib/rc-module';
-import { ActionMap, prefixActions } from '../../src/lib/redux-helper';
+import RcModule, { addModule, initFunction, suppressInit, initializeModule } from './rc-module';
+import { ActionMap, prefixActions } from './redux-helper';
 import { createStore, combineReducers } from 'redux';
 import uuid from 'uuid';
 

@@ -3,13 +3,13 @@ import KeyValueMap from 'data-types/key-value-map';
 import RcModule, { initFunction } from '../../lib/rc-module';
 import { proxify } from '../proxy';
 import fetchList from '../../lib/fetch-list';
-import dialingPlanStatus from './dialing-plan-status';
-import dialingPlanActions from './dialing-plan-actions';
-import getDialingPlanReducer from './get-dialing-plan-reducer';
-import dialingPlanEvents from './dialing-plan-events';
+import forwardingNumberStatus from './forwarding-number-status';
+import forwardingNumberActions from './forwarding-number-actions';
+import getForwardingNumberReducer from './get-forwarding-number-reducer';
+import forwardingNumberEvents from './forwarding-number-events';
 
 const keys = new KeyValueMap({
-  storage: 'dialing-plan-data',
+  storage: 'forwarding-number-data',
 });
 
 const DEFAULT_TTL = 30 * 60 * 1000;
@@ -21,11 +21,11 @@ const symbols = new SymbolMap([
   'ttl',
 ]);
 
-export default class DialingPlan extends RcModule {
+export default class ForwardingNumber extends RcModule {
   constructor(options = {}) {
     super({
       ...options,
-      actions: dialingPlanActions,
+      actions: forwardingNumberActions,
     });
     const {
       api,
@@ -41,13 +41,13 @@ export default class DialingPlan extends RcModule {
     this.on('state-change', ({ oldState, newState }) => {
       if (oldState) {
         if (oldState.status !== newState.status) {
-          this.emit(dialingPlanEvents.statusChange, {
+          this.emit(forwardingNumberEvents.statusChange, {
             oldStatus: oldState.status,
             newStatus: newState.status,
           });
         }
         if (newState.error && newState.error !== oldState.error) {
-          this.emit(dialingPlanEvents.error, newState.error);
+          this.emit(forwardingNumberEvents.error, newState.error);
         }
       }
     });
@@ -59,10 +59,13 @@ export default class DialingPlan extends RcModule {
           oldData[keys.storage] && !newData[keys.storage] ||
           !oldData[keys.storage] && newData[keys.storage] ||
           oldData[keys.storage] !== newData[keys.storage] &&
-          oldData[keys.storage].dialingPlans.map(plan => plan.id).sort().join(',') !==
-          newData[keys.storage].dialingPlans.map(plan => plan.id).sort().join(',')
+          oldData[keys.storage].forwardingNumbers.map(p => p.id).sort().join(',') !==
+          newData[keys.storage].forwardingNumbers.map(p => p.id).sort().join(',')
         ) {
-          this.emit(dialingPlanEvents.dialingPlanChange, newData[keys.storage].dialingPlans);
+          this.emit(
+            forwardingNumberEvents.forwardingNumberChange,
+            newData[keys.storage].forwardingNumbers,
+          );
         }
       },
     );
@@ -71,7 +74,7 @@ export default class DialingPlan extends RcModule {
   @initFunction
   init() {
     this[symbols.storage].on(this[symbols.storage].storageEvents.ready, async () => {
-      await this.loadDialingPlans();
+      await this.loadForwardingNumbers();
       this.store.dispatch({
         type: this.actions.ready,
       });
@@ -86,7 +89,7 @@ export default class DialingPlan extends RcModule {
     return this[symbols.storage].getItem(keys.storage);
   }
   @proxify
-  async loadDialingPlans(options = {}) {
+  async loadForwardingNumbers(options = {}) {
     const {
       force = false,
     } = options;
@@ -97,8 +100,8 @@ export default class DialingPlan extends RcModule {
           type: this.actions.fetch,
         });
         data = {
-          dialingPlans: await fetchList(params => (
-            this[symbols.api].account().dialingPlan().list(params)
+          forwardingNumbers: await fetchList(params => (
+            this[symbols.api].account().extension().forwardingNumber().list(params)
           )),
           timestamp: Date.now(),
         };
@@ -117,24 +120,25 @@ export default class DialingPlan extends RcModule {
     return data;
   }
   get reducer() {
-    return getDialingPlanReducer(this.prefix);
+    return getForwardingNumberReducer(this.prefix);
   }
 
-  get dialingPlanStatus() {
-    return dialingPlanStatus;
+  get forwardingNumberStatus() {
+    return forwardingNumberStatus;
   }
-  static get dialingPlanStatus() {
-    return dialingPlanStatus;
+  static get forwardingNumberStatus() {
+    return forwardingNumberStatus;
   }
 
-  get dialingPlanEvents() {
-    return dialingPlanEvents;
+  get forwardingNumberEvents() {
+    return forwardingNumberEvents;
   }
-  static get dialingPlanEvents() {
-    return dialingPlanEvents;
+  static get forwardingNumberEvents() {
+    return forwardingNumberEvents;
   }
 
   get status() {
     return this.state.status;
   }
+
 }
