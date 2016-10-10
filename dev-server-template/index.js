@@ -59,11 +59,14 @@ if (typeof window !== 'undefined') {
 
 (async () => {
   phone.auth.on(phone.auth.authEvents.loggedIn, () => {
-    console.log('hello');
+    console.log('loggedIn');
   });
-  phone.dialingPlan.on(phone.dialingPlan.dialingPlanEvents.statusChange, status => {
-    console.log('check', status);
-  });
+  phone.dialingPlan.on(
+    phone.dialingPlan.dialingPlanEvents.statusChange,
+    ({ oldStatus, newStatus }) => {
+      console.log(`dialingPlan status change: ${oldStatus} -> ${newStatus}`);
+    }
+  );
   if (!await phone.auth.isLoggedIn()) {
     await phone.auth.login({
       ...config.user,

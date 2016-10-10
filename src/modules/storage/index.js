@@ -77,7 +77,7 @@ export default class Storage extends RcModule {
   @initFunction
   init() {
     this[symbols.auth].on(this[symbols.auth].authEvents.loggedIn, async () => {
-      console.log('check');
+      console.log('storage init');
       const key = `${this.prefix ? `${this.prefix}-` : ''}storage-${this[symbols.auth].ownerId}`;
       this[symbols.storage] = new this[symbols.storageProvider]({ key });
 
@@ -108,17 +108,6 @@ export default class Storage extends RcModule {
           data: newData,
         });
       });
-    });
-
-    this[symbols.auth].addBeforeLogoutHandler(async () => {
-      if (this.status !== storageStatus.pending) {
-        this.store.dispatch({
-          type: this.actions.reset,
-        });
-        this[symbols.unsubscribeStorage]();
-        this[symbols.storage].destroy();
-        this[symbols.storage] = null;
-      }
     });
     this[symbols.auth].on(this[symbols.auth].authEvents.notLoggedIn, () => {
       if (this.status !== storageStatus.pending) {

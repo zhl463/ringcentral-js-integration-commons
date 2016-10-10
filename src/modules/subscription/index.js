@@ -1,124 +1,38 @@
 import RcModule, { initFunction } from '../../lib/rc-module';
 import SymbolMap from 'data-types/symbol-map';
+import KeyValueMap from 'data-types/key-value-map';
 import subscriptionActions from './subscription-actions';
-import getSubscriptionReducer from './subscription-reducer';
-import { subscriptionEvents, subscriptionEventTypes } from './subscription-events';
+import getSubscriptionReducer from './get-subscription-reducer';
+import subscriptionEvents from './subscription-events';
 import subscriptionStatus from './subscription-status';
 import { proxify } from '../proxy';
 
 const symbols = new SymbolMap([
   'auth',
-  'sdk',
-  'platform',
+  'api',
+  'storage',
   'subscription',
 ]);
 
-/**
- * @function
- * @param {Object} message
- * @description Handles messages delivered by the subscripton
- */
-function messageHandler(message) {
-  // dispatch the message in redux manner
-  this.store.dispatch({
-    type: this.actions.notification,
-    message,
-  });
-}
-async function init() {
-  if (this.base) {
-    await this.reset();
-  }
-  const platform = this[symbols.platform];
-  this[symbols.subscription] = this[symbols.sdk].createSubscription();
-  const ownerId = platform.auth().data().owner_id;
-  let cacheKey = null;
-  if (typeof localStorage !== 'undefined') {
-    cacheKey = `${this.prefix}-sub-${ownerId}`;
-    const cachedSubscription = localStorage.getItem(cacheKey);
-    if (cachedSubscription) {
-      try {
-        this.base.setSubscription(JSON.parse(cachedSubscription));
-      } catch (e) {
-        /* do nothing */
-      }
-    }
-  }
-  this.base.setEventFilters(this.filters);
-  this.base.on(this.base.events.notification, message => {
-    this::messageHandler(message);
-  });
-  this.base.on(this.base.events.removeSuccess, () => {
-    this.store.dispatch({
-      type: this.actions.updateStatus,
-      status: subscriptionStatus.notSubscribed,
-      subscription: null,
-    });
-  });
-  this.base.on(this.base.events.removeError, () => {
-    // TODO
-  });
-  this.base.on(this.base.events.renewSuccess, () => {
-    if (cacheKey) {
-      localStorage.setItem(cacheKey, JSON.stringify(this.base.subscription()));
-    }
-    // const oldStatus = this.status;
-    this.store.dispatch({
-      type: this.actions.updateStatus,
-      status: subscriptionStatus.subscribed,
-      subscription: this.base.subscription(),
-    });
-  });
-  this.base.on(this.base.events.renewError, error => {
-    // TODO handle 429
-    this.store.dispatch({
-      type: this.actions.updateStatus,
-      status: subscriptionStatus.notSubscribed,
-      subscription: null,
-    });
-    this.base.reset().setEventFilters(this.filters).register().catch(e => { });
-  });
-  this.base.on(this.base.events.subscribeSuccess, () => {
-    if (cacheKey) {
-      localStorage.setItem(cacheKey, JSON.stringify(this.base.subscription()));
-    }
-    this.store.dispatch({
-      type: this.actions.updateStatus,
-      status: subscriptionStatus.subscribed,
-      subscription: this.base.subscription(),
-    });
-  });
-  this.base.on(this.base.events.subscribeError, error => {
-    // TODO
-    // handle 429
-    // handle subscription limit
-  });
-
-  if (this.filters.length) {
-    await this.base.register().catch(() => { /* do nothing */ });
-  } else {
-    this.store.dispatch({
-      type: this.actions.updateStatus,
-      status: subscriptionStatus.notSubscribed,
-    });
-  }
-}
+const keys = new KeyValueMap({
+  storage: 'subscription-cache',
+});
 
 export default class Subscription extends RcModule {
-  constructor(options) {
+  constructor({
+    auth,
+    api,
+    storage,
+    ...options,
+  }) {
     super({
       ...options,
       actions: subscriptionActions,
     });
 
-    const {
-      auth,
-      platform,
-      sdk,
-    } = options;
     this[symbols.auth] = auth;
-    this[symbols.platform] = platform;
-    this[symbols.sdk] = sdk;
+    this[symbols.api] = api;
+    this[symbols.storage] = storage;
     this[symbols.subscription] = null;
 
     // send events based on state change
@@ -137,23 +51,84 @@ export default class Subscription extends RcModule {
         if (newState.lastMessage && oldState.lastMessage !== newState.lastMessage) {
           this.emit(subscriptionEvents.notification, newState.lastMessage);
         }
+        if (
+          oldState.status === subscriptionStatus.pending &&
+          oldState.status !== newState.status
+        ) {
+          this.emit(subscriptionEvents.ready);
+        }
       }
     });
   }
   @initFunction
   init() {
-    const auth = this[symbols.auth];
-    auth.on(auth.events.loggedIn, () => {
-      this::init();
-    });
-
-    auth.on(auth.events.loggedOut, () => {
+    const storage = this[symbols.storage];
+    storage.on(storage.storageEvents.ready, async () => {
       if (this.base) {
-        this.reset();
+        await this.reset();
       }
+      this[symbols.subscription] = this[symbols.api].createSubscription();
+      // cached subscription
+      const cachedSubscription = storage.getItem(keys.storage);
+      if (cachedSubscription) {
+        this.base.setSubscription(cachedSubscription);
+      }
+      this.base.on(this.base.events.notification, message => {
+        this.store.dispatch({
+          type: this.actions.notification,
+          message,
+        });
+      });
+      this.base.on(this.base.events.removeSuccess, async () => {
+        this.base.reset();
+        await storage.removeItem(keys.storage);
+        this.store.dispatch({
+          type: this.actions.removeSuccess,
+        });
+      });
+      this.base.on(this.base.events.removeError, error => {
+        this.store.disptach({
+          type: this.actions.removeError,
+          error,
+        });
+      });
+      this.base.on(this.base.events.renewSuccess, async () => {
+        await storage.setItem(keys.storage, this.base.subscription());
+        this.store.dispatch({
+          type: this.actions.renewSuccess,
+        });
+      });
+      this.base.on(this.base.events.renewError, async error => {
+        storage.removeItem(keys.storage);
+        this.store.dispatch({
+          type: this.actions.renewError,
+          error,
+        });
+        this.base.reset().setEventFilters(this.filters).register().catch(e => { });
+      });
+      this.base.on(this.base.events.subscribeSuccess, async () => {
+        await storage.setItem(keys.storage, this.base.subscription());
+        this.store.dispatch({
+          type: this.actions.subscribeSuccess,
+        });
+      });
+      this.base.on(this.base.events.subscribeError, async error => {
+        await storage.removeItem(keys.storage);
+        this.store.dispatch({
+          type: this.actions.subscribeError,
+          error,
+        });
+      });
+      this.store.dispatch({
+        type: this.actions.ready,
+      });
     });
 
-    auth.addBeforeLogoutHandler(async () => {
+    this[symbols.auth].on(this[symbols.auth].authEvents.loggedOut, async () => {
+      await this.reset();
+    });
+
+    this[symbols.auth].addBeforeLogoutHandler(async () => {
       await this.reset();
     });
   }
@@ -174,67 +149,71 @@ export default class Subscription extends RcModule {
     return this[symbols.subscription];
   }
 
-  get events() {
+  get subscriptionEvents() {
     return subscriptionEvents;
   }
-
-  get eventTypes() {
-    return subscriptionEventTypes;
+  static get subscriptionEvents() {
+    return subscriptionEvents;
+  }
+  get subscriptionStatus() {
+    return subscriptionStatus;
+  }
+  static get subscriptionStatus() {
+    return subscriptionStatus;
   }
 
   @proxify
-  async subscribe(event) {
-    if (this.filters.indexOf(event) === -1) {
-      const newFilters = this.filters.slice();
-      newFilters.push(event);
+  async subscribe(events) {
+    if (this.status === subscriptionStatus.pending) {
+      throw new Error('Called before module is ready');
+    }
+    const newFilters = [...(new Set([...this.filters].concat(events)))];
+    if (newFilters.length !== this.filters.length) {
       this.store.dispatch({
-        type: this.actions.updateFilters,
+        type: this.actions.setFilters,
         filters: newFilters,
       });
-      if (this.base) {
-        this.base.setEventFilters(newFilters);
-        await this.base.register().catch(() => { /* do nothing */ });
-      }
+      this.base.setEventFilters(newFilters);
+      await this.base.register();
     }
   }
 
   @proxify
-  async unsubscribe(event) {
-    const idx = this.filters.indexOf(event);
-    if (this.filters.indexOf(event) > -1) {
-      const newFilters = this.filters.slice();
-      newFilters.splice(idx, 1);
+  async unsubscribe(events) {
+    if (this.status === subscriptionStatus.pending) {
+      throw new Error('Called before module is ready');
+    }
+    const newFilters = [...(new Set([...this.filters]).remove([].concat(events)))];
+    if (newFilters.length !== this.filters.length) {
       this.store.dispatch({
-        type: this.actions.updateFilters,
+        type: this.actions.setFilters,
         filters: newFilters,
       });
-      if (this.base) {
-        this.base.setEventFilters(newFilters);
-        if (newFilters.length) {
-          this.base.register().catch(() => { /* do nothing */ });
-        } else {
-          this.base.remove();
-        }
+      this.base.setEventFilters(newFilters);
+      if (newFilters.length > 0) {
+        await this.base.register();
+      } else {
+        await this.base.remove();
       }
     }
   }
 
   @proxify
   async reset() {
-    try {
-      if (this.base) {
+    if (this.base) {
+      try {
         if (this.status === subscriptionStatus.subscribed) {
           await this.base.remove();
         } else {
           await this.base.reset();
         }
+      } catch (e) {
+        // TODO
       }
-    } catch (e) {
-      // TODO
+      this[symbols.subscription] = null;
+      this.store.dispatch({
+        type: this.actions.reset,
+      });
     }
-    this[symbols.subscription] = null;
-    this.store.dispatch({
-      type: this.actions.reset,
-    });
   }
 }

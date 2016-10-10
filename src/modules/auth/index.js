@@ -12,7 +12,7 @@ const logger = new Loganberry({
 });
 
 const symbols = new SymbolMap([
-  'sdk',
+  'api',
   'emitter',
   'beforeLogoutHandlers',
   'init',
@@ -33,7 +33,7 @@ export default class Auth extends RcModule {
     });
 
     const {
-      sdk,
+      api,
     } = options;
     this.on('state-change', ({ oldState, newState }) => {
       if (!oldState || oldState.status !== newState.status) {
@@ -44,14 +44,19 @@ export default class Auth extends RcModule {
             newStatus: newState.status,
           }
         );
-        this.emit(newState.status);
+        if (!newState.error) {
+          this.emit(newState.status);
+        }
+      }
+      if (newState.error && (!oldState || oldState.error !== newState.error)) {
+        this.emit(authEvents.error, newState.error);
       }
     });
-    this[symbols.sdk] = sdk;
+    this[symbols.api] = api;
   }
   @initFunction
   init() {
-    const platform = this[symbols.sdk].platform();
+    const platform = this[symbols.api].service.platform();
     this[symbols.beforeLogoutHandlers] = new Set();
 
     // load info on login
@@ -124,7 +129,7 @@ export default class Auth extends RcModule {
         remember,
       },
     });
-    return await this[symbols.sdk].platform().login({
+    return await this[symbols.api].login({
       username,
       password,
       extension,
@@ -137,7 +142,7 @@ export default class Auth extends RcModule {
    * @description get OAuth page url
    */
   loginUrl({ redirectUri, state, brandId, display, prompt }) {
-    return this[symbols.sdk].platform().loginUrl({
+    return this[symbols.api].loginUrl({
       redirectUri,
       state,
       brandId,
@@ -152,7 +157,7 @@ export default class Auth extends RcModule {
    * @return {Object}
    */
   parseLoginUrl(url) {
-    return this[symbols.sdk].platform().parseLoginRedirectUrl(url);
+    return this[symbols.api].parseLoginRedirectUrl(url);
   }
 
   /**
@@ -169,7 +174,7 @@ export default class Auth extends RcModule {
         redirectUri,
       },
     });
-    return await this[symbols.sdk].platform().login({
+    return await this[symbols.api].login({
       code,
       redirectUri,
     });
@@ -196,7 +201,7 @@ export default class Auth extends RcModule {
         // TODO: should emit error
       }
     }
-    return await this[symbols.sdk].platform().logout();
+    return await this[symbols.api].logout();
   }
   /**
    * @function
@@ -237,7 +242,7 @@ export default class Auth extends RcModule {
 
   @proxify
   async isLoggedIn() {
-    return await this[symbols.sdk].platform().loggedIn();
+    return await this[symbols.api].service.platform().loggedIn();
   }
 }
 

@@ -59,13 +59,13 @@ export default class ForwardingNumber extends RcModule {
           oldData[keys.storage] && !newData[keys.storage] ||
           !oldData[keys.storage] && newData[keys.storage] ||
           oldData[keys.storage] !== newData[keys.storage] &&
-          oldData[keys.storage].forwardingNumbers.map(p => p.id).sort().join(',') !==
-          newData[keys.storage].forwardingNumbers.map(p => p.id).sort().join(',')
+          (JSON.stringify(oldData[keys.storage].forwardingNumbers) !==
+            JSON.stringify(newData[keys.storage].forwardingNumbers))
         ) {
-          this.emit(
-            forwardingNumberEvents.forwardingNumberChange,
-            newData[keys.storage].forwardingNumbers,
-          );
+          this.emit(forwardingNumberEvents.forwardingNumberChange, {
+            oldData: oldData[keys.storage] && oldData[keys.storage].forwardingNumbers,
+            newData: newData[keys.storage] && newData[keys.storage].forwardingNumbers,
+          });
         }
       },
     );

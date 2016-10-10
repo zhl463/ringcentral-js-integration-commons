@@ -58,9 +58,13 @@ export default class AccountInfo extends RcModule {
           oldData[keys.storage] && !newData[keys.storage] ||
           !oldData[keys.storage] && newData[keys.storage] ||
           oldData[keys.storage] !== newData[keys.storage] &&
-          JSON.stringify(oldData[keys.storage]) !== JSON.stringify(newData[keys.storage])
+          (JSON.stringify(oldData[keys.storage].accountInfo) !==
+            JSON.stringify(newData[keys.storage].accountInfo))
         ) {
-          this.emit(accountInfoEvents.accountInfoChange, newData[keys.storage].accountInfo);
+          this.emit(accountInfoEvents.accountInfoChange, {
+            oldData: oldData[keys.storage] && oldData[keys.storage].accountInfo,
+            newData: newData[keys.storage] && newData[keys.storage].accountInfo,
+          });
         }
       },
     );

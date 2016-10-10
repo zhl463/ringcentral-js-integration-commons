@@ -55,9 +55,13 @@ export default class ExtensionInfo extends RcModule {
           oldData[keys.storage] && !newData[keys.storage] ||
           !oldData[keys.storage] && newData[keys.storage] ||
           oldData[keys.storage] !== newData[keys.storage] &&
-          JSON.stringify(oldData[keys.storage]) !== JSON.stringify(newData[keys.storage])
+          (JSON.stringify(oldData[keys.storage].extensionInfo) !==
+            JSON.stringify(newData[keys.storage].extensionInfo))
         ) {
-          this.emit(extensionInfoEvents.extensionInfoChange, newData[keys.storage].extensionInfo);
+          this.emit(extensionInfoEvents.extensionInfoChange, {
+            oldData: oldData[keys.storage] && oldData[keys.storage].extensionInfo,
+            newData: newData[keys.storage] && newData[keys.storage].extensionInfo,
+          });
         }
       },
     );

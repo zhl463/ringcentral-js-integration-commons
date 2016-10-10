@@ -59,13 +59,13 @@ export default class BlockedNumber extends RcModule {
           oldData[keys.storage] && !newData[keys.storage] ||
           !oldData[keys.storage] && newData[keys.storage] ||
           oldData[keys.storage] !== newData[keys.storage] &&
-          oldData[keys.storage].blockedNumbers.map(p => p.id).sort().join(',') !==
-          newData[keys.storage].blockedNumbers.map(p => p.id).sort().join(',')
+          (JSON.stringify(oldData[keys.storage].blockedNumbers) !==
+            JSON.stringify(newData[keys.storage].blockedNumbers))
         ) {
-          this.emit(
-            blockedNumberEvents.blockedNumberChange,
-            newData[keys.storage].blockedNumbers,
-          );
+          this.emit(blockedNumberEvents.blockedNumberChange, {
+            oldData: oldData[keys.storage] && oldData[keys.storage].blockedNumbers,
+            newData: newData[keys.storage] && newData[keys.storage].blockedNumbers,
+          });
         }
       },
     );

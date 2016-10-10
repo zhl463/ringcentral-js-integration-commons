@@ -59,10 +59,13 @@ export default class DialingPlan extends RcModule {
           oldData[keys.storage] && !newData[keys.storage] ||
           !oldData[keys.storage] && newData[keys.storage] ||
           oldData[keys.storage] !== newData[keys.storage] &&
-          oldData[keys.storage].dialingPlans.map(plan => plan.id).sort().join(',') !==
-          newData[keys.storage].dialingPlans.map(plan => plan.id).sort().join(',')
+          (JSON.stringify(oldData[keys.storage].dialingPlans) !==
+            JSON.stringify(newData[keys.storage].dialingPlans))
         ) {
-          this.emit(dialingPlanEvents.dialingPlanChange, newData[keys.storage].dialingPlans);
+          this.emit(dialingPlanEvents.dialingPlanChange, {
+            oldData: oldData[keys.storage] && oldData[keys.storage].dialingPlans,
+            newData: newData[keys.storage] && newData[keys.storage].dialingPlans,
+          });
         }
       },
     );

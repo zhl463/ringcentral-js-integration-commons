@@ -59,13 +59,13 @@ export default class ExtensionPhoneNumber extends RcModule {
           oldData[keys.storage] && !newData[keys.storage] ||
           !oldData[keys.storage] && newData[keys.storage] ||
           oldData[keys.storage] !== newData[keys.storage] &&
-          oldData[keys.storage].phoneNumbers.map(p => p.id).sort().join(',') !==
-          newData[keys.storage].phoneNumbers.map(p => p.id).sort().join(',')
+          (JSON.stringify(oldData[keys.storage].phoneNumbers) !==
+            JSON.stringify(newData[keys.storage].phoneNumbers))
         ) {
-          this.emit(
-            extensionPhoneNumberEvents.extensionPhoneNumberChange,
-            newData[keys.storage].extensionPhoneNumbers,
-          );
+          this.emit(extensionPhoneNumberEvents.extensionPhoneNumberChange, {
+            oldData: oldData[keys.storage] && oldData[keys.storage].phoneNumbers,
+            newData: newData[keys.storage] && newData[keys.storage].phoneNumbers,
+          });
         }
       },
     );
