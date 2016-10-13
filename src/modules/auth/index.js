@@ -156,7 +156,7 @@ export default class Auth extends RcModule {
    * @param {string} url
    * @return {Object}
    */
-  parseCallBackUrl({ callbackUri }) {
+  parseCallbackUri({ callbackUri }) {
     return this[symbols.api].getAuthCode(callbackUri);
   }
 

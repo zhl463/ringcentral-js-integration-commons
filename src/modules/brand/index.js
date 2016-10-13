@@ -1,29 +1,26 @@
 import RcModule from '../../lib/rc-module';
-import brandActions from './brand-actions';
-import getReducer from './brand-reducer';
 import SymbolMap from 'data-types/symbol-map';
 
 const symbols = new SymbolMap([
-  'initialState',
+  'reducer',
+  'data',
 ]);
 
 export default class Brand extends RcModule {
   constructor(options) {
-    super({
-      ...options,
-      actions: brandActions,
-    });
+    super();
     const {
       id,
       name,
     } = options;
-    this[symbols.initialState] = {
+    this[symbols.data] = {
       id,
       name,
     };
+    this[symbols.initialState] = () => this[symbols.data];
   }
   get reducer() {
-    return getReducer(this[symbols.initialState], this.prefix);
+    return this[symbols.reducer];
   }
   get id() {
     return this.state.id;
