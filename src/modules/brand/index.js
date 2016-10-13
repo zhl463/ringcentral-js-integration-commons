@@ -17,7 +17,7 @@ export default class Brand extends RcModule {
       id,
       name,
     };
-    this[symbols.initialState] = () => this[symbols.data];
+    this[symbols.reducer] = () => this[symbols.data];
   }
   get reducer() {
     return this[symbols.reducer];
