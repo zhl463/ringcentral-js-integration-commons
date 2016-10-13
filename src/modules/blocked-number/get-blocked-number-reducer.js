@@ -3,7 +3,7 @@ import blockedNumberActions from './blocked-number-actions';
 import blockedNumberStatus from './blocked-number-status';
 
 export default function getBlockedNumberReducer(prefix) {
-  const actions = prefixActions(blockedNumberActions, prefix);
+  const actions = prefixActions({ actions: blockedNumberActions, prefix });
   return (state, action) => {
     if (!state) {
       return {

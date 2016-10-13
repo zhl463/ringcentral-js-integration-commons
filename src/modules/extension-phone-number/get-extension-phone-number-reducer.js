@@ -3,7 +3,7 @@ import extensionPhoneNumberActions from './extension-phone-number-actions';
 import extensionPhoneNumberStatus from './extension-phone-number-status';
 
 export default function getExtensionPhoneNumberReducer(prefix) {
-  const actions = prefixActions(extensionPhoneNumberActions, prefix);
+  const actions = prefixActions({ actions: extensionPhoneNumberActions, prefix });
   return (state, action) => {
     if (!state) {
       return {

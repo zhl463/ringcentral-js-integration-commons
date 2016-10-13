@@ -3,7 +3,7 @@ import authActions from './auth-actions';
 import authStatus from './auth-status';
 
 export default function getAuthReducer(prefix) {
-  const actions = prefixActions(authActions, prefix);
+  const actions = prefixActions({ actions: authActions, prefix });
   return (state, action) => {
     if (typeof state === 'undefined') {
       return {

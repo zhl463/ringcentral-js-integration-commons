@@ -3,7 +3,7 @@ import extensionInfoActions from './extension-info-actions';
 import extensionInfoStatus from './extension-info-status';
 
 export default function getExtensionInfoReducer(prefix) {
-  const actions = prefixActions(extensionInfoActions, prefix);
+  const actions = prefixActions({ actions: extensionInfoActions, prefix });
   return (state, action) => {
     if (!state) {
       return {

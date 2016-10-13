@@ -3,7 +3,7 @@ import forwardingNumberActions from './forwarding-number-actions';
 import forwardingNumberStatus from './forwarding-number-status';
 
 export default function getForwardingNumberReducer(prefix) {
-  const actions = prefixActions(forwardingNumberActions, prefix);
+  const actions = prefixActions({ actions: forwardingNumberActions, prefix });
   return (state, action) => {
     if (!state) {
       return {

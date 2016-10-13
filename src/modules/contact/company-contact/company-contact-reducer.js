@@ -8,7 +8,7 @@ const initialState = {
 };
 
 export default function getReducer(prefix) {
-  const actions = prefixActions(companyContactActions, prefix);
+  const actions = prefixActions({ actions: companyContactActions, prefix });
 
   return (state, action) => {
     if (typeof state === 'undefined') return Object.assign({}, initialState);

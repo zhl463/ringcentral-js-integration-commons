@@ -124,8 +124,8 @@ describe('auth-reducer', () => {
     const prefix = 'eagle';
     const roguePrefix = 'rogue';
     const reducer = getAuthReducer('eagle');
-    const prefixedActions = prefixActions(authActions, prefix);
-    const rogueActions = prefixActions(authActions, roguePrefix);
+    const prefixedActions = prefixActions({ actions: authActions, prefix });
+    const rogueActions = prefixActions({ actions: authActions, roguePrefix });
     it('should handle an action with the same prefix', () => {
       const initialState = {
         status: authStatus.loggedIn,

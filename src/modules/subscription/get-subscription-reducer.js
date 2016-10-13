@@ -3,7 +3,7 @@ import subscriptionActions from './subscription-actions';
 import subscriptionStatus from './subscription-status';
 
 export default function getSubscriptionReducer(prefix) {
-  const actions = prefixActions(subscriptionActions, prefix);
+  const actions = prefixActions({ actions: subscriptionActions, prefix });
   return (state, action) => {
     if (typeof state === 'undefined') {
       return {

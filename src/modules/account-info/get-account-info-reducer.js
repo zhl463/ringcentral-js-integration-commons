@@ -3,7 +3,7 @@ import accountInfoActions from './account-info-actions';
 import accountInfoStatus from './account-info-status';
 
 export default function getAccountInfoReducer(prefix) {
-  const actions = prefixActions(accountInfoActions, prefix);
+  const actions = prefixActions({ actions: accountInfoActions, prefix });
   return (state, action) => {
     if (!state) {
       return {

@@ -24,7 +24,7 @@ export class ActionMap extends KeyValueMap {
  * @function
  * @description helper function to return a prefixed action definition maps
  */
-export function prefixActions(actions, prefix) {
+export function prefixActions({ actions, prefix } = {}) {
   if (!prefix || prefix === '') return actions;
   const definition = {};
   for (const action in actions) {

@@ -33,7 +33,7 @@ describe('getProxyClientReducer', () => {
   });
   it('should accept `prefix` parameter and resulting reducer should only accept prefixed proxyActions', () => {
     const prefix = 'foo';
-    const prefixedActions = prefixActions(proxyActions, prefix);
+    const prefixedActions = prefixActions({ actions: proxyActions, prefix });
     const reducer = getProxyClientReducer(prefix, sampleReducer);
     const initialState = reducer();
     expect(reducer(initialState, {

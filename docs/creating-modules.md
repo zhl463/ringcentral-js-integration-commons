@@ -53,7 +53,10 @@ import dialingPlanStatus from './dialing-plan-status';
 
 export default function getDialingPlanReducer(prefix) {
   // get prefixed actions
-  const actions = prefixActions(dialingPlanActions, prefix);
+  const actions = prefixActions({
+    actions: dialingPlanActions,
+    prefix,
+  });
 
   //return the reducer
   return (state, action) => {

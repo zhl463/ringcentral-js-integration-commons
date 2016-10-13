@@ -133,7 +133,7 @@ describe('getProxyServerReducer', () => {
       'should call the push function with prefixed proxyActions if prefix parameter was set',
       () => {
         const prefix = 'foo';
-        const prefixedProxyActions = prefixActions(proxyActions, prefix);
+        const prefixedProxyActions = prefixActions({ actions: proxyActions, prefix });
         let check = false;
         const transport = {
           push(params) {

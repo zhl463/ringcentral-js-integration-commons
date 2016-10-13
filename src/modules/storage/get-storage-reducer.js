@@ -3,7 +3,7 @@ import storageActions from './storage-actions';
 import storageStatus from './storage-status';
 
 export default function getStorageReducer(prefix) {
-  const actions = prefixActions(storageActions, prefix);
+  const actions = prefixActions({ actions: storageActions, prefix });
   let tmp = null;
   return (state, action) => {
     if (!state) {

@@ -40,7 +40,7 @@ describe('prefixActions', () => {
   ], 'eagle');
   it('should return a new action map with prefix', () => {
     const prefix = 'rogue';
-    expect(prefixActions(actions, prefix))
+    expect(prefixActions({ actions, prefix }))
       .to.deep.equal({
         foo: `${prefix}-eagle-foo`,
         bar: `${prefix}-eagle-bar`,

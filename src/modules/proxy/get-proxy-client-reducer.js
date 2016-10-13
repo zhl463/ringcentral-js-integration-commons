@@ -2,7 +2,7 @@ import { prefixActions } from '../../lib/redux-helper';
 import proxyActions from './proxy-actions';
 
 export default function getProxyClientReducer(prefix, moduleReducer) {
-  const actions = prefixActions(proxyActions, prefix);
+  const actions = prefixActions({ actions: proxyActions, prefix });
   return (state, action) => {
     if (!state) {
       return {

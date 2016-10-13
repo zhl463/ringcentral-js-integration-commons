@@ -71,7 +71,7 @@ describe('RcModule instance', async () => {
           prefix,
           actions,
         });
-        expect(module.actions).to.deep.equal(prefixActions(actions, prefix));
+        expect(module.actions).to.deep.equal(prefixActions({ actions, prefix }));
       });
     });
     describe('reducer', async () => {

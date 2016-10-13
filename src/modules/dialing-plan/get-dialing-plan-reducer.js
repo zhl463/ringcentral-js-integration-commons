@@ -3,7 +3,7 @@ import dialingPlanActions from './dialing-plan-actions';
 import dialingPlanStatus from './dialing-plan-status';
 
 export default function getDialingPlanReducer(prefix) {
-  const actions = prefixActions(dialingPlanActions, prefix);
+  const actions = prefixActions({ actions: dialingPlanActions, prefix });
   return (state, action) => {
     if (!state) {
       return {

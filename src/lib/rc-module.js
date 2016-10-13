@@ -56,7 +56,7 @@ export default class RcModule extends Emitter {
       throw new Error('The `prefix` options property must be null, undefined, or a string');
     }
     this[symbols.prefix] = prefix;
-    this[symbols.actions] = actions && prefixActions(actions, prefix);
+    this[symbols.actions] = actions && prefixActions({ actions, prefix });
   }
 
   get state() {
