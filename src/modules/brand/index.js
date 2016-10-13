@@ -8,7 +8,7 @@ const symbols = new SymbolMap([
 
 export default class Brand extends RcModule {
   constructor(options) {
-    super();
+    super(options);
     const {
       id,
       name,
