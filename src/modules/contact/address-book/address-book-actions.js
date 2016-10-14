@@ -1,4 +1,4 @@
-import { ActionMap } from '../../../lib/redux-helper';
+import ActionMap from '../../../lib/ActionMap';
 
 export default new ActionMap([
   'loadAddressBook',

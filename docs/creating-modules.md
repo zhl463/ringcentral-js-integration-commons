@@ -19,7 +19,7 @@ Define Actions
 Here we defined all the redux action types for the module by using the ActionMap helper class.
 
 ```javascript
-import { ActionMap } from '../../lib/redux-helper';
+import ActionMap from '../../lib/ActionMap';
 
 export default new ActionMap([
   'ready',
@@ -47,9 +47,9 @@ Define Reducers
 Reducers are the core of redux. It is what defines an redux application. In the modules design, we are not ruling the possibility of running multiple instances of phones in the same application. Therefore all the reducers needs to support prefixed actions.
 
 ```javascript
-import { prefixActions } from '../../lib/redux-helper';
-import dialingPlanActions from './dialing-plan-actions';
-import dialingPlanStatus from './dialing-plan-status';
+import { prefixActions } from '../../lib/ActionMap';
+import dialingPlanActions from './dialingPlanActions';
+import dialingPlanStatus from './dialingPlanStatus';
 
 export default function getDialingPlanReducer(prefix) {
   // get prefixed actions
@@ -114,13 +114,13 @@ Here we extend the RcModule class to create the DialingPlan module. There are so
 ```javascript
 import SymbolMap from 'data-types/symbol-map';
 import KeyValueMap from 'data-types/key-value-map';
-import RcModule, { initFunction } from '../../lib/rc-module';
-import { proxify } from '../proxy';
-import fetchList from '../../lib/fetch-list';
-import dialingPlanStatus from './dialing-plan-status';
-import dialingPlanActions from './dialing-plan-actions';
-import getDialingPlanReducer from './get-dialing-plan-reducer';
-import dialingPlanEvents from './dialing-plan-events';
+import RcModule, { initFunction } from '../../lib/RcModule';
+import { proxify } from '../../lib/proxy';
+import fetchList from '../../lib/fetchList';
+import dialingPlanStatus from './dialingPlanStatus';
+import dialingPlanActions from './dialingPlanActions';
+import getDialingPlanReducer from './getDialingPlanReducer';
+import dialingPlanEvents from './dialingPlanEvents';
 
 const keys = new KeyValueMap({
   storage: 'dialing-plan-data',
@@ -305,15 +305,14 @@ Using Modules
 Let's go through some demo code to see how modules are used.
 
 ```javascript
-import RingCentral from 'ringcentral';
 import RingCentralClient from 'ringcentral-client';
 import { combineReducers, createStore } from 'redux';
 import SymbolMap from 'data-types/symbol-map';
-import RcModule, { addModule, initializeModule } from '../src/lib/rc-module';
+import RcModule, { addModule, initializeModule } from '../src/lib/RcModule';
 
-import Auth from '../src/modules/auth';
-import Storage from '../src/modules/storage';
-import DialingPlan from '../src/modules/dialing-plan';
+import Auth from '../src/modules/Auth';
+import Storage from '../src/modules/Storage';
+import DialingPlan from '../src/modules/DialingPlan';
 
 import config from './config';
 
@@ -329,13 +328,12 @@ class DemoPhone extends RcModule {
     // addModule helper function binds the sub module object to the parent.
     // the :: is the bind operator which is similar to
     // addModule.call(this, 'moduleName', subModule).
-    this::addModule('sdk', new RingCentral({
+    this::addModule('api', new RingCentralClient({
       ...config.api,
     }));
-    this::addModule('api', new RingCentralClient(this.sdk));
     this::addModule('auth', new Auth({
       getState: () => this.state.auth,
-      sdk: this.sdk,
+      api: this.api,
     }));
     this::addModule('storage', new Storage({
       getState: () => this.state.storage,

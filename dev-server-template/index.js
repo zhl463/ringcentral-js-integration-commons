@@ -2,11 +2,11 @@ import RingCentral from 'ringcentral';
 import RingCentralClient from 'ringcentral-client';
 import { combineReducers, createStore } from 'redux';
 import SymbolMap from 'data-types/symbol-map';
-import RcModule, { addModule, initializeModule } from '../src/lib/rc-module';
+import RcModule, { addModule, initializeModule } from '../src/lib/RcModule';
 
-import Auth from '../src/modules/auth';
-import Storage from '../src/modules/storage';
-import DialingPlan from '../src/modules/dialing-plan';
+import Auth from '../src/modules/Auth';
+import Storage from '../src/modules/Storage';
+import DialingPlan from '../src/modules/DialingPlan';
 
 import config from './config';
 

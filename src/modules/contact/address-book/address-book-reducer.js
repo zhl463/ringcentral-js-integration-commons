@@ -1,4 +1,4 @@
-import { prefixActions } from '../../../lib/redux-helper';
+import { prefixActions } from '../../../lib/ActionMap';
 import addressBookActions from './address-book-actions';
 
 const initialState = {

@@ -1,4 +1,4 @@
-import RcModule, { addModule } from '../../lib/rc-module';
+import RcModule, { addModule } from '../../lib/RcModule';
 
 import SymbolMap from 'data-types/symbol-map';
 import KeyValueMap from 'data-types/key-value-map';
@@ -6,6 +6,8 @@ import { combineReducers } from 'redux';
 
 import CompanyContact from './company-contact';
 import AddressBook from './address-book';
+
+// TODO refactor
 
 const symbols = new SymbolMap([
   'api',

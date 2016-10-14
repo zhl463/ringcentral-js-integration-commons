@@ -1,6 +1,6 @@
-import Emitter from './emitter';
+import Emitter from './Emitter';
 import SymbolMap from 'data-types/symbol-map';
-import { ActionMap } from './redux-helper';
+import ActionMap from './ActionMap';
 import uuid from 'uuid';
 
 /* global chrome */

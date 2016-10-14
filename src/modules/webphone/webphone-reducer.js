@@ -1,4 +1,4 @@
-import { prefixActions } from '../../lib/redux-helper';
+import { prefixActions } from '../../lib/ActionMap';
 import webphoneActions from './webphone-actions';
 import webphoneStatus from './webphone-status';
 

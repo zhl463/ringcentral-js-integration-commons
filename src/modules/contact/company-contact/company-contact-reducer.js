@@ -1,4 +1,4 @@
-import { prefixActions } from '../../../lib/redux-helper';
+import { prefixActions } from '../../../lib/ActionMap';
 import companyContactActions from './company-contact-actions';
 
 const initialState = {

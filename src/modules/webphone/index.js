@@ -1,4 +1,4 @@
-import RcModule from '../../lib/rc-module';
+import RcModule from '../../lib/RcModule';
 import SymbolMap from 'data-types/symbol-map';
 import KeyValueMap from 'data-types/key-value-map';
 import webphoneActions from './webphone-actions';
@@ -8,8 +8,10 @@ import RingCentralWebphone from 'ringcentral-web-phone';
 import webphoneStatus from './webphone-status';
 import callStatus from './call-status';
 
-import authEvents from '../auth/auth-events';
+import authEvents from '../Auth/authEvents';
 import { webphoneEvents } from './webphone-events';
+
+// TODO refactor
 
 const symbols = new SymbolMap([
   'api',

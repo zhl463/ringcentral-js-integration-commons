@@ -2,8 +2,8 @@
  * @deprecated
  */
 
-import RcModule from '../../lib/rc-module';
-import { ActionMap, prefixActions } from '../../lib/redux-helper';
+import RcModule from '../../lib/RcModule';
+import ActionMap, { prefixActions } from '../../lib/ActionMap';
 import { combineReducers } from 'redux';
 
 import SymbolMap from 'data-types/symbol-map';
