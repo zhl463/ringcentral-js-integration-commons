@@ -1,77 +1,110 @@
 import { expect } from 'chai';
-import getAccountInfoReducer from './getAccountInfoReducer';
-import accountInfoActions from './accountInfoActions';
+import getAccountInfoReducer, {
+  getErrorReducer,
+  getStatusReducer,
+} from './getAccountInfoReducer';
+
+import accountInfoActionTypes from './accountInfoActionTypes';
 import accountInfoStatus from './accountInfoStatus';
 
-describe('account-info-reducer', () => {
-  describe('getStorageReducer', () => {
-    it('should be a function', () => {
-      expect(getAccountInfoReducer).to.be.a('function');
+describe('getStatusReducer', () => {
+  it('should be a function', () => {
+    expect(getStatusReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getStatusReducer()).to.be.a('function');
+  });
+  describe('statusReducer', () => {
+    const reducer = getStatusReducer();
+    it('should have initial state of pending', () => {
+      expect(reducer(undefined, {})).to.equal(accountInfoStatus.pending);
     });
-    it('should return a reducer function', () => {
-      expect(getAccountInfoReducer()).to.be.a('function');
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return ready status for the following action types', () => {
+      [
+        accountInfoActionTypes.init,
+        accountInfoActionTypes.fetchSuccess,
+        accountInfoActionTypes.fetchError,
+      ].forEach(type => {
+        expect(reducer('foo', {
+          type,
+        })).to.equal(accountInfoStatus.ready);
+      });
+    });
+    it('should return pending status on reset', () => {
+      expect(reducer('foo', {
+        type: accountInfoActionTypes.reset,
+      })).to.equal(accountInfoStatus.pending);
+    });
+    it('should return fetching status on reset', () => {
+      expect(reducer('foo', {
+        type: accountInfoActionTypes.fetch,
+      })).to.equal(accountInfoStatus.fetching);
     });
   });
-  describe('reducer', () => {
+});
+
+describe('getErrorReducer', () => {
+  it('should be a function', () => {
+    expect(getErrorReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getErrorReducer()).to.be.a('function');
+  });
+  describe('errorReducer', () => {
+    const reducer = getErrorReducer();
+    it('should have initial state of null', () => {
+      expect(reducer(undefined, {})).to.be.null;
+    });
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return error on fetchError', () => {
+      const error = new Error('test');
+      expect(reducer(null, {
+        type: accountInfoActionTypes.fetchError,
+        error,
+      })).to.equal(error);
+    });
+    it('should return null on other action types', () => {
+      [
+        accountInfoActionTypes.fetch,
+        accountInfoActionTypes.fetchSuccess,
+        accountInfoActionTypes.reset,
+        accountInfoActionTypes.init,
+      ].forEach(type => {
+        expect(reducer('foo', {
+          type,
+        })).to.be.null;
+      });
+    });
+  });
+});
+
+
+describe('getAccountInfoReducer', () => {
+  it('should be a function', () => {
+    expect(getAccountInfoReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getAccountInfoReducer()).to.be.a('function');
+  });
+  describe('subscriptionReducer', () => {
     const reducer = getAccountInfoReducer();
-    it('should return an initial state', () => {
-      expect(reducer()).to.deep.equal({
-        status: accountInfoStatus.pending,
-        error: null,
-      });
-    });
-    it('should return original state if no action is given', () => {
-      const originalState = {};
-      expect(reducer(originalState)).to.equal(originalState);
-    });
-    it('should return original state if action is not recognized', () => {
-      const originalState = {};
-      expect(reducer(originalState, {
-        type: 'foo',
-      })).to.equal(originalState);
-    });
-    describe('accountInfoActions', () => {
-      it('should handle accountInfoActions.ready', () => {
-        expect(reducer({}, {
-          type: accountInfoActions.ready,
-        })).to.deep.equal({
-          status: accountInfoStatus.ready,
-          error: null,
+    const errorReducer = getErrorReducer();
+    const statusReducer = getStatusReducer();
+    it('should return combined state', () => {
+      expect(reducer(undefined, {}))
+        .to.deep.equal({
+          error: errorReducer(undefined, {}),
+          status: statusReducer(undefined, {}),
         });
-      });
-      it('should handle accountInfoActions.fetch', () => {
-        expect(reducer({}, {
-          type: accountInfoActions.fetch,
-        })).to.deep.equal({
-          status: accountInfoStatus.fetching,
-          error: null,
-        });
-      });
-      it('should handle accountInfoActions.fetchSuccess', () => {
-        expect(reducer({}, {
-          type: accountInfoActions.fetchSuccess,
-        })).to.deep.equal({
-          status: accountInfoStatus.ready,
-          error: null,
-        });
-      });
-      it('should handle accountInfoActions.fetchError', () => {
-        expect(reducer({}, {
-          type: accountInfoActions.fetchError,
-          error: new Error('test'),
-        })).to.deep.equal({
-          status: accountInfoStatus.ready,
-          error: new Error('test'),
-        });
-      });
-      it('should handle accountInfoActions.reset', () => {
-        expect(reducer({}, {
-          type: accountInfoActions.reset,
-        })).to.deep.equal({
-          status: accountInfoStatus.pending,
-          error: null,
-        });
-      });
     });
   });
 });

@@ -1,7 +1,9 @@
-import ActionMap from '../../lib/ActionMap';
+import Enum from '../../lib/Enum';
 
-export default new ActionMap([
+export default new Enum([
   'setFilters',
+  'addFilters',
+  'removeFilters',
   'notification',
   'subscribeSuccess',
   'subscribeError',
@@ -10,5 +12,6 @@ export default new ActionMap([
   'removeSuccess',
   'removeError',
   'reset',
-  'ready',
+  'resetSuccess',
+  'init',
 ], 'subscription');

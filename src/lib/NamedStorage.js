@@ -2,13 +2,6 @@ import SymbolMap from 'data-types/symbol-map';
 import Subscribable from './Subscribable';
 import uuid from 'uuid';
 
-const symbols = new SymbolMap([
-  'key',
-  'localStorage',
-  'handler',
-  'id',
-]);
-
 class MemoryStorage {
   getItem() {
     return this.data;
@@ -20,17 +13,17 @@ class MemoryStorage {
 
 export default class NamedStorage extends Subscribable {
   constructor({
-    key,
+    storageKey,
   }) {
     super();
-    if (!key) {
-      throw Error('NameLocalStorage must be created with a key');
+    if (!storageKey) {
+      throw Error('NameLocalStorage must be created with a storage key');
     }
-    this[symbols.key] = key;
-    this[symbols.id] = uuid.v4();
+    this._storageKey = storageKey;
+    this._id = uuid.v4();
     if (typeof localStorage !== 'undefined' && typeof window !== 'undefined') {
-      this[symbols.handler] = event => {
-        if (event.key === this[symbols.key]) {
+      this._storageHandler = event => {
+        if (event.key === this._storageKey) {
           try {
             const {
               setter,
@@ -44,26 +37,26 @@ export default class NamedStorage extends Subscribable {
           }
         }
       };
-      this[symbols.localStorage] = localStorage;
-      window.addEventListener('storage', this[symbols.handler]);
+      this._localStorage = localStorage;
+      window.addEventListener('storage', this._storageHandler);
     } else {
-      this[symbols.localStorage] = new MemoryStorage();
+      this._localStorage = new MemoryStorage();
     }
   }
   getData() {
     try {
       const {
         data,
-      } = JSON.parse(this[symbols.localStorage].getItem(this[symbols.key]));
-      return data;
+      } = JSON.parse(this._localStorage.getItem(this._storageKey));
+      return data || {};
     } catch (e) {
       /* ignore error */
-      return undefined;
+      return {};
     }
   }
   setData(data) {
-    this[symbols.localStorage].setItem(
-      this[symbols.key],
+    this._localStorage.setItem(
+      this._storageKey,
       JSON.stringify({
         setter: this.id,
         data,
@@ -71,11 +64,11 @@ export default class NamedStorage extends Subscribable {
     );
   }
   destroy() {
-    if (this[symbols.handler]) {
-      window.removeEventListener('storage', this[symbols.handler]);
+    if (this._storageHandler) {
+      window.removeEventListener('storage', this._storageHandler);
     }
   }
   get id() {
-    return this[symbols.id];
+    return this._id;
   }
 }

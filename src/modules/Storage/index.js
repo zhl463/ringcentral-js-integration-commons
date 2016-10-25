@@ -1,65 +1,103 @@
-import SymbolMap from 'data-types/symbol-map';
-import RcModule, { initFunction } from '../../lib/RcModule';
-import { proxify } from '../../lib/proxy';
+import RcModule from '../../lib/RcModule';
 import NamedStorage from '../../lib/NamedStorage';
-import getStorageReducer from './getStorageReducer';
-import storageActions from './storageActions';
 import storageStatus from './storageStatus';
-import storageEvents from './storageEvents';
-
-const symbols = new SymbolMap([
-  'storage',
-  'storageProvider',
-  'unsubscribeStorage',
-]);
+import storageActionTypes from './storageActionTypes';
+import getStorageReducer from './getStorageReducer';
 
 export default class Storage extends RcModule {
-  constructor(options) {
+  constructor({
+    auth,
+    StorageProvider = NamedStorage,
+    ...options,
+  } = {}) {
     super({
       ...options,
-      actions: storageActions,
+      actionTypes: storageActionTypes,
     });
-    const {
-      StorageProvider = NamedStorage,
-      auth,
-    } = options;
-    this[symbols.storage] = null;
-    this[symbols.storageProvider] = StorageProvider;
-    this[symbols.auth] = auth;
+    this._auth = auth;
+    this._StorageProvider = StorageProvider;
+    this._storage = null;
+    this._reducer = getStorageReducer(this.prefix);
+  }
+  initialize() {
+    this.store.subscribe(() => {
+      if (
+        this._auth.status === this._auth.authStatus.loggedIn &&
+        this.status !== storageStatus.ready
+      ) {
+        const storageKey = `${this.prefix ? `${this.prefix}-` : ''}storage-${this._auth.ownerId}`;
+        this._storage = new this._StorageProvider({ storageKey });
 
-    this.on('state-change', ({ oldState, newState }) => {
-      if (oldState) {
-        if (oldState.status !== newState.status) {
-          this.emit(
-            storageEvents.statusChange,
-            {
-              oldStatus: oldState.status,
-              newStatus: newState.status,
-            },
-          );
-          this.emit(newState.status);
+        const initialData = this._storage.getData() || {};
+        this.store.dispatch({
+          type: this.actionTypes.init,
+          storageKey,
+          data: initialData,
+        });
+        this._unsubscribe = this._storage.subscribe(updatedData => {
+          if (this.status === storageStatus.ready) {
+            this.store.dispatch({
+              type: this.actions.load,
+              data: updatedData,
+            });
+          }
+        });
+      } else if (
+        this._auth.status === this._auth.authStatus.notLoggedIn &&
+        this.status !== storageStatus.pending
+      ) {
+        this.store.dispatch({
+          type: this.actionTypes.reset,
+        });
+        if (this._unsubscribe) {
+          this._unsubscribe();
         }
-        if (oldState.data !== newState.data) {
-          this.emit(
-            storageEvents.dataChange,
-            {
-              oldData: oldState.data,
-              newData: newState.data,
-            },
-          );
-        }
-        if (newState.key && !oldState.key) {
-          this.emit(storageEvents.ready);
+        if (this._storage) {
+          this._storage.destroy();
+          this._storage = null;
         }
       }
     });
-  }
-  get reducer() {
-    return getStorageReducer(this.prefix);
+    this._auth.addBeforeLogoutHandler(() => {
+      this.store.dispatch({
+        type: this.actionTypes.reset,
+      });
+      if (this._unsubscribe) {
+        this._unsubscribe();
+      }
+      if (this._storage) {
+        this._storage.destroy();
+        this._storage = null;
+      }
+    });
   }
 
-  get key() {
-    return this.state.key;
+  getItem(key) {
+    return this.data[key];
+  }
+
+  setItem(key, value) {
+    this.store.dispatch({
+      type: this.actionTypes.set,
+      key,
+      value,
+    });
+    this._storage.setData(this.data);
+  }
+
+  hasItem(key) {
+    return this.data::Object.prototype.hasOwnProperty(key);
+  }
+  removeItem(key) {
+    this.store.dispatch({
+      type: this.actionTypes.remove,
+      key,
+    });
+    this._storage.setData(this.data);
+  }
+
+  get data() {
+    return this.state.data;
   }
 
   get status() {
@@ -70,130 +108,4 @@ export default class Storage extends RcModule {
     return storageStatus;
   }
 
-  get storageEvents() {
-    return storageEvents;
-  }
-
-  @initFunction
-  init() {
-    this[symbols.auth].on(this[symbols.auth].authEvents.loggedIn, async () => {
-      const key = `${this.prefix ? `${this.prefix}-` : ''}storage-${this[symbols.auth].ownerId}`;
-      this[symbols.storage] = new this[symbols.storageProvider]({ key });
-
-      let data = null;
-      let error = null;
-      let status = storageStatus.saved;
-
-      try {
-        data = await (async () => this[symbols.storage].getData())();
-      } catch (e) {
-        status = storageStatus.dirty;
-        error = e;
-      }
-
-      if (!data) data = {};
-
-      this.store.dispatch({
-        type: this.actions.init,
-        key,
-        data,
-        error,
-        status,
-      });
-
-      this[symbols.unsubscribeStorage] = this[symbols.storage].subscribe(newData => {
-        this.store.dispatch({
-          type: this.actions.load,
-          data: newData,
-        });
-      });
-    });
-    this[symbols.auth].on(this[symbols.auth].authEvents.notLoggedIn, () => {
-      if (this.status !== storageStatus.pending) {
-        this.store.dispatch({
-          type: this.actions.reset,
-        });
-        this[symbols.unsubscribeStorage]();
-        this[symbols.storage].destroy();
-        this[symbols.storage] = null;
-      }
-    });
-  }
-
-  @proxify
-  async setItem(key, value) {
-    await this.setData({
-      [key]: value,
-    });
-  }
-
-  @proxify
-  async setData(data) {
-    if (!this.state || this.state.status === storageStatus.pending) {
-      throw new Error('Storage is not ready');
-    }
-    this.store.dispatch({
-      type: this.actions.update,
-      data,
-    });
-    const version = this.state.version;
-    try {
-      this.store.dispatch({
-        type: this.actions.save,
-      });
-      await(
-        async () => this[symbols.storage].setData(this.getData())
-      )();
-      this.store.dispatch({
-        type: this.actions.saveSuccess,
-        version,
-      });
-    } catch (error) {
-      this.store.dispatch({
-        type: this.actions.saveError,
-        version,
-        error,
-      });
-    }
-  }
-
-  @proxify
-  async removeItem(key) {
-    if (!this.state || this.state.status === storageStatus.pending) {
-      throw new Error('Storage is not ready');
-    }
-    this.store.dispatch({
-      type: this.actions.remove,
-      key,
-    });
-    const version = this.state.version;
-    try {
-      this.store.dispatch({
-        type: this.actions.save,
-      });
-      await(
-        async () => this[symbols.storage].setData(this.getData())
-      )();
-      this.store.dispatch({
-        type: this.actions.saveSuccess,
-        version,
-      });
-    } catch (error) {
-      this.store.dispatch({
-        type: this.actions.saveError,
-        version,
-        error,
-      });
-    }
-  }
-
-  getItem(key) {
-    return this.state.data[key];
-  }
-
-  getData() {
-    return {
-      ...this.state.data,
-    };
-  }
 }

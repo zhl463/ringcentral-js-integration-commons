@@ -1,143 +1,99 @@
-import SymbolMap from 'data-types/symbol-map';
-import KeyValueMap from 'data-types/key-value-map';
-import RcModule, { initFunction } from '../../lib/RcModule';
-import { proxify } from '../../lib/proxy';
-import fetchList from '../../lib/fetchList';
+import RcModule from '../../lib/RcModule';
 import dialingPlanStatus from './dialingPlanStatus';
-import dialingPlanActions from './dialingPlanActions';
+import dialingPlanActionTypes from './dialingPlanActionTypes';
 import getDialingPlanReducer from './getDialingPlanReducer';
-import dialingPlanEvents from './dialingPlanEvents';
-
-const keys = new KeyValueMap({
-  storage: 'dialing-plan-data',
-});
-
-const DEFAULT_TTL = 30 * 60 * 1000;
-
-const symbols = new SymbolMap([
-  'api',
-  'auth',
-  'storage',
-  'ttl',
-]);
+import fetchList from '../../lib/fetchList';
 
 export default class DialingPlan extends RcModule {
-  constructor(options = {}) {
+  constructor({
+    auth,
+    client,
+    storage,
+    ttl = 30 * 60 * 1000,
+    ...options,
+  }) {
     super({
       ...options,
-      actions: dialingPlanActions,
+      actionTypes: dialingPlanActionTypes,
     });
-    const {
-      api,
-      auth,
-      storage,
-      ttl = DEFAULT_TTL,
-    } = options;
-    this[symbols.api] = api;
-    this[symbols.auth] = auth;
-    this[symbols.storage] = storage;
-    this[symbols.ttl] = ttl;
-
-    this.on('state-change', ({ oldState, newState }) => {
-      if (oldState) {
-        if (oldState.status !== newState.status) {
-          this.emit(dialingPlanEvents.statusChange, {
-            oldStatus: oldState.status,
-            newStatus: newState.status,
-          });
-        }
-        if (newState.error && newState.error !== oldState.error) {
-          this.emit(dialingPlanEvents.error, newState.error);
-        }
-      }
-    });
-    this[symbols.storage].on(
-      this[symbols.storage].storageEvents.dataChange,
-      ({ oldData, newData }) => {
-        if (!oldData[keys.storage] && !newData[keys.storage]) return;
+    this._auth = auth;
+    this._storage = storage;
+    this._client = client;
+    this._ttl = ttl;
+    this._storageKey = 'dialingPlan';
+    this._reducer = getDialingPlanReducer(this.prefix);
+    this._promise = null;
+  }
+  initialize() {
+    this.store.subscribe(() => {
+      if (
+        this._storage.status !== this._storage.storageStatus.pending &&
+        this.status === dialingPlanStatus.pending
+      ) {
+        this.store.dispatch({
+          type: this.actionTypes.init,
+        });
         if (
-          oldData[keys.storage] && !newData[keys.storage] ||
-          !oldData[keys.storage] && newData[keys.storage] ||
-          oldData[keys.storage] !== newData[keys.storage] &&
-          (JSON.stringify(oldData[keys.storage].dialingPlans) !==
-            JSON.stringify(newData[keys.storage].dialingPlans))
+          this._auth.isFreshLogin ||
+          !this._storage.hasItem(this._storageKey) ||
+          Date.now() - this.data.timestamp > this._ttl
         ) {
-          this.emit(dialingPlanEvents.dialingPlanChange, {
-            oldData: oldData[keys.storage] && oldData[keys.storage].dialingPlans,
-            newData: newData[keys.storage] && newData[keys.storage].dialingPlans,
-          });
+          this.loadDialingPlan();
         }
-      },
-    );
+      } else if (
+        this._storage.status === this._storage.storageStatus.pending &&
+        this.status !== dialingPlanStatus.pending
+      ) {
+        this.store.dispatch({
+          type: this.actionTypes.reset,
+        });
+      }
+    });
   }
 
-  @initFunction
-  init() {
-    this[symbols.storage].on(this[symbols.storage].storageEvents.ready, async () => {
-      await this.loadDialingPlans();
-      this.store.dispatch({
-        type: this.actions.ready,
-      });
-    });
-    this[symbols.storage].on(this[symbols.storage].storageEvents.pending, () => {
-      this.store.dispatch({
-        type: this.actions.reset,
-      });
-    });
-  }
   get data() {
-    return this[symbols.storage].getItem(keys.storage);
+    return this._storage.getItem(this._storageKey);
   }
-  @proxify
-  async loadDialingPlans(options = {}) {
-    const {
-      force = false,
-    } = options;
-    let data = this[symbols.storage].getItem(keys.storage);
-    if (force || !data || Date.now() - data.timestamp > this[symbols.ttl]) {
-      try {
-        this.store.dispatch({
-          type: this.actions.fetch,
-        });
-        data = {
-          dialingPlans: await fetchList(params => (
-            this[symbols.api].account().dialingPlan().list(params)
-          )),
-          timestamp: Date.now(),
-        };
-        this[symbols.storage].setItem(keys.storage, data);
-        this.store.dispatch({
-          type: this.actions.fetchSuccess,
-        });
-      } catch (error) {
-        this.store.dispatch({
-          type: this.actions.fetchError,
-          error,
-        });
-        throw error;
-      }
-    }
-    return data;
+
+  get status() {
+    return this.state.status;
   }
-  get reducer() {
-    return getDialingPlanReducer(this.prefix);
+
+  get error() {
+    return this.state.error;
   }
 
   get dialingPlanStatus() {
     return dialingPlanStatus;
   }
-  static get dialingPlanStatus() {
-    return dialingPlanStatus;
-  }
 
-  get dialingPlanEvents() {
-    return dialingPlanEvents;
-  }
-  static get dialingPlanEvents() {
-    return dialingPlanEvents;
-  }
-
-  get status() {
-    return this.state.status;
+  async loadDialingPlan() {
+    if (!this._promise) {
+      this._promise = (async () => {
+        this.store.dispatch({
+          type: this.actionTypes.fetch,
+        });
+        try {
+          this._storage.setItem(this._storageKey, {
+            dialingPlan: await fetchList(params => (
+              this._client.account().dialingPlan().list(params)
+            )),
+            timestamp: Date.now(),
+          });
+          this.store.dispatch({
+            type: this.actionTypes.fetchSuccess,
+          });
+          this._promise = null;
+        } catch (error) {
+          this.store.dispatch({
+            type: this.actions.fetchError,
+            error,
+          });
+          this._promise = null;
+          throw error;
+        }
+      })();
+    }
+    await this._promise;
   }
 }

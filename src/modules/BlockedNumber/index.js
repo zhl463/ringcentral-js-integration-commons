@@ -1,144 +1,99 @@
-import SymbolMap from 'data-types/symbol-map';
-import KeyValueMap from 'data-types/key-value-map';
-import RcModule, { initFunction } from '../../lib/RcModule';
-import { proxify } from '../../lib/proxy';
-import fetchList from '../../lib/fetchList';
+import RcModule from '../../lib/RcModule';
 import blockedNumberStatus from './blockedNumberStatus';
-import blockedNumberActions from './blockedNumberActions';
+import blockedNumberActionTypes from './blockedNumberActionTypes';
 import getBlockedNumberReducer from './getBlockedNumberReducer';
-import blockedNumberEvents from './blockedNumberEvents';
-
-const keys = new KeyValueMap({
-  storage: 'blocked-number-data',
-});
-
-const DEFAULT_TTL = 30 * 60 * 1000;
-
-const symbols = new SymbolMap([
-  'api',
-  'auth',
-  'storage',
-  'ttl',
-]);
+import fetchList from '../../lib/fetchList';
 
 export default class BlockedNumber extends RcModule {
-  constructor(options = {}) {
+  constructor({
+    auth,
+    client,
+    storage,
+    ttl = 30 * 60 * 1000,
+    ...options,
+  }) {
     super({
       ...options,
-      actions: blockedNumberActions,
+      actionTypes: blockedNumberActionTypes,
     });
-    const {
-      api,
-      auth,
-      storage,
-      ttl = DEFAULT_TTL,
-    } = options;
-    this[symbols.api] = api;
-    this[symbols.auth] = auth;
-    this[symbols.storage] = storage;
-    this[symbols.ttl] = ttl;
-
-    this.on('state-change', ({ oldState, newState }) => {
-      if (oldState) {
-        if (oldState.status !== newState.status) {
-          this.emit(blockedNumberEvents.statusChange, {
-            oldStatus: oldState.status,
-            newStatus: newState.status,
-          });
-        }
-        if (newState.error && newState.error !== oldState.error) {
-          this.emit(blockedNumberEvents.error, newState.error);
-        }
-      }
-    });
-    this[symbols.storage].on(
-      this[symbols.storage].storageEvents.dataChange,
-      ({ oldData, newData }) => {
-        if (!oldData[keys.storage] && !newData[keys.storage]) return;
+    this._auth = auth;
+    this._storage = storage;
+    this._client = client;
+    this._ttl = ttl;
+    this._storageKey = 'blockedNumber';
+    this._reducer = getBlockedNumberReducer(this.prefix);
+    this._promise = null;
+  }
+  initialize() {
+    this.store.subscribe(() => {
+      if (
+        this._storage.status !== this._storage.storageStatus.pending &&
+        this.status === blockedNumberStatus.pending
+      ) {
+        this.store.dispatch({
+          type: this.actionTypes.init,
+        });
         if (
-          oldData[keys.storage] && !newData[keys.storage] ||
-          !oldData[keys.storage] && newData[keys.storage] ||
-          oldData[keys.storage] !== newData[keys.storage] &&
-          (JSON.stringify(oldData[keys.storage].blockedNumbers) !==
-            JSON.stringify(newData[keys.storage].blockedNumbers))
+          this._auth.isFreshLogin ||
+          !this._storage.hasItem(this._storageKey) ||
+          Date.now() - this.data.timestamp > this._ttl
         ) {
-          this.emit(blockedNumberEvents.blockedNumberChange, {
-            oldData: oldData[keys.storage] && oldData[keys.storage].blockedNumbers,
-            newData: newData[keys.storage] && newData[keys.storage].blockedNumbers,
-          });
+          this.loadBlockedNumber();
         }
-      },
-    );
-  }
-
-  @initFunction
-  init() {
-    this[symbols.storage].on(this[symbols.storage].storageEvents.ready, async () => {
-      await this.loadBlockedNumbers();
-      this.store.dispatch({
-        type: this.actions.ready,
-      });
-    });
-    this[symbols.storage].on(this[symbols.storage].storageEvents.pending, () => {
-      this.store.dispatch({
-        type: this.actions.reset,
-      });
-    });
-  }
-  get data() {
-    return this[symbols.storage].getItem(keys.storage);
-  }
-  @proxify
-  async loadBlockedNumbers(options = {}) {
-    const {
-      force = false,
-    } = options;
-    let data = this[symbols.storage].getItem(keys.storage);
-    if (force || !data || Date.now() - data.timestamp > this[symbols.ttl]) {
-      try {
+      } else if (
+        this._storage.status === this._storage.storageStatus.pending &&
+        this.status !== blockedNumberStatus.pending
+      ) {
         this.store.dispatch({
-          type: this.actions.fetch,
+          type: this.actionTypes.reset,
         });
-        data = {
-          blockedNumbers: await fetchList(params => (
-            this[symbols.api].account().extension().blockedNumber().list(params)
-          )),
-          timestamp: Date.now(),
-        };
-        this[symbols.storage].setItem(keys.storage, data);
-        this.store.dispatch({
-          type: this.actions.fetchSuccess,
-        });
-      } catch (error) {
-        this.store.dispatch({
-          type: this.actions.fetchError,
-          error,
-        });
-        throw error;
       }
-    }
-    return data;
-  }
-  get reducer() {
-    return getBlockedNumberReducer(this.prefix);
+    });
   }
 
-  get blockedNumberStatus() {
-    return blockedNumberStatus;
-  }
-  static get blockedNumberStatus() {
-    return blockedNumberStatus;
-  }
-
-  get blockedNumberEvents() {
-    return blockedNumberEvents;
-  }
-  static get blockedNumberEvents() {
-    return blockedNumberEvents;
+  get data() {
+    return this._storage.getItem(this._storageKey);
   }
 
   get status() {
     return this.state.status;
   }
 
+  get error() {
+    return this.state.error;
+  }
+
+  get blockedNumberStatus() {
+    return blockedNumberStatus;
+  }
+
+  async loadBlockedNumber() {
+    if (!this._promise) {
+      this._promise = (async () => {
+        this.store.dispatch({
+          type: this.actionTypes.fetch,
+        });
+        try {
+          this._storage.setItem(this._storageKey, {
+            blockedNumber: await fetchList(params => (
+              this._client.account().extension().blockedNumber().list(params)
+            )),
+            timestamp: Date.now(),
+          });
+          this.store.dispatch({
+            type: this.actionTypes.fetchSuccess,
+          });
+          this._promise = null;
+        } catch (error) {
+          this.store.dispatch({
+            type: this.actions.fetchError,
+            error,
+          });
+          this._promise = null;
+          throw error;
+        }
+      })();
+    }
+    await this._promise;
+  }
 }

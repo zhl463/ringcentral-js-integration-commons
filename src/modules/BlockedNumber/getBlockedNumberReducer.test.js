@@ -1,77 +1,110 @@
 import { expect } from 'chai';
-import getBlockedNumberReducer from './getBlockedNumberReducer';
-import blockedNumberActions from './blockedNumberActions';
+import getBlockedNumberReducer, {
+  getErrorReducer,
+  getStatusReducer,
+} from './getBlockedNumberReducer';
+
+import blockedNumberActionTypes from './blockedNumberActionTypes';
 import blockedNumberStatus from './blockedNumberStatus';
 
-describe('blocked-number-reducer', () => {
-  describe('getStorageReducer', () => {
-    it('should be a function', () => {
-      expect(getBlockedNumberReducer).to.be.a('function');
+describe('getStatusReducer', () => {
+  it('should be a function', () => {
+    expect(getStatusReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getStatusReducer()).to.be.a('function');
+  });
+  describe('statusReducer', () => {
+    const reducer = getStatusReducer();
+    it('should have initial state of pending', () => {
+      expect(reducer(undefined, {})).to.equal(blockedNumberStatus.pending);
     });
-    it('should return a reducer function', () => {
-      expect(getBlockedNumberReducer()).to.be.a('function');
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return ready status for the following action types', () => {
+      [
+        blockedNumberActionTypes.init,
+        blockedNumberActionTypes.fetchSuccess,
+        blockedNumberActionTypes.fetchError,
+      ].forEach(type => {
+        expect(reducer('foo', {
+          type,
+        })).to.equal(blockedNumberStatus.ready);
+      });
+    });
+    it('should return pending status on reset', () => {
+      expect(reducer('foo', {
+        type: blockedNumberActionTypes.reset,
+      })).to.equal(blockedNumberStatus.pending);
+    });
+    it('should return fetching status on reset', () => {
+      expect(reducer('foo', {
+        type: blockedNumberActionTypes.fetch,
+      })).to.equal(blockedNumberStatus.fetching);
     });
   });
-  describe('reducer', () => {
+});
+
+describe('getErrorReducer', () => {
+  it('should be a function', () => {
+    expect(getErrorReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getErrorReducer()).to.be.a('function');
+  });
+  describe('errorReducer', () => {
+    const reducer = getErrorReducer();
+    it('should have initial state of null', () => {
+      expect(reducer(undefined, {})).to.be.null;
+    });
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return error on fetchError', () => {
+      const error = new Error('test');
+      expect(reducer(null, {
+        type: blockedNumberActionTypes.fetchError,
+        error,
+      })).to.equal(error);
+    });
+    it('should return null on other action types', () => {
+      [
+        blockedNumberActionTypes.fetch,
+        blockedNumberActionTypes.fetchSuccess,
+        blockedNumberActionTypes.reset,
+        blockedNumberActionTypes.init,
+      ].forEach(type => {
+        expect(reducer('foo', {
+          type,
+        })).to.be.null;
+      });
+    });
+  });
+});
+
+
+describe('getBlockedNumberReducer', () => {
+  it('should be a function', () => {
+    expect(getBlockedNumberReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getBlockedNumberReducer()).to.be.a('function');
+  });
+  describe('subscriptionReducer', () => {
     const reducer = getBlockedNumberReducer();
-    it('should return an initial state', () => {
-      expect(reducer()).to.deep.equal({
-        status: blockedNumberStatus.pending,
-        error: null,
-      });
-    });
-    it('should return original state if no action is given', () => {
-      const originalState = {};
-      expect(reducer(originalState)).to.equal(originalState);
-    });
-    it('should return original state if action is not recognized', () => {
-      const originalState = {};
-      expect(reducer(originalState, {
-        type: 'foo',
-      })).to.equal(originalState);
-    });
-    describe('blockedNumberActions', () => {
-      it('should handle blockedNumberActions.ready', () => {
-        expect(reducer({}, {
-          type: blockedNumberActions.ready,
-        })).to.deep.equal({
-          status: blockedNumberStatus.ready,
-          error: null,
+    const errorReducer = getErrorReducer();
+    const statusReducer = getStatusReducer();
+    it('should return combined state', () => {
+      expect(reducer(undefined, {}))
+        .to.deep.equal({
+          error: errorReducer(undefined, {}),
+          status: statusReducer(undefined, {}),
         });
-      });
-      it('should handle blockedNumberActions.fetch', () => {
-        expect(reducer({}, {
-          type: blockedNumberActions.fetch,
-        })).to.deep.equal({
-          status: blockedNumberStatus.fetching,
-          error: null,
-        });
-      });
-      it('should handle blockedNumberActions.fetchSuccess', () => {
-        expect(reducer({}, {
-          type: blockedNumberActions.fetchSuccess,
-        })).to.deep.equal({
-          status: blockedNumberStatus.ready,
-          error: null,
-        });
-      });
-      it('should handle blockedNumberActions.fetchError', () => {
-        expect(reducer({}, {
-          type: blockedNumberActions.fetchError,
-          error: new Error('test'),
-        })).to.deep.equal({
-          status: blockedNumberStatus.ready,
-          error: new Error('test'),
-        });
-      });
-      it('should handle blockedNumberActions.reset', () => {
-        expect(reducer({}, {
-          type: blockedNumberActions.reset,
-        })).to.deep.equal({
-          status: blockedNumberStatus.pending,
-          error: null,
-        });
-      });
     });
   });
 });

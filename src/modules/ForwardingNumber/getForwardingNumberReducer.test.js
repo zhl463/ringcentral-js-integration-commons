@@ -1,77 +1,110 @@
 import { expect } from 'chai';
-import getForwardingNumberReducer from './getForwardingNumberReducer';
-import forwardingNumberActions from './forwardingNumberActions';
+import getForwardingNumberReducer, {
+  getErrorReducer,
+  getStatusReducer,
+} from './getForwardingNumberReducer';
+
+import forwardingNumberActionTypes from './forwardingNumberActionTypes';
 import forwardingNumberStatus from './forwardingNumberStatus';
 
-describe('forwarding-number-reducer', () => {
-  describe('getStorageReducer', () => {
-    it('should be a function', () => {
-      expect(getForwardingNumberReducer).to.be.a('function');
+describe('getStatusReducer', () => {
+  it('should be a function', () => {
+    expect(getStatusReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getStatusReducer()).to.be.a('function');
+  });
+  describe('statusReducer', () => {
+    const reducer = getStatusReducer();
+    it('should have initial state of pending', () => {
+      expect(reducer(undefined, {})).to.equal(forwardingNumberStatus.pending);
     });
-    it('should return a reducer function', () => {
-      expect(getForwardingNumberReducer()).to.be.a('function');
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return ready status for the following action types', () => {
+      [
+        forwardingNumberActionTypes.init,
+        forwardingNumberActionTypes.fetchSuccess,
+        forwardingNumberActionTypes.fetchError,
+      ].forEach(type => {
+        expect(reducer('foo', {
+          type,
+        })).to.equal(forwardingNumberStatus.ready);
+      });
+    });
+    it('should return pending status on reset', () => {
+      expect(reducer('foo', {
+        type: forwardingNumberActionTypes.reset,
+      })).to.equal(forwardingNumberStatus.pending);
+    });
+    it('should return fetching status on reset', () => {
+      expect(reducer('foo', {
+        type: forwardingNumberActionTypes.fetch,
+      })).to.equal(forwardingNumberStatus.fetching);
     });
   });
-  describe('reducer', () => {
+});
+
+describe('getErrorReducer', () => {
+  it('should be a function', () => {
+    expect(getErrorReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getErrorReducer()).to.be.a('function');
+  });
+  describe('errorReducer', () => {
+    const reducer = getErrorReducer();
+    it('should have initial state of null', () => {
+      expect(reducer(undefined, {})).to.be.null;
+    });
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return error on fetchError', () => {
+      const error = new Error('test');
+      expect(reducer(null, {
+        type: forwardingNumberActionTypes.fetchError,
+        error,
+      })).to.equal(error);
+    });
+    it('should return null on other action types', () => {
+      [
+        forwardingNumberActionTypes.fetch,
+        forwardingNumberActionTypes.fetchSuccess,
+        forwardingNumberActionTypes.reset,
+        forwardingNumberActionTypes.init,
+      ].forEach(type => {
+        expect(reducer('foo', {
+          type,
+        })).to.be.null;
+      });
+    });
+  });
+});
+
+
+describe('getForwardingNumberReducer', () => {
+  it('should be a function', () => {
+    expect(getForwardingNumberReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getForwardingNumberReducer()).to.be.a('function');
+  });
+  describe('subscriptionReducer', () => {
     const reducer = getForwardingNumberReducer();
-    it('should return an initial state', () => {
-      expect(reducer()).to.deep.equal({
-        status: forwardingNumberStatus.pending,
-        error: null,
-      });
-    });
-    it('should return original state if no action is given', () => {
-      const originalState = {};
-      expect(reducer(originalState)).to.equal(originalState);
-    });
-    it('should return original state if action is not recognized', () => {
-      const originalState = {};
-      expect(reducer(originalState, {
-        type: 'foo',
-      })).to.equal(originalState);
-    });
-    describe('forwardingNumberActions', () => {
-      it('should handle forwardingNumberActions.ready', () => {
-        expect(reducer({}, {
-          type: forwardingNumberActions.ready,
-        })).to.deep.equal({
-          status: forwardingNumberStatus.ready,
-          error: null,
+    const errorReducer = getErrorReducer();
+    const statusReducer = getStatusReducer();
+    it('should return combined state', () => {
+      expect(reducer(undefined, {}))
+        .to.deep.equal({
+          error: errorReducer(undefined, {}),
+          status: statusReducer(undefined, {}),
         });
-      });
-      it('should handle forwardingNumberActions.fetch', () => {
-        expect(reducer({}, {
-          type: forwardingNumberActions.fetch,
-        })).to.deep.equal({
-          status: forwardingNumberStatus.fetching,
-          error: null,
-        });
-      });
-      it('should handle forwardingNumberActions.fetchSuccess', () => {
-        expect(reducer({}, {
-          type: forwardingNumberActions.fetchSuccess,
-        })).to.deep.equal({
-          status: forwardingNumberStatus.ready,
-          error: null,
-        });
-      });
-      it('should handle forwardingNumberActions.fetchError', () => {
-        expect(reducer({}, {
-          type: forwardingNumberActions.fetchError,
-          error: new Error('test'),
-        })).to.deep.equal({
-          status: forwardingNumberStatus.ready,
-          error: new Error('test'),
-        });
-      });
-      it('should handle forwardingNumberActions.reset', () => {
-        expect(reducer({}, {
-          type: forwardingNumberActions.reset,
-        })).to.deep.equal({
-          status: forwardingNumberStatus.pending,
-          error: null,
-        });
-      });
     });
   });
 });

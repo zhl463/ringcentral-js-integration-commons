@@ -1,9 +1,8 @@
-import KeyValueMap from 'data-types/key-value-map';
+import Enum from '../../lib/Enum';
 
-const definition = {
-  pending: 'PENDING',
-  subscribed: 'SUBSCRIBED',
-  notSubscribed: 'NOT_SUBSCRIBED',
-};
-
-export default new KeyValueMap(definition);
+export default new Enum([
+  'pending',
+  'subscribed',
+  'notSubscribed',
+  'resetting',
+], 'subscription');

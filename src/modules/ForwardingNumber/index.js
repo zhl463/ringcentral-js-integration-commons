@@ -1,144 +1,99 @@
-import SymbolMap from 'data-types/symbol-map';
-import KeyValueMap from 'data-types/key-value-map';
-import RcModule, { initFunction } from '../../lib/RcModule';
-import { proxify } from '../../lib/proxy';
-import fetchList from '../../lib/fetchList';
+import RcModule from '../../lib/RcModule';
 import forwardingNumberStatus from './forwardingNumberStatus';
-import forwardingNumberActions from './forwardingNumberActions';
+import forwardingNumberActionTypes from './forwardingNumberActionTypes';
 import getForwardingNumberReducer from './getForwardingNumberReducer';
-import forwardingNumberEvents from './forwardingNumberEvents';
-
-const keys = new KeyValueMap({
-  storage: 'forwarding-number-data',
-});
-
-const DEFAULT_TTL = 30 * 60 * 1000;
-
-const symbols = new SymbolMap([
-  'api',
-  'auth',
-  'storage',
-  'ttl',
-]);
+import fetchList from '../../lib/fetchList';
 
 export default class ForwardingNumber extends RcModule {
-  constructor(options = {}) {
+  constructor({
+    auth,
+    client,
+    storage,
+    ttl = 30 * 60 * 1000,
+    ...options,
+  }) {
     super({
       ...options,
-      actions: forwardingNumberActions,
+      actionTypes: forwardingNumberActionTypes,
     });
-    const {
-      api,
-      auth,
-      storage,
-      ttl = DEFAULT_TTL,
-    } = options;
-    this[symbols.api] = api;
-    this[symbols.auth] = auth;
-    this[symbols.storage] = storage;
-    this[symbols.ttl] = ttl;
-
-    this.on('state-change', ({ oldState, newState }) => {
-      if (oldState) {
-        if (oldState.status !== newState.status) {
-          this.emit(forwardingNumberEvents.statusChange, {
-            oldStatus: oldState.status,
-            newStatus: newState.status,
-          });
-        }
-        if (newState.error && newState.error !== oldState.error) {
-          this.emit(forwardingNumberEvents.error, newState.error);
-        }
-      }
-    });
-    this[symbols.storage].on(
-      this[symbols.storage].storageEvents.dataChange,
-      ({ oldData, newData }) => {
-        if (!oldData[keys.storage] && !newData[keys.storage]) return;
+    this._auth = auth;
+    this._storage = storage;
+    this._client = client;
+    this._ttl = ttl;
+    this._storageKey = 'forwardingNumber';
+    this._reducer = getForwardingNumberReducer(this.prefix);
+    this._promise = null;
+  }
+  initialize() {
+    this.store.subscribe(() => {
+      if (
+        this._storage.status !== this._storage.storageStatus.pending &&
+        this.status === forwardingNumberStatus.pending
+      ) {
+        this.store.dispatch({
+          type: this.actionTypes.init,
+        });
         if (
-          oldData[keys.storage] && !newData[keys.storage] ||
-          !oldData[keys.storage] && newData[keys.storage] ||
-          oldData[keys.storage] !== newData[keys.storage] &&
-          (JSON.stringify(oldData[keys.storage].forwardingNumbers) !==
-            JSON.stringify(newData[keys.storage].forwardingNumbers))
+          this._auth.isFreshLogin ||
+          !this._storage.hasItem(this._storageKey) ||
+          Date.now() - this.data.timestamp > this._ttl
         ) {
-          this.emit(forwardingNumberEvents.forwardingNumberChange, {
-            oldData: oldData[keys.storage] && oldData[keys.storage].forwardingNumbers,
-            newData: newData[keys.storage] && newData[keys.storage].forwardingNumbers,
-          });
+          this.loadForwardingNumber();
         }
-      },
-    );
-  }
-
-  @initFunction
-  init() {
-    this[symbols.storage].on(this[symbols.storage].storageEvents.ready, async () => {
-      await this.loadForwardingNumbers();
-      this.store.dispatch({
-        type: this.actions.ready,
-      });
-    });
-    this[symbols.storage].on(this[symbols.storage].storageEvents.pending, () => {
-      this.store.dispatch({
-        type: this.actions.reset,
-      });
-    });
-  }
-  get data() {
-    return this[symbols.storage].getItem(keys.storage);
-  }
-  @proxify
-  async loadForwardingNumbers(options = {}) {
-    const {
-      force = false,
-    } = options;
-    let data = this[symbols.storage].getItem(keys.storage);
-    if (force || !data || Date.now() - data.timestamp > this[symbols.ttl]) {
-      try {
+      } else if (
+        this._storage.status === this._storage.storageStatus.pending &&
+        this.status !== forwardingNumberStatus.pending
+      ) {
         this.store.dispatch({
-          type: this.actions.fetch,
+          type: this.actionTypes.reset,
         });
-        data = {
-          forwardingNumbers: await fetchList(params => (
-            this[symbols.api].account().extension().forwardingNumber().list(params)
-          )),
-          timestamp: Date.now(),
-        };
-        this[symbols.storage].setItem(keys.storage, data);
-        this.store.dispatch({
-          type: this.actions.fetchSuccess,
-        });
-      } catch (error) {
-        this.store.dispatch({
-          type: this.actions.fetchError,
-          error,
-        });
-        throw error;
       }
-    }
-    return data;
-  }
-  get reducer() {
-    return getForwardingNumberReducer(this.prefix);
+    });
   }
 
-  get forwardingNumberStatus() {
-    return forwardingNumberStatus;
-  }
-  static get forwardingNumberStatus() {
-    return forwardingNumberStatus;
-  }
-
-  get forwardingNumberEvents() {
-    return forwardingNumberEvents;
-  }
-  static get forwardingNumberEvents() {
-    return forwardingNumberEvents;
+  get data() {
+    return this._storage.getItem(this._storageKey);
   }
 
   get status() {
     return this.state.status;
   }
 
+  get error() {
+    return this.state.error;
+  }
+
+  get forwardingNumberStatus() {
+    return forwardingNumberStatus;
+  }
+
+  async loadForwardingNumber() {
+    if (!this._promise) {
+      this._promise = (async () => {
+        this.store.dispatch({
+          type: this.actionTypes.fetch,
+        });
+        try {
+          this._storage.setItem(this._storageKey, {
+            forwardingNumber: await fetchList(params => (
+              this._client.account().extension().forwardingNumber().list(params)
+            )),
+            timestamp: Date.now(),
+          });
+          this.store.dispatch({
+            type: this.actionTypes.fetchSuccess,
+          });
+          this._promise = null;
+        } catch (error) {
+          this.store.dispatch({
+            type: this.actions.fetchError,
+            error,
+          });
+          this._promise = null;
+          throw error;
+        }
+      })();
+    }
+    await this._promise;
+  }
 }

@@ -1,47 +1,50 @@
-import { prefixActions } from '../../lib/ActionMap';
-import extensionInfoActions from './extensionInfoActions';
+import { combineReducers } from 'redux';
+import { prefixEnum } from '../../lib/Enum';
+import extensionInfoActionTypes from './extensionInfoActionTypes';
 import extensionInfoStatus from './extensionInfoStatus';
 
-export default function getExtensionInfoReducer(prefix) {
-  const actions = prefixActions({ actions: extensionInfoActions, prefix });
-  return (state, action) => {
-    if (!state) {
-      return {
-        status: extensionInfoStatus.pending,
-        error: null,
-      };
-    }
-    if (!action) {
-      return state;
-    }
-    switch (action.type) {
-      case actions.ready:
-        return {
-          status: extensionInfoStatus.ready,
-          error: null,
-        };
-      case actions.fetch:
-        return {
-          status: extensionInfoStatus.fetching,
-          error: null,
-        };
-      case actions.fetchSuccess:
-        return {
-          status: extensionInfoStatus.ready,
-          error: null,
-        };
-      case actions.fetchError:
-        return {
-          status: extensionInfoStatus.ready,
-          error: action.error,
-        };
-      case actions.reset:
-        return {
-          status: extensionInfoStatus.pending,
-          error: null,
-        };
+export function getStatusReducer(prefix) {
+  const prefixedTypes = prefixEnum({ enumMap: extensionInfoActionTypes, prefix });
+  return (state = extensionInfoStatus.pending, { type }) => {
+    switch (type) {
+      case prefixedTypes.fetch:
+        return extensionInfoStatus.fetching;
+
+      case prefixedTypes.init:
+      case prefixedTypes.fetchSuccess:
+      case prefixedTypes.fetchError:
+        return extensionInfoStatus.ready;
+
+      case prefixedTypes.reset:
+        return extensionInfoStatus.pending;
       default:
         return state;
     }
   };
+}
+
+export function getErrorReducer(prefix) {
+  const prefixedTypes = prefixEnum({ enumMap: extensionInfoActionTypes, prefix });
+  return (state = null, { type, error }) => {
+    switch (type) {
+      case prefixedTypes.init:
+      case prefixedTypes.fetch:
+      case prefixedTypes.fetchSuccess:
+      case prefixedTypes.reset:
+        return null;
+
+      case prefixedTypes.fetchError:
+        return error;
+
+      default:
+        return state;
+    }
+  };
+}
+
+export default function getAccountInfoReducer(prefix) {
+  return combineReducers({
+    status: getStatusReducer(prefix),
+    error: getErrorReducer(prefix),
+  });
 }

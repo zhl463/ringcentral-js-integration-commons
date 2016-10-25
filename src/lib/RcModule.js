@@ -1,19 +1,5 @@
-import SymbolMap from 'data-types/symbol-map';
-import { prefixActions } from './ActionMap';
-import Emitter from './Emitter';
-
-const symbols = new SymbolMap([
-  'store',
-  'getState',
-  'prefix',
-  'actions',
-  'emitter',
-  'modulePath',
-  'oldState',
-  'initFunction',
-  'isInitialized',
-  'suppressInit',
-]);
+import { prefixEnum } from './Enum';
+import { createSelector } from 'reselect';
 
 /**
  * @function
@@ -21,11 +7,15 @@ const symbols = new SymbolMap([
  * @return {Object}
  * @description Default reducer if module does not has its own reducer.
  */
-function defaultReducer(state) {
-  if (typeof state === 'undefined') return {};
-  return state;
+function defaultReducer() {
+  return null;
 }
 
+/**
+ * @function
+ * @return any
+ * @description Default getState function
+ */
 function defaultGetState() {
   return this.store.getState();
 }
@@ -35,171 +25,183 @@ function defaultGetState() {
  * @default
  * @description Base module class.
  */
-export default class RcModule extends Emitter {
+export default class RcModule {
   /**
    * @constructor
+   * @param {Function} options.getState
+   * @param {String} options.prefix
+   * @param {Enum} options.actionTypes,
    */
-  constructor(options = {}) {
-    super();
-    const {
-      getState = defaultGetState,
-      prefix,
-      actions,
-    } = options;
+  constructor({
+    getState = defaultGetState,
+    prefix,
+    actionTypes,
+  } = {}) {
     if (typeof getState !== 'function') {
       throw new Error(
         'The `getState` options property must be of type function'
       );
     }
-    this[symbols.getState] = getState;
+    this._getState = getState;
     if (prefix && typeof prefix !== 'string') {
       throw new Error('The `prefix` options property must be null, undefined, or a string');
     }
-    this[symbols.prefix] = prefix;
-    this[symbols.actions] = actions && prefixActions({ actions, prefix });
+    this._prefix = prefix;
+    this._actionTypes = actionTypes && prefixEnum({ enumMap: actionTypes, prefix });
+    this._reducer = defaultReducer;
+    this._modulePath = 'root';
+    this._selectors = {};
+    // add state selector
+
+    this.addSelector('state', () => this::this._getState());
   }
 
+  /**
+   * @property
+   * @type any
+   * @description The state of the module
+   */
   get state() {
-    return this::this[symbols.getState]();
+    return this.getSelector('state')();
   }
+
+  /**
+   * @property
+   * @type Function
+   * @description The reducer function of the module
+   */
   get reducer() {
-    return defaultReducer;
+    return this._reducer;
   }
+
+  /**
+   * @property
+   * @type Object
+   * @description The store object of the module
+   */
   get store() {
-    if (!this[symbols.store]) {
+    if (!this._store) {
       throw new Error('module has not been initialized...');
     }
-    return this[symbols.store];
+    return this._store;
   }
+  /**
+   * @property
+   * @type String
+   * @description The prefix string of this module
+   */
   get prefix() {
-    return this[symbols.prefix];
+    return this._prefix;
   }
-  get actions() {
-    return this[symbols.actions];
+  /**
+   * @property
+   * @type Enum
+   * @description The actionTypes used by the module
+   */
+  get actionTypes() {
+    return this._actionTypes;
   }
+  /**
+   * @property
+   * @type String
+   * @description The canonical path of the module from the root module
+   */
   get modulePath() {
-    return this[symbols.modulePath] || 'root';
+    return this._modulePath;
   }
-}
 
-/**
- * @function addModule
- * @param {String} name - Name of the module. Also used for the property name.
- * @param {any} module - The module to be attached, can be any type.
- * @description Intended to be used as an instance function. Either use
- *  the bind operator (target::addModule('testmodule', {})), or
- *  use call/apply (addModule.call(target, 'testmodule', {})).
- */
-export function addModule(name, module) {
-  if (!this || !(this instanceof RcModule)) {
-    throw new Error('addModule should be called with scope binding to target module');
-  }
-  if (this::Object.prototype.hasOwnProperty(name)) {
-    throw new Error(`module '${name}' already exists...`);
-  }
-  Object.defineProperty(this, name, {
-    get() {
-      return module;
-    },
-    enumerable: true,
-  });
-
-  // tag submodule with a modulePath for proxying function calls
-  // do nothing if module is already tagged
-  if (!this[name][symbols.modulePath]) {
-    this[name][symbols.modulePath] = `${this.modulePath}.${name}`;
-  }
-}
-
-/**
- * @function
- * @decorator
- * @param {Object} prototype
- * @param {String} property
- * @param {Object} descriptor
- * @description Decorator function to decorate initialize functions for RcModules
- */
-export function initFunction(prototype, property, descriptor) {
-  const {
-    value,
-  } = descriptor;
-  if (typeof value !== 'function') {
-    throw new Error('initFunction must be a function');
-  }
-  const proto = prototype;
-  proto[symbols.initFunction] = value;
-
-  function proxyFunction() {
-    throw new Error('initFunction cannot be called directly');
-  }
-  // eslint-disable-next-line
-  proxyFunction.toString = () => value.toString();
-
-  return {
-    enumerable: true,
-    configurable: false,
-    get() {
-      return proxyFunction;
-    },
-  };
-}
-
-/**
- * @function
- * @description Helper function used to suppress the call of initFunction
- */
-export function suppressInit() {
-  this[symbols.suppressInit] = true;
-}
-
-
-function setStore(store) {
-  if (!this[symbols.store]) {
-    this[symbols.store] = store;
-
-    // state change event for state tracking
-    store.subscribe(() => {
-      const oldState = this[symbols.oldState];
-      const newState = this.state;
-      if (newState !== oldState) {
-        this[symbols.oldState] = newState;
-        this.emit('state-change', {
-          oldState,
-          newState,
-        });
-      }
+  /**
+   * @function addModule
+   * @param {String} name - Name of the module. Also used for the property name.
+   * @param {any} module - The module to be attached, can be any type.
+   * @description Add the desired module to the
+   */
+  addModule(name, module) {
+    if (this::Object.prototype.hasOwnProperty(name)) {
+      throw new Error(`Property '${name}' already exists...`);
+    }
+    Object.defineProperty(this, name, {
+      get() {
+        return module;
+      },
+      enumerable: true,
     });
+    // tag submodule with a modulePath for proxying function calls
+    // do nothing if module is already tagged
+    if (this[name]._modulePath === 'root') {
+      this[name]._modulePath = `${this.modulePath}.${name}`;
+    }
+  }
+
+  /**
+   * @function
+   * @param {String} name
+   * @description Add the selector to the internal selector object.
+   *  This is intended to be called with this.addSelector(name, selectorFn) or
+   *  this.addSelector(name, [...dependenciesFns], selectorFn);
+   */
+  addSelector(name, ...args) {
+    if (this._selectors::Object.prototype.hasOwnProperty(name)) {
+      throw new Error(`Selector '${name}' already exists...`);
+    }
+    const selector = args.pop();
+    if (args.length > 0) {
+      this._selectors[name] = createSelector(...args, selector);
+    } else {
+      this._selectors[name] = selector;
+    }
+  }
+
+  /**
+   * @function
+   * @param {String} name
+   * @return {Function}
+   * @description Returns the named selector function
+   */
+  getSelector(name) {
+    return this._selectors[name];
+  }
+
+  /**
+   * @function
+   * @param {Object} store
+   * @description Set the store to the modules and initialize the modules.
+   *   This should only be called once.
+   */
+  setStore(store) {
+    if (this._modulePath !== 'root') {
+      throw new Error('setStore should only be called on root module');
+    }
+    if (!store) {
+      throw new Error('setStore must accept a store object');
+    }
+    if (this._store) {
+      throw new Error('setStore should only be called once');
+    }
+    this._setStore(store);
+    this._initModule();
+  }
+  _setStore(store) {
+    this._store = store;
     for (const subModule in this) {
       if (this.hasOwnProperty(subModule) && this[subModule] instanceof RcModule) {
-        this[subModule]::setStore(store);
+        this[subModule]._setStore(store);
       }
     }
   }
-}
-
-function callInit() {
-  if (
-    !this[symbols.suppressInit] &&
-    !this[symbols.isInitialized] &&
-    typeof this[symbols.initFunction] === 'function'
-  ) {
-    this[symbols.isInitialized] = true;
-    this[symbols.initFunction]();
-  }
-  for (const subModule in this) {
-    if (this.hasOwnProperty(subModule) && this[subModule] instanceof RcModule) {
-      this[subModule]::callInit();
+  _initModule() {
+    if (
+      !this._suppressInit &&
+      !this._initialized &&
+      typeof this.initialize === 'function'
+    ) {
+      this._initialized = true;
+      this.initialize();
+    }
+    for (const subModule in this) {
+      if (this.hasOwnProperty(subModule) && this[subModule] instanceof RcModule) {
+        this[subModule]._initModule();
+      }
     }
   }
-}
-
-export function initializeModule(store) {
-  if (!(this instanceof RcModule)) {
-    throw new Error('initializeModule should be scope-bound to a RcModule instance');
-  }
-  if (this[symbols.store]) {
-    throw new Error('Module has already been initialized');
-  }
-  this::setStore(store);
-  this::callInit();
 }

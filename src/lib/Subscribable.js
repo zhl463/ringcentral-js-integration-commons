@@ -1,26 +1,36 @@
-import SymbolMap from 'data-types/symbol-map';
-
-const symbols = new SymbolMap([
-  'handlers',
-]);
-
+/**
+ * @class Subscribable
+ * @description Simple subscribable base class
+ */
 export default class Subscribable {
   constructor() {
-    this[symbols.handlers] = new Set();
+    this._handlers = new Set();
   }
+  /**
+   * @function
+   * @param {Function} handler
+   * @return {Function} unsubscriber
+   */
   subscribe(handler) {
-    this[symbols.handlers].add(handler);
+    this._handlers.add(handler);
     return () => {
       this.unsubscribe(handler);
     };
   }
+  /**
+   * @function
+   * @param {Function} handler
+   */
   unsubscribe(handler) {
-    this[symbols.handlers].delete(handler);
+    this._handlers.delete(handler);
   }
-  trigger(...args) {
-    [...this[symbols.handlers]].forEach(handler => {
+  /**
+   * @function
+   */
+  trigger() {
+    [...this._handlers].forEach(handler => {
       try {
-        handler(...args);
+        handler();
       } catch (e) {
         /* ignore error */
       }

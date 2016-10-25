@@ -16,7 +16,7 @@
     ],
     "no-console": 0,
     "no-unused-vars": 1,
-    "no-underscore-dangle": 1, // because ringcentral-js has underscore prefixed variables,
+    "no-underscore-dangle": 0,
     "no-empty-function": 1,
     "max-len": [ 1, { "code": 100 }],
     "no-unused-expressions": 1

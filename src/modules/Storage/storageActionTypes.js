@@ -1,6 +1,9 @@
 import Enum from '../../lib/Enum';
 
 export default new Enum([
-  'pending',
-  'ready',
+  'init',
+  'set',
+  'remove',
+  'load',
+  'reset',
 ], 'storage');

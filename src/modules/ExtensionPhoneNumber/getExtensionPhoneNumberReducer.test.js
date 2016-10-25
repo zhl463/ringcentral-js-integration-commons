@@ -1,77 +1,110 @@
 import { expect } from 'chai';
-import getExtensionPhoneNumberReducer from './getExtensionPhoneNumberReducer';
-import extensionPhoneNumberActions from './extensionPhoneNumberActions';
+import getExtensionPhoneNumberReducer, {
+  getErrorReducer,
+  getStatusReducer,
+} from './getExtensionPhoneNumberReducer';
+
+import extensionPhoneNumberActionTypes from './extensionPhoneNumberActionTypes';
 import extensionPhoneNumberStatus from './extensionPhoneNumberStatus';
 
-describe('extension-phone-number-reducer', () => {
-  describe('getStorageReducer', () => {
-    it('should be a function', () => {
-      expect(getExtensionPhoneNumberReducer).to.be.a('function');
+describe('getStatusReducer', () => {
+  it('should be a function', () => {
+    expect(getStatusReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getStatusReducer()).to.be.a('function');
+  });
+  describe('statusReducer', () => {
+    const reducer = getStatusReducer();
+    it('should have initial state of pending', () => {
+      expect(reducer(undefined, {})).to.equal(extensionPhoneNumberStatus.pending);
     });
-    it('should return a reducer function', () => {
-      expect(getExtensionPhoneNumberReducer()).to.be.a('function');
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return ready status for the following action types', () => {
+      [
+        extensionPhoneNumberActionTypes.init,
+        extensionPhoneNumberActionTypes.fetchSuccess,
+        extensionPhoneNumberActionTypes.fetchError,
+      ].forEach(type => {
+        expect(reducer('foo', {
+          type,
+        })).to.equal(extensionPhoneNumberStatus.ready);
+      });
+    });
+    it('should return pending status on reset', () => {
+      expect(reducer('foo', {
+        type: extensionPhoneNumberActionTypes.reset,
+      })).to.equal(extensionPhoneNumberStatus.pending);
+    });
+    it('should return fetching status on reset', () => {
+      expect(reducer('foo', {
+        type: extensionPhoneNumberActionTypes.fetch,
+      })).to.equal(extensionPhoneNumberStatus.fetching);
     });
   });
-  describe('reducer', () => {
+});
+
+describe('getErrorReducer', () => {
+  it('should be a function', () => {
+    expect(getErrorReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getErrorReducer()).to.be.a('function');
+  });
+  describe('errorReducer', () => {
+    const reducer = getErrorReducer();
+    it('should have initial state of null', () => {
+      expect(reducer(undefined, {})).to.be.null;
+    });
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return error on fetchError', () => {
+      const error = new Error('test');
+      expect(reducer(null, {
+        type: extensionPhoneNumberActionTypes.fetchError,
+        error,
+      })).to.equal(error);
+    });
+    it('should return null on other action types', () => {
+      [
+        extensionPhoneNumberActionTypes.fetch,
+        extensionPhoneNumberActionTypes.fetchSuccess,
+        extensionPhoneNumberActionTypes.reset,
+        extensionPhoneNumberActionTypes.init,
+      ].forEach(type => {
+        expect(reducer('foo', {
+          type,
+        })).to.be.null;
+      });
+    });
+  });
+});
+
+
+describe('getExtensionPhoneNumberReducer', () => {
+  it('should be a function', () => {
+    expect(getExtensionPhoneNumberReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getExtensionPhoneNumberReducer()).to.be.a('function');
+  });
+  describe('subscriptionReducer', () => {
     const reducer = getExtensionPhoneNumberReducer();
-    it('should return an initial state', () => {
-      expect(reducer()).to.deep.equal({
-        status: extensionPhoneNumberStatus.pending,
-        error: null,
-      });
-    });
-    it('should return original state if no action is given', () => {
-      const originalState = {};
-      expect(reducer(originalState)).to.equal(originalState);
-    });
-    it('should return original state if action is not recognized', () => {
-      const originalState = {};
-      expect(reducer(originalState, {
-        type: 'foo',
-      })).to.equal(originalState);
-    });
-    describe('extensionPhoneNumberActions', () => {
-      it('should handle extensionPhoneNumberActions.ready', () => {
-        expect(reducer({}, {
-          type: extensionPhoneNumberActions.ready,
-        })).to.deep.equal({
-          status: extensionPhoneNumberStatus.ready,
-          error: null,
+    const errorReducer = getErrorReducer();
+    const statusReducer = getStatusReducer();
+    it('should return combined state', () => {
+      expect(reducer(undefined, {}))
+        .to.deep.equal({
+          error: errorReducer(undefined, {}),
+          status: statusReducer(undefined, {}),
         });
-      });
-      it('should handle extensionPhoneNumberActions.fetch', () => {
-        expect(reducer({}, {
-          type: extensionPhoneNumberActions.fetch,
-        })).to.deep.equal({
-          status: extensionPhoneNumberStatus.fetching,
-          error: null,
-        });
-      });
-      it('should handle extensionPhoneNumberActions.fetchSuccess', () => {
-        expect(reducer({}, {
-          type: extensionPhoneNumberActions.fetchSuccess,
-        })).to.deep.equal({
-          status: extensionPhoneNumberStatus.ready,
-          error: null,
-        });
-      });
-      it('should handle extensionPhoneNumberActions.fetchError', () => {
-        expect(reducer({}, {
-          type: extensionPhoneNumberActions.fetchError,
-          error: new Error('test'),
-        })).to.deep.equal({
-          status: extensionPhoneNumberStatus.ready,
-          error: new Error('test'),
-        });
-      });
-      it('should handle extensionPhoneNumberActions.reset', () => {
-        expect(reducer({}, {
-          type: extensionPhoneNumberActions.reset,
-        })).to.deep.equal({
-          status: extensionPhoneNumberStatus.pending,
-          error: null,
-        });
-      });
     });
   });
 });

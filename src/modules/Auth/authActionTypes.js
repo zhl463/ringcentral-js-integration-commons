@@ -1,6 +1,6 @@
-import ActionMap from '../../lib/ActionMap';
+import Enum from '../../lib/Enum';
 
-export default new ActionMap([
+export default new Enum([
   'login',
   'loginSuccess',
   'loginError',
@@ -10,5 +10,7 @@ export default new ActionMap([
   'refresh',
   'refreshSuccess',
   'refreshError',
+  'beforeLogout',
+  'cancelLogout',
   'init',
 ], 'auth');

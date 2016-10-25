@@ -1,183 +1,109 @@
-import SymbolMap from 'data-types/symbol-map';
-import KeyValueMap from 'data-types/key-value-map';
-import RcModule, { initFunction } from '../../lib/RcModule';
-import { proxify } from '../../lib/proxy';
-import fetchList from '../../lib/fetchList';
+import RcModule from '../../lib/RcModule';
 import extensionPhoneNumberStatus from './extensionPhoneNumberStatus';
-import extensionPhoneNumberActions from './extensionPhoneNumberActions';
+import extensionPhoneNumberActionTypes from './extensionPhoneNumberActionTypes';
 import getExtensionPhoneNumberReducer from './getExtensionPhoneNumberReducer';
-import extensionPhoneNumberEvents from './extensionPhoneNumberEvents';
-
-const keys = new KeyValueMap({
-  storage: 'extension-phone-number-data',
-});
-
-const DEFAULT_TTL = 30 * 60 * 1000;
-
-const symbols = new SymbolMap([
-  'api',
-  'auth',
-  'storage',
-  'ttl',
-]);
+import fetchList from '../../lib/fetchList';
 
 export default class ExtensionPhoneNumber extends RcModule {
-  constructor(options = {}) {
+  constructor({
+    auth,
+    client,
+    storage,
+    ttl = 30 * 60 * 1000,
+    ...options,
+  }) {
     super({
       ...options,
-      actions: extensionPhoneNumberActions,
+      actionTypes: extensionPhoneNumberActionTypes,
     });
-    const {
-      api,
-      auth,
-      storage,
-      ttl = DEFAULT_TTL,
-    } = options;
-    this[symbols.api] = api;
-    this[symbols.auth] = auth;
-    this[symbols.storage] = storage;
-    this[symbols.ttl] = ttl;
+    this._auth = auth;
+    this._storage = storage;
+    this._client = client;
+    this._ttl = ttl;
+    this._storageKey = 'extensionPhoneNumber';
+    this._reducer = getExtensionPhoneNumberReducer(this.prefix);
+    this._promise = null;
 
-    this.on('state-change', ({ oldState, newState }) => {
-      if (oldState) {
-        if (oldState.status !== newState.status) {
-          this.emit(extensionPhoneNumberEvents.statusChange, {
-            oldStatus: oldState.status,
-            newStatus: newState.status,
-          });
-        }
-        if (newState.error && newState.error !== oldState.error) {
-          this.emit(extensionPhoneNumberEvents.error, newState.error);
-        }
-      }
-    });
-    this[symbols.storage].on(
-      this[symbols.storage].storageEvents.dataChange,
-      ({ oldData, newData }) => {
-        if (!oldData[keys.storage] && !newData[keys.storage]) return;
+    this.addSelector('companyNumbers', () => this.data.phoneNumber, phoneNumbers => phoneNumbers.filter(p => p.usageType === 'CompanyNumber'));
+  }
+  initialize() {
+    this.store.subscribe(() => {
+      if (
+        this._storage.status === this._storage.storageStatus.ready &&
+        this.status === extensionPhoneNumberStatus.pending
+      ) {
+        this.store.dispatch({
+          type: this.actionTypes.init,
+        });
         if (
-          oldData[keys.storage] && !newData[keys.storage] ||
-          !oldData[keys.storage] && newData[keys.storage] ||
-          oldData[keys.storage] !== newData[keys.storage] &&
-          (JSON.stringify(oldData[keys.storage].phoneNumbers) !==
-            JSON.stringify(newData[keys.storage].phoneNumbers))
+          this._auth.isFreshLogin ||
+          !this._storage.hasItem(this._storageKey) ||
+          Date.now() - this.data.timestamp > this._ttl
         ) {
-          this.emit(extensionPhoneNumberEvents.extensionPhoneNumberChange, {
-            oldData: oldData[keys.storage] && oldData[keys.storage].phoneNumbers,
-            newData: newData[keys.storage] && newData[keys.storage].phoneNumbers,
-          });
+          this.loadExtensionPhoneNumber();
         }
-      },
-    );
-  }
-
-  @initFunction
-  init() {
-    this[symbols.storage].on(this[symbols.storage].storageEvents.ready, async () => {
-      await this.loadExtensionPhoneNumbers();
-      this.store.dispatch({
-        type: this.actions.ready,
-      });
-    });
-    this[symbols.storage].on(this[symbols.storage].storageEvents.pending, () => {
-      this.store.dispatch({
-        type: this.actions.reset,
-      });
-    });
-  }
-  get data() {
-    return this[symbols.storage].getItem(keys.storage);
-  }
-  @proxify
-  async loadExtensionPhoneNumbers(options = {}) {
-    const {
-      force = false,
-    } = options;
-    let data = this[symbols.storage].getItem(keys.storage);
-    if (force || !data || Date.now() - data.timestamp > this[symbols.ttl]) {
-      try {
+      } else if (
+        this._storage.status === this._storage.storageStatus.pending &&
+        this.status !== extensionPhoneNumberStatus.pending
+      ) {
         this.store.dispatch({
-          type: this.actions.fetch,
+          type: this.actionTypes.reset,
         });
-        data = {
-          phoneNumbers: await fetchList(params => (
-            this[symbols.api].account().extension().phoneNumber().list(params)
-          )),
-          timestamp: Date.now(),
-        };
-        this[symbols.storage].setItem(keys.storage, data);
-        this.store.dispatch({
-          type: this.actions.fetchSuccess,
-        });
-      } catch (error) {
-        this.store.dispatch({
-          type: this.actions.fetchError,
-          error,
-        });
-        throw error;
       }
-    }
-    return data;
-  }
-  get reducer() {
-    return getExtensionPhoneNumberReducer(this.prefix);
+    });
   }
 
-  get extensionPhoneNumberStatus() {
-    return extensionPhoneNumberStatus;
-  }
-
-  static get extensionPhoneNumberStatus() {
-    return extensionPhoneNumberStatus;
-  }
-
-  get extensionPhoneNumberEvents() {
-    return extensionPhoneNumberEvents;
-  }
-
-  static get extensionPhoneNumberEvents() {
-    return extensionPhoneNumberEvents;
+  get data() {
+    return this._storage.getItem(this._storageKey);
   }
 
   get status() {
     return this.state.status;
   }
 
+  get error() {
+    return this.state.error;
+  }
+
   get phoneNumbers() {
     return this.data.phoneNumbers;
   }
 
-  get directNumbers() {
-    return this.phoneNumbers.filter(p => p.usageType === 'DirectNumber');
-  }
-
   get companyNumbers() {
-    return this.phoneNumbers.filter(p => p.usageType === 'CompanyNumber');
+    return this._selectors.companyNumbers();
   }
 
-  get companyFaxNumbers() {
-    return this.phoneNumbers.filter(p => p.usageType === 'CompanyFaxNumber');
+  get extensionPhoneNumberStatus() {
+    return extensionPhoneNumberStatus;
   }
 
-  get mainCompanyNumber() {
-    return this.phoneNumbers.find(p => p.usageType === 'MainCompanyNumber');
-  }
-
-  get smsNumbers() {
-    return this.phoneNumbers.filter(p => p.features.indexOf('SmsSender') > -1);
-  }
-
-  // get callerIds() {
-  //   return this.phoneNumbers.filter(p => p.features.indexOf('CallerId') > -1);
-  // }
-
-  filter(usageTypes) {
-    if (!usageTypes) return this.phoneNumbers;
-    let types = usageTypes;
-    if (!Array.isArray(types)) {
-      types = [types];
+  async loadExtensionPhoneNumber() {
+    if (!this._promise) {
+      this._promise = (async () => {
+        this.store.dispatch({
+          type: this.actionTypes.fetch,
+        });
+        try {
+          this._storage.setItem(this._storageKey, {
+            extensionPhoneNumber: await fetchList(params => (
+              this._client.account().extension().phoneNumber().list(params)
+            )),
+            timestamp: Date.now(),
+          });
+          this.store.dispatch({
+            type: this.actionTypes.fetchSuccess,
+          });
+          this._promise = null;
+        } catch (error) {
+          this.store.dispatch({
+            type: this.actions.fetchError,
+            error,
+          });
+          this._promise = null;
+          throw error;
+        }
+      })();
     }
-    types = types.map(t => t.toLowerCase());
-    return this.phoneNumber.filter(p => types.indexOf(p.usageType.toLowerCase()) > -1);
+    await this._promise;
   }
 }

@@ -1,47 +1,50 @@
-import { prefixActions } from '../../lib/ActionMap';
-import blockedNumberActions from './blockedNumberActions';
+import { combineReducers } from 'redux';
+import { prefixEnum } from '../../lib/Enum';
+import blockedNumberActionTypes from './blockedNumberActionTypes';
 import blockedNumberStatus from './blockedNumberStatus';
 
-export default function getBlockedNumberReducer(prefix) {
-  const actions = prefixActions({ actions: blockedNumberActions, prefix });
-  return (state, action) => {
-    if (!state) {
-      return {
-        status: blockedNumberStatus.pending,
-        error: null,
-      };
-    }
-    if (!action) {
-      return state;
-    }
-    switch (action.type) {
-      case actions.ready:
-        return {
-          status: blockedNumberStatus.ready,
-          error: null,
-        };
-      case actions.fetch:
-        return {
-          status: blockedNumberStatus.fetching,
-          error: null,
-        };
-      case actions.fetchSuccess:
-        return {
-          status: blockedNumberStatus.ready,
-          error: null,
-        };
-      case actions.fetchError:
-        return {
-          status: blockedNumberStatus.ready,
-          error: action.error,
-        };
-      case actions.reset:
-        return {
-          status: blockedNumberStatus.pending,
-          error: null,
-        };
+export function getStatusReducer(prefix) {
+  const prefixedTypes = prefixEnum({ enumMap: blockedNumberActionTypes, prefix });
+  return (state = blockedNumberStatus.pending, { type }) => {
+    switch (type) {
+      case prefixedTypes.fetch:
+        return blockedNumberStatus.fetching;
+
+      case prefixedTypes.init:
+      case prefixedTypes.fetchSuccess:
+      case prefixedTypes.fetchError:
+        return blockedNumberStatus.ready;
+
+      case prefixedTypes.reset:
+        return blockedNumberStatus.pending;
       default:
         return state;
     }
   };
+}
+
+export function getErrorReducer(prefix) {
+  const prefixedTypes = prefixEnum({ enumMap: blockedNumberActionTypes, prefix });
+  return (state = null, { type, error }) => {
+    switch (type) {
+      case prefixedTypes.init:
+      case prefixedTypes.fetch:
+      case prefixedTypes.fetchSuccess:
+      case prefixedTypes.reset:
+        return null;
+
+      case prefixedTypes.fetchError:
+        return error;
+
+      default:
+        return state;
+    }
+  };
+}
+
+export default function getAccountInfoReducer(prefix) {
+  return combineReducers({
+    status: getStatusReducer(prefix),
+    error: getErrorReducer(prefix),
+  });
 }

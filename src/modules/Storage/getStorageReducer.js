@@ -1,100 +1,78 @@
-import { prefixActions } from '../../lib/ActionMap';
-import storageActions from './storageActions';
+import { combineReducers } from 'redux';
+import { prefixEnum } from '../../lib/Enum';
+import storageActionTypes from './storageActionTypes';
 import storageStatus from './storageStatus';
 
-export default function getStorageReducer(prefix) {
-  const actions = prefixActions({ actions: storageActions, prefix });
-  let tmp = null;
-  return (state, action) => {
-    if (!state) {
-      return {
-        data: {},
-        key: null,
-        status: storageStatus.pending,
-        version: 0,
-        error: null,
-      };
-    }
-    if (!action) {
-      return state;
-    }
-    switch (action.type) {
+export function getDataReducer(prefix) {
+  const types = prefixEnum({ enumMap: storageActionTypes, prefix });
+  return (state = {}, { type, data, key, value }) => {
+    let result;
+    switch (type) {
 
-      case actions.init:
-        return {
-          data: action.data,
-          key: action.key,
-          status: action.status,
-          error: action.error,
-          version: state.version + 1,
-        };
+      case types.init:
+        return data;
 
-      case actions.update:
+      case types.set:
         return {
           ...state,
-          data: {
-            ...state.data,
-            ...action.data,
-          },
-          version: state.version + 1,
-          status: storageStatus.dirty,
+          [key]: value,
         };
 
-      case actions.remove:
-        tmp = {
-          ...state.data,
-        };
-        delete tmp[action.key];
-        return {
-          ...state,
-          data: tmp,
-          version: state.version + 1,
-          status: storageStatus.dirty,
-        };
+      case types.remove:
+        result = { ...state };
+        delete result[key];
+        return result;
 
-      case actions.save:
-        return {
-          ...state,
-          status: storageStatus.saving,
-        };
+      case types.load:
+        return data;
 
-      case actions.saveSuccess:
-        return action.version === state.version ?
-          {
-            ...state,
-            status: storageStatus.saved,
-          } :
-          state;
-
-      case actions.saveError:
-        return action.version === state.version ?
-          {
-            ...state,
-            status: storageStatus.dirty,
-            error: action.error,
-          } :
-          state;
-
-      case actions.load:
-        return {
-          ...state,
-          data: action.data,
-          status: storageStatus.saved,
-          version: state.version + 1,
-          error: null,
-        };
-
-      case actions.reset:
-        return {
-          status: storageStatus.pending,
-          data: {},
-          key: null,
-          version: state.version + 1,
-          error: null,
-        };
+      case types.reset:
+        return {};
 
       default:
         return state;
     }
   };
+}
+
+export function getStorageKeyReducer(prefix) {
+  const types = prefixEnum({ enumMap: storageActionTypes, prefix });
+  return (state = null, { type, storageKey }) => {
+    switch (type) {
+
+      case types.init:
+        return storageKey;
+
+      case types.reset:
+        return null;
+
+      default:
+        return state;
+    }
+  };
+}
+
+export function getStatusReducer(prefix) {
+  const types = prefixEnum({ enumMap: storageActionTypes, prefix });
+  return (state = storageStatus.pending, { type }) => {
+    switch (type) {
+
+      case types.init:
+        return storageStatus.ready;
+
+      case types.reset:
+        return storageStatus.pending;
+
+      default:
+        return state;
+    }
+  };
+}
+
+export default function getStorageReducer(prefix) {
+  return combineReducers({
+    data: getDataReducer(prefix),
+    storageKey: getStorageKeyReducer(prefix),
+    status: getStatusReducer(prefix),
+  });
 }

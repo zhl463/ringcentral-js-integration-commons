@@ -1,47 +1,50 @@
-import { prefixActions } from '../../lib/ActionMap';
-import accountInfoActions from './accountInfoActions';
+import { combineReducers } from 'redux';
+import { prefixEnum } from '../../lib/Enum';
+import accountInfoActionTypes from './accountInfoActionTypes';
 import accountInfoStatus from './accountInfoStatus';
 
-export default function getAccountInfoReducer(prefix) {
-  const actions = prefixActions({ actions: accountInfoActions, prefix });
-  return (state, action) => {
-    if (!state) {
-      return {
-        status: accountInfoStatus.pending,
-        error: null,
-      };
-    }
-    if (!action) {
-      return state;
-    }
-    switch (action.type) {
-      case actions.ready:
-        return {
-          status: accountInfoStatus.ready,
-          error: null,
-        };
-      case actions.fetch:
-        return {
-          status: accountInfoStatus.fetching,
-          error: null,
-        };
-      case actions.fetchSuccess:
-        return {
-          status: accountInfoStatus.ready,
-          error: null,
-        };
-      case actions.fetchError:
-        return {
-          status: accountInfoStatus.ready,
-          error: action.error,
-        };
-      case actions.reset:
-        return {
-          status: accountInfoStatus.pending,
-          error: null,
-        };
+export function getStatusReducer(prefix) {
+  const prefixedTypes = prefixEnum({ enumMap: accountInfoActionTypes, prefix });
+  return (state = accountInfoStatus.pending, { type }) => {
+    switch (type) {
+      case prefixedTypes.fetch:
+        return accountInfoStatus.fetching;
+
+      case prefixedTypes.init:
+      case prefixedTypes.fetchSuccess:
+      case prefixedTypes.fetchError:
+        return accountInfoStatus.ready;
+
+      case prefixedTypes.reset:
+        return accountInfoStatus.pending;
       default:
         return state;
     }
   };
+}
+
+export function getErrorReducer(prefix) {
+  const prefixedTypes = prefixEnum({ enumMap: accountInfoActionTypes, prefix });
+  return (state = null, { type, error }) => {
+    switch (type) {
+      case prefixedTypes.init:
+      case prefixedTypes.fetch:
+      case prefixedTypes.fetchSuccess:
+      case prefixedTypes.reset:
+        return null;
+
+      case prefixedTypes.fetchError:
+        return error;
+
+      default:
+        return state;
+    }
+  };
+}
+
+export default function getAccountInfoReducer(prefix) {
+  return combineReducers({
+    status: getStatusReducer(prefix),
+    error: getErrorReducer(prefix),
+  });
 }

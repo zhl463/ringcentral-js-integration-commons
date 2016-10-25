@@ -1,137 +1,96 @@
-import SymbolMap from 'data-types/symbol-map';
-import KeyValueMap from 'data-types/key-value-map';
-import RcModule, { initFunction } from '../../lib/RcModule';
-import { proxify } from '../../lib/proxy';
+import RcModule from '../../lib/RcModule';
 import extensionInfoStatus from './extensionInfoStatus';
-import extensionInfoActions from './extensionInfoActions';
+import extensionInfoActionTypes from './extensionInfoActionTypes';
 import getExtensionInfoReducer from './getExtensionInfoReducer';
-import extensionInfoEvents from './extensionInfoEvents';
-
-const keys = new KeyValueMap({
-  storage: 'extension-info-data',
-});
-
-const DEFAULT_TTL = 30 * 60 * 1000;
-
-const symbols = new SymbolMap([
-  'api',
-  'auth',
-  'storage',
-  'ttl',
-]);
 
 export default class ExtensionInfo extends RcModule {
-  constructor(options = {}) {
+  constructor({
+    auth,
+    client,
+    storage,
+    ttl = 30 * 60 * 1000,
+    ...options,
+  }) {
     super({
       ...options,
-      actions: extensionInfoActions,
+      actionTypes: extensionInfoActionTypes,
     });
-    const {
-      api,
-      auth,
-      storage,
-      ttl = DEFAULT_TTL,
-    } = options;
-    this[symbols.api] = api;
-    this[symbols.auth] = auth;
-    this[symbols.storage] = storage;
-    this[symbols.ttl] = ttl;
-
-    this.on('state-change', ({ oldState, newState }) => {
-      if (oldState) {
-        if (oldState.status !== newState.status) {
-          this.emit(extensionInfoEvents.statusChange, {
-            oldStatus: oldState.status,
-            newStatus: newState.status,
-          });
-        }
-      }
-    });
-    this[symbols.storage].on(
-      this[symbols.storage].storageEvents.dataChange,
-      ({ oldData, newData }) => {
-        if (!oldData[keys.storage] && !newData[keys.storage]) return;
+    this._auth = auth;
+    this._storage = storage;
+    this._client = client;
+    this._ttl = ttl;
+    this._storageKey = 'extensionInfo';
+    this._reducer = getExtensionInfoReducer(this.prefix);
+    this._promise = null;
+  }
+  initialize() {
+    this.store.subscribe(() => {
+      if (
+        this._storage.status !== this._storage.storageStatus.pending &&
+        this.status === extensionInfoStatus.pending
+      ) {
+        this.store.dispatch({
+          type: this.actionTypes.init,
+        });
         if (
-          oldData[keys.storage] && !newData[keys.storage] ||
-          !oldData[keys.storage] && newData[keys.storage] ||
-          oldData[keys.storage] !== newData[keys.storage] &&
-          (JSON.stringify(oldData[keys.storage].extensionInfo) !==
-            JSON.stringify(newData[keys.storage].extensionInfo))
+          this._auth.isFreshLogin ||
+          !this._storage.hasItem(this._storageKey) ||
+          Date.now() - this.data.timestamp > this._ttl
         ) {
-          this.emit(extensionInfoEvents.extensionInfoChange, {
-            oldData: oldData[keys.storage] && oldData[keys.storage].extensionInfo,
-            newData: newData[keys.storage] && newData[keys.storage].extensionInfo,
-          });
+          this.loadExtensionInfo();
         }
-      },
-    );
+      } else if (
+        this._storage.status === this._storage.storageStatus.pending &&
+        this.status !== extensionInfoStatus.pending
+      ) {
+        this.store.dispatch({
+          type: this.actionTypes.reset,
+        });
+      }
+    });
   }
 
-  @initFunction
-  init() {
-    this[symbols.storage].on(this[symbols.storage].storageEvents.ready, async () => {
-      await this.loadExtensionInfo();
-      this.store.dispatch({
-        type: this.actions.ready,
-      });
-    });
-    this[symbols.storage].on(this[symbols.storage].storageEvents.pending, () => {
-      this.store.dispatch({
-        type: this.actions.reset,
-      });
-    });
-  }
   get data() {
-    return this[symbols.storage].getItem(keys.storage);
+    return this._storage.getItem(this._storageKey);
   }
-  @proxify
-  async loadExtensionInfo(options = {}) {
-    const {
-      force = false,
-    } = options;
-    let data = this[symbols.storage].getItem(keys.storage);
-    if (force || !data || Date.now() - data.timestamp > this[symbols.ttl]) {
-      try {
-        this.store.dispatch({
-          type: this.actions.fetch,
-        });
-        data = {
-          extensionInfo: await this[symbols.api].account().extension().get(),
-          timestamp: Date.now(),
-        };
-        this[symbols.storage].setItem(keys.storage, data);
-        this.store.dispatch({
-          type: this.actions.fetchSuccess,
-        });
-      } catch (error) {
-        this.store.dispatch({
-          type: this.actions.fetchError,
-          error,
-        });
-        throw error;
-      }
-    }
-    return data;
+
+  get status() {
+    return this.state.status;
   }
-  get reducer() {
-    return getExtensionInfoReducer(this.prefix);
+
+  get error() {
+    return this.state.error;
   }
 
   get extensionInfoStatus() {
     return extensionInfoStatus;
   }
-  static get extensionInfoStatus() {
-    return extensionInfoStatus;
-  }
 
-  get extensionInfoEvents() {
-    return extensionInfoEvents;
-  }
-  static get extensionInfoEvents() {
-    return extensionInfoEvents;
-  }
-
-  get status() {
-    return this.state.status;
+  async loadExtensionInfo() {
+    if (!this._promise) {
+      this._promise = (async () => {
+        this.store.dispatch({
+          type: this.actionTypes.fetch,
+        });
+        try {
+          this._storage.setItem(this._storageKey, {
+            extensionInfo: await this._client.account().extension().get(),
+            timestamp: Date.now(),
+          });
+          this.store.dispatch({
+            type: this.actionTypes.fetchSuccess,
+          });
+          this._promise = null;
+        } catch (error) {
+          this.store.dispatch({
+            type: this.actions.fetchError,
+            error,
+          });
+          this._promise = null;
+          throw error;
+        }
+      })();
+    }
+    await this._promise;
   }
 }

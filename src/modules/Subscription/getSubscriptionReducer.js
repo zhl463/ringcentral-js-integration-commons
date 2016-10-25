@@ -1,92 +1,94 @@
-import { prefixActions } from '../../lib/ActionMap';
-import subscriptionActions from './subscriptionActions';
+import { combineReducers } from 'redux';
+import { prefixEnum } from '../../lib/Enum';
 import subscriptionStatus from './subscriptionStatus';
+import subscriptionActionTypes from './subscriptionActionTypes';
 
-export default function getSubscriptionReducer(prefix) {
-  const actions = prefixActions({ actions: subscriptionActions, prefix });
-  return (state, action) => {
-    if (typeof state === 'undefined') {
-      return {
-        filters: [],
-        status: subscriptionStatus.pending,
-        error: null,
-        lastMessage: null,
-      };
-    }
-    if (!action) return state;
+export function getMessageReducer(prefix) {
+  const prefixedTypes = prefixEnum({ enumMap: subscriptionActionTypes, prefix });
+  return (state = null, { type, message }) => {
+    if (type === prefixedTypes.notification) return message;
 
-    switch (action.type) {
+    return null;
+  };
+}
 
-      case actions.setFilters:
-        return {
-          ...state,
-          filters: [...action.filters],
-        };
+export function getStatusReducer(prefix) {
+  const prefixedTypes = prefixEnum({ enumMap: subscriptionActionTypes, prefix });
+  return (state = subscriptionStatus.pending, { type }) => {
+    switch (type) {
+      case prefixedTypes.init:
+      case prefixedTypes.renewError:
+      case prefixedTypes.subscribeError:
+      case prefixedTypes.removeSuccess:
+        return subscriptionStatus.notSubscribed;
 
-      case actions.notification:
-        return {
-          ...state,
-          lastMessage: action.message,
-        };
+      case prefixedTypes.subscribeSuccess:
+      case prefixedTypes.renewSuccess:
+        return subscriptionStatus.subscribed;
 
-      case actions.ready:
-        return {
-          ...state,
-          status: subscriptionStatus.notSubscribed,
-        };
+      case prefixedTypes.reset:
+        return subscriptionStatus.resetting;
 
-      case actions.subscribeSuccess:
-        return {
-          ...state,
-          status: subscriptionStatus.subscribed,
-          error: null,
-        };
-
-      case actions.subscribeError:
-        return {
-          ...state,
-          status: subscriptionStatus.notSubscribed,
-          error: action.error,
-        };
-
-      case actions.renewSuccess:
-        return {
-          ...state,
-          status: subscriptionStatus.subscribed,
-          error: null,
-        };
-
-      case actions.renewError:
-        return {
-          ...state,
-          status: subscriptionStatus.notSubscribed,
-          error: action.error,
-        };
-
-      case actions.removeSuccess:
-        return {
-          ...state,
-          status: subscriptionStatus.notSubscribed,
-          error: null,
-        };
-
-      case actions.removeError:
-        return {
-          ...state,
-          status: subscriptionStatus.subscribed,
-          error: action.error,
-        };
-
-      case actions.reset:
-        return {
-          ...state,
-          lastMessage: null,
-          error: null,
-          status: subscriptionStatus.pending,
-        };
+      case prefixedTypes.resetSuccess:
+        return subscriptionStatus.pending;
 
       default:
         return state;
     }
   };
+}
+
+export function getFiltersReducer(prefix) {
+  const prefixedTypes = prefixEnum({ enumMap: subscriptionActionTypes, prefix });
+  return (state = [], { type, filters }) => {
+    const coercedFilters = [].concat(filters);
+    switch (type) {
+      case prefixedTypes.setFilters:
+        return filters;
+
+      case prefixedTypes.addFilters:
+        return [...(new Set([...state].concat(coercedFilters)))];
+
+      case prefixedTypes.removeFilters:
+        return state.filter(f => coercedFilters.indexOf(f) === -1);
+
+      case prefixedTypes.resetSuccess:
+        return [];
+
+      default:
+        return state;
+    }
+  };
+}
+
+export function getErrorReducer(prefix) {
+  const prefixedTypes = prefixEnum({ enumMap: subscriptionActionTypes, prefix });
+  return (state = null, { type, error }) => {
+    switch (type) {
+      case prefixedTypes.subscribeError:
+      case prefixedTypes.removeError:
+      case prefixedTypes.renewError:
+        return error;
+
+      case prefixedTypes.subscribeSuccess:
+      case prefixedTypes.renewSuccess:
+      case prefixedTypes.removeSuccess:
+      case prefixedTypes.reset:
+      case prefixedTypes.resetSuccess:
+      case prefixedTypes.init:
+        return null;
+
+      default:
+        return state;
+    }
+  };
+}
+
+export default function getSubscriptionReducer(prefix) {
+  return combineReducers({
+    filters: getFiltersReducer(prefix),
+    status: getStatusReducer(prefix),
+    error: getErrorReducer(prefix),
+    message: getMessageReducer(prefix),
+  });
 }

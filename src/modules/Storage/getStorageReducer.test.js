@@ -1,209 +1,163 @@
 import { expect } from 'chai';
-import getStorageReducer from './getStorageReducer';
-import storageActions from './storageActions';
+import getStorageReducer, {
+  getDataReducer,
+  getStorageKeyReducer,
+  getStatusReducer,
+} from './getStorageReducer';
+
+import storageActionTypes from './storageActionTypes';
 import storageStatus from './storageStatus';
 
-describe('storage-reducer', () => {
-  describe('getStorageReducer', () => {
-    it('should be a function', () => {
-      expect(getStorageReducer).to.be.a('function');
+describe('getStatusReducer', () => {
+  it('should be a function', () => {
+    expect(getStatusReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getStatusReducer()).to.be.a('function');
+  });
+  describe('statusReducer', () => {
+    const reducer = getStatusReducer();
+    it('should have initial state of pending', () => {
+      expect(reducer(undefined, {})).to.equal(storageStatus.pending);
     });
-    it('should return a reducer function', () => {
-      expect(getStorageReducer()).to.exist;
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return ready status on init', () => {
+      [
+        storageActionTypes.init,
+      ].forEach(type => {
+        expect(reducer('foo', {
+          type,
+        })).to.equal(storageStatus.ready);
+      });
+    });
+    it('should return pending status on reset', () => {
+      [
+        storageActionTypes.reset,
+      ].forEach(type => {
+        expect(reducer('foo', {
+          type,
+        })).to.equal(storageStatus.pending);
+      });
     });
   });
-  describe('reducer', () => {
+});
+
+describe('getDataReducer', () => {
+  it('should be a function', () => {
+    expect(getDataReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getDataReducer()).to.be.a('function');
+  });
+  describe('dataReducer', () => {
+    const reducer = getDataReducer();
+    it('should have initial state of {}', () => {
+      expect(reducer(undefined, {})).to.deep.equal({});
+    });
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return action.data on init and load action types', () => {
+      const data = {};
+      [
+        storageActionTypes.init,
+        storageActionTypes.load,
+      ].forEach(type => {
+        expect(reducer(null, {
+          type,
+          data,
+        })).to.equal(data);
+      });
+    });
+    it('should return {} on reset', () => {
+      expect(reducer('foo', {
+        type: storageActionTypes.reset,
+      })).to.deep.equal({});
+    });
+    it('should add key value pairs on set action type', () => {
+      expect(reducer({}, {
+        type: storageActionTypes.set,
+        key: 'foo',
+        value: 'bar',
+      })).to.deep.equal({
+        foo: 'bar',
+      });
+    });
+    it('should overwrite key value pairs on set action type', () => {
+      expect(reducer({ foo: 'baz' }, {
+        type: storageActionTypes.set,
+        key: 'foo',
+        value: 'bar',
+      })).to.deep.equal({
+        foo: 'bar',
+      });
+    });
+    it('should remove keys on remove action type', () => {
+      expect(reducer({ foo: 'bar' }, {
+        type: storageActionTypes.remove,
+        key: 'foo',
+      })).to.deep.equal({});
+    });
+  });
+});
+
+describe('getStorageKeyReducer', () => {
+  it('should be a function', () => {
+    expect(getStorageKeyReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getStorageKeyReducer()).to.be.a('function');
+  });
+  describe('storageKeyReducer', () => {
+    const reducer = getStorageKeyReducer();
+    it('should have initial state of null', () => {
+      expect(reducer(undefined, {})).to.be.null;
+    });
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return action.storageKey on init', () => {
+      expect(reducer(null, {
+        type: storageActionTypes.init,
+        storageKey: 'foo',
+      })).to.equal('foo');
+    });
+    it('should return null on reset', () => {
+      expect(reducer('foo', {
+        type: storageActionTypes.reset,
+      })).to.be.null;
+    });
+  });
+});
+
+
+describe('getStorageReducer', () => {
+  it('should be a function', () => {
+    expect(getStorageReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getStorageReducer()).to.be.a('function');
+  });
+  describe('subscriptionReducer', () => {
     const reducer = getStorageReducer();
-    it('should be a function', () => {
-      expect(reducer).to.be.a('function');
-    });
-    it('should return an initial state', () => {
-      expect(reducer()).to.deep.equal({
-        data: {},
-        key: null,
-        status: storageStatus.pending,
-        version: 0,
-        error: null,
-      });
-    });
-    it('should return original state if no action is given', () => {
-      const originalState = {};
-      expect(reducer(originalState)).to.equal(originalState);
-    });
-    it('should return original state if action type if not recognized', () => {
-      const originalState = {};
-      expect(reducer(originalState, {
-        type: 'foo',
-      })).to.equal(originalState);
-    });
-    describe('storageActions', () => {
-      it('should handle storageActions.init', () => {
-        expect(reducer(reducer(), {
-          type: storageActions.init,
-          data: { check: true },
-          key: 'storage-key',
-          status: storageStatus.saved,
-          error: null,
-        })).to.deep.equal({
-          data: { check: true },
-          key: 'storage-key',
-          status: storageStatus.saved,
-          version: 1,
-          error: null,
+    const dataReducer = getDataReducer();
+    const statusReducer = getStatusReducer();
+    const storageKeyReducer = getStorageKeyReducer();
+    it('should return combined state', () => {
+      expect(reducer(undefined, {}))
+        .to.deep.equal({
+          data: dataReducer(undefined, {}),
+          status: statusReducer(undefined, {}),
+          storageKey: storageKeyReducer(undefined, {}),
         });
-      });
-      it('should handle storageActions.update', () => {
-        const initialState = {
-          key: 'storage-key',
-          data: {
-            foo: 'bar',
-          },
-          status: storageStatus.saved,
-          version: 3,
-          error: null,
-        };
-        expect(reducer(initialState, {
-          type: storageActions.update,
-          data: {
-            foo: 'baz',
-          },
-        })).to.deep.equal({
-          ...initialState,
-          data: {
-            ...initialState.data,
-            foo: 'baz',
-          },
-          version: 4,
-          status: storageStatus.dirty,
-        });
-      });
-      it('should handle storageActions.remove', () => {
-        const initialState = {
-          key: 'storage-key',
-          data: {
-            foo: 'bar',
-          },
-          status: storageStatus.saved,
-          version: 5,
-          error: null,
-        };
-        expect(reducer(initialState, {
-          type: storageActions.remove,
-          key: 'foo',
-        })).to.deep.equal({
-          ...initialState,
-          data: {},
-          version: 6,
-          status: storageStatus.dirty,
-        });
-      });
-      it('should handle storageActions.save', () => {
-        const initialState = {
-          key: 'storage-key',
-          data: {
-            foo: 'bar',
-          },
-          status: storageStatus.dirty,
-          error: null,
-        };
-        expect(reducer(initialState, {
-          type: storageActions.save,
-        })).to.deep.equal({
-          ...initialState,
-          status: storageStatus.saving,
-        });
-      });
-      it('should handle storageActions.saveSuccess', () => {
-        const initialState = {
-          key: 'storage-key',
-          data: {
-            foo: 'bar',
-          },
-          status: storageStatus.dirty,
-          version: 3,
-          error: null,
-        };
-        expect(reducer(initialState, {
-          type: storageActions.saveSuccess,
-          version: 3,
-        })).to.deep.equal({
-          ...initialState,
-          status: storageStatus.saved,
-        });
-        expect(reducer(initialState, {
-          type: storageActions.saveSuccess,
-          version: 5,
-        })).to.equal(initialState);
-      });
-      it('should handle storageActions.saveError', () => {
-        const initialState = {
-          key: 'storage-key',
-          data: {
-            foo: 'bar',
-          },
-          status: storageStatus.dirty,
-          version: 4,
-          error: null,
-        };
-        expect(reducer(initialState, {
-          type: storageActions.saveError,
-          version: 4,
-          error: new Error('test'),
-        })).to.deep.equal({
-          ...initialState,
-          error: new Error('test'),
-          status: storageStatus.dirty,
-        });
-        expect(reducer(initialState, {
-          type: storageActions.saveError,
-          version: 7,
-          error: new Error('test'),
-        })).to.equal(initialState);
-      });
-      it('should handle storageActions.load', () => {
-        const initialState = {
-          key: 'storage-key',
-          data: {
-            foo: 'bar',
-          },
-          status: storageStatus.saved,
-          error: null,
-          version: 4,
-        };
-        expect(reducer(initialState, {
-          type: storageActions.load,
-          data: {
-            foo: 'baz',
-          },
-        })).to.deep.equal({
-          ...initialState,
-          data: {
-            foo: 'baz',
-          },
-          version: initialState.version + 1,
-          status: storageStatus.saved,
-        });
-      });
-      it('should handle storageActions.reset', () => {
-        const initialState = {
-          key: 'storage-key',
-          data: {
-            foo: 'bar',
-          },
-          status: storageStatus.saved,
-          error: null,
-          version: 4,
-        };
-        expect(reducer(initialState, {
-          type: storageActions.reset,
-        })).to.deep.equal({
-          status: storageStatus.pending,
-          data: {},
-          key: null,
-          version: initialState.version + 1,
-          error: null,
-        });
-      });
     });
   });
 });

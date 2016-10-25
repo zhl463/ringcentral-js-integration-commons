@@ -1,7 +1,7 @@
-import KeyValueMap from 'data-types/key-value-map';
+import Enum from '../../lib/Enum';
 
-export default new KeyValueMap({
-  pending: 'PENDING',
-  fetching: 'FETCHING',
-  ready: 'READY',
-});
+export default new Enum([
+  'pending',
+  'fetching',
+  'ready',
+], 'user');

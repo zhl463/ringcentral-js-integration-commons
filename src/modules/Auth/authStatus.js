@@ -1,11 +1,10 @@
-import KeyValueMap from 'data-types/key-value-map';
+import Enum from '../../lib/Enum';
 
-const definition = {
-  pending: 'PENDING', // after init, before status from platform is determined
-  notLoggedIn: 'NOT_LOGGED_IN',
-  loggingIn: 'LOGGING_IN',
-  loggedIn: 'LOGGED_IN',
-  loggingOut: 'LOGGING_OUT',
-};
-
-export default new KeyValueMap(definition);
+export default new Enum([
+  'pending',
+  'loggingIn',
+  'loggedIn',
+  'beforeLogout',
+  'loggingOut',
+  'notLoggedIn',
+], 'auth');
