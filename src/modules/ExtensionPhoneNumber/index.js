@@ -24,7 +24,11 @@ export default class ExtensionPhoneNumber extends RcModule {
     this._reducer = getExtensionPhoneNumberReducer(this.prefix);
     this._promise = null;
 
-    this.addSelector('companyNumbers', () => this.data.phoneNumber, phoneNumbers => phoneNumbers.filter(p => p.usageType === 'CompanyNumber'));
+    this.addSelector(
+      'companyNumbers',
+      () => this.data.extensionPhoneNumbers,
+      phoneNumbers => phoneNumbers.filter(p => p.usageType === 'CompanyNumber'),
+    );
   }
   initialize() {
     this.store.subscribe(() => {
@@ -85,7 +89,7 @@ export default class ExtensionPhoneNumber extends RcModule {
         });
         try {
           this._storage.setItem(this._storageKey, {
-            extensionPhoneNumber: await fetchList(params => (
+            extensionPhoneNumbers: await fetchList(params => (
               this._client.account().extension().phoneNumber().list(params)
             )),
             timestamp: Date.now(),
