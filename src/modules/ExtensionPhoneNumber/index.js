@@ -66,7 +66,7 @@ export default class ExtensionPhoneNumber extends RcModule {
   }
 
   get phoneNumbers() {
-    return this.data.phoneNumbers;
+    return this.data.extensionPhoneNumbers;
   }
 
   get companyNumbers() {
