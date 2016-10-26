@@ -55,6 +55,10 @@ export default class DialingPlan extends RcModule {
     return this._storage.getItem(this._storageKey);
   }
 
+  get plans() {
+    return this.data.dialingPlans;
+  }
+
   get status() {
     return this.state.status;
   }
@@ -75,7 +79,7 @@ export default class DialingPlan extends RcModule {
         });
         try {
           this._storage.setItem(this._storageKey, {
-            dialingPlan: await fetchList(params => (
+            dialingPlans: await fetchList(params => (
               this._client.account().dialingPlan().list(params)
             )),
             timestamp: Date.now(),

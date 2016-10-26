@@ -44,7 +44,7 @@ export default class ExtensionPhoneNumber extends RcModule {
           !this._storage.hasItem(this._storageKey) ||
           Date.now() - this.data.timestamp > this._ttl
         ) {
-          this.loadExtensionPhoneNumber();
+          this.loadExtensionPhoneNumbers();
         }
       } else if (
         this._storage.status === this._storage.storageStatus.pending &&
@@ -69,7 +69,7 @@ export default class ExtensionPhoneNumber extends RcModule {
     return this.state.error;
   }
 
-  get phoneNumbers() {
+  get numbers() {
     return this.data.extensionPhoneNumbers;
   }
 
@@ -81,7 +81,7 @@ export default class ExtensionPhoneNumber extends RcModule {
     return extensionPhoneNumberStatus;
   }
 
-  async loadExtensionPhoneNumber() {
+  async loadExtensionPhoneNumbers() {
     if (!this._promise) {
       this._promise = (async () => {
         this.store.dispatch({

@@ -55,6 +55,10 @@ export default class ForwardingNumber extends RcModule {
     return this._storage.getItem(this._storageKey);
   }
 
+  get numbers() {
+    return this.data.forwardingNumbers;
+  }
+
   get status() {
     return this.state.status;
   }
@@ -75,7 +79,7 @@ export default class ForwardingNumber extends RcModule {
         });
         try {
           this._storage.setItem(this._storageKey, {
-            forwardingNumber: await fetchList(params => (
+            forwardingNumbers: await fetchList(params => (
               this._client.account().extension().forwardingNumber().list(params)
             )),
             timestamp: Date.now(),

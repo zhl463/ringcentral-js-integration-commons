@@ -58,6 +58,10 @@ export default class AccountInfo extends RcModule {
     return this.state.status;
   }
 
+  get country() {
+    return this.data.serviceInfo.brand.homeCountry;
+  }
+
   get error() {
     return this.state.error;
   }

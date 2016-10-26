@@ -55,6 +55,10 @@ export default class BlockedNumber extends RcModule {
     return this._storage.getItem(this._storageKey);
   }
 
+  get numbers() {
+    return this.data.blockedNumbers;
+  }
+
   get status() {
     return this.state.status;
   }
@@ -75,7 +79,7 @@ export default class BlockedNumber extends RcModule {
         });
         try {
           this._storage.setItem(this._storageKey, {
-            blockedNumber: await fetchList(params => (
+            blockedNumbers: await fetchList(params => (
               this._client.account().extension().blockedNumber().list(params)
             )),
             timestamp: Date.now(),
