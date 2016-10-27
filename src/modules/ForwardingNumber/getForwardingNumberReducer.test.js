@@ -28,12 +28,16 @@ describe('getStatusReducer', () => {
       [
         forwardingNumberActionTypes.init,
         forwardingNumberActionTypes.fetchSuccess,
-        forwardingNumberActionTypes.fetchError,
       ].forEach(type => {
         expect(reducer('foo', {
           type,
         })).to.equal(forwardingNumberStatus.ready);
       });
+    });
+    it('should return error status on fetchError', () => {
+      expect(reducer('foo', {
+        type: forwardingNumberActionTypes.fetchError,
+      })).to.equal(forwardingNumberStatus.error);
     });
     it('should return pending status on reset', () => {
       expect(reducer('foo', {

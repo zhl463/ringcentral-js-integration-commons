@@ -4,18 +4,20 @@ import blockedNumberActionTypes from './blockedNumberActionTypes';
 import blockedNumberStatus from './blockedNumberStatus';
 
 export function getStatusReducer(prefix) {
-  const prefixedTypes = prefixEnum({ enumMap: blockedNumberActionTypes, prefix });
+  const types = prefixEnum({ enumMap: blockedNumberActionTypes, prefix });
   return (state = blockedNumberStatus.pending, { type }) => {
     switch (type) {
-      case prefixedTypes.fetch:
+      case types.fetch:
         return blockedNumberStatus.fetching;
 
-      case prefixedTypes.init:
-      case prefixedTypes.fetchSuccess:
-      case prefixedTypes.fetchError:
+      case types.init:
+      case types.fetchSuccess:
         return blockedNumberStatus.ready;
 
-      case prefixedTypes.reset:
+      case types.fetchError:
+        return blockedNumberStatus.error;
+
+      case types.reset:
         return blockedNumberStatus.pending;
       default:
         return state;
@@ -24,16 +26,16 @@ export function getStatusReducer(prefix) {
 }
 
 export function getErrorReducer(prefix) {
-  const prefixedTypes = prefixEnum({ enumMap: blockedNumberActionTypes, prefix });
+  const types = prefixEnum({ enumMap: blockedNumberActionTypes, prefix });
   return (state = null, { type, error }) => {
     switch (type) {
-      case prefixedTypes.init:
-      case prefixedTypes.fetch:
-      case prefixedTypes.fetchSuccess:
-      case prefixedTypes.reset:
+      case types.init:
+      case types.fetch:
+      case types.fetchSuccess:
+      case types.reset:
         return null;
 
-      case prefixedTypes.fetchError:
+      case types.fetchError:
         return error;
 
       default:

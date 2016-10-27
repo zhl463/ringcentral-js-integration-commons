@@ -12,8 +12,10 @@ export function getStatusReducer(prefix) {
 
       case prefixedTypes.init:
       case prefixedTypes.fetchSuccess:
-      case prefixedTypes.fetchError:
         return extensionPhoneNumberStatus.ready;
+
+      case prefixedTypes.fetchError:
+        return extensionPhoneNumberStatus.error;
 
       case prefixedTypes.reset:
         return extensionPhoneNumberStatus.pending;

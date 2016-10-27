@@ -28,12 +28,16 @@ describe('getStatusReducer', () => {
       [
         extensionInfoActionTypes.init,
         extensionInfoActionTypes.fetchSuccess,
-        extensionInfoActionTypes.fetchError,
       ].forEach(type => {
         expect(reducer('foo', {
           type,
         })).to.equal(extensionInfoStatus.ready);
       });
+    });
+    it('should return error status on fetchError', () => {
+      expect(reducer('foo', {
+        type: extensionInfoActionTypes.fetchError,
+      })).to.equal(extensionInfoStatus.error);
     });
     it('should return pending status on reset', () => {
       expect(reducer('foo', {

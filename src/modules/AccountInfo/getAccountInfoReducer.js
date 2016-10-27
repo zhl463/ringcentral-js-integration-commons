@@ -4,18 +4,20 @@ import accountInfoActionTypes from './accountInfoActionTypes';
 import accountInfoStatus from './accountInfoStatus';
 
 export function getStatusReducer(prefix) {
-  const prefixedTypes = prefixEnum({ enumMap: accountInfoActionTypes, prefix });
+  const types = prefixEnum({ enumMap: accountInfoActionTypes, prefix });
   return (state = accountInfoStatus.pending, { type }) => {
     switch (type) {
-      case prefixedTypes.fetch:
+      case types.fetch:
         return accountInfoStatus.fetching;
 
-      case prefixedTypes.init:
-      case prefixedTypes.fetchSuccess:
-      case prefixedTypes.fetchError:
+      case types.init:
+      case types.fetchSuccess:
         return accountInfoStatus.ready;
 
-      case prefixedTypes.reset:
+      case types.fetchError:
+        return accountInfoStatus.error;
+
+      case types.reset:
         return accountInfoStatus.pending;
       default:
         return state;
@@ -24,16 +26,16 @@ export function getStatusReducer(prefix) {
 }
 
 export function getErrorReducer(prefix) {
-  const prefixedTypes = prefixEnum({ enumMap: accountInfoActionTypes, prefix });
+  const types = prefixEnum({ enumMap: accountInfoActionTypes, prefix });
   return (state = null, { type, error }) => {
     switch (type) {
-      case prefixedTypes.init:
-      case prefixedTypes.fetch:
-      case prefixedTypes.fetchSuccess:
-      case prefixedTypes.reset:
+      case types.init:
+      case types.fetch:
+      case types.fetchSuccess:
+      case types.reset:
         return null;
 
-      case prefixedTypes.fetchError:
+      case types.fetchError:
         return error;
 
       default:

@@ -4,18 +4,20 @@ import dialingPlanActionTypes from './dialingPlanActionTypes';
 import dialingPlanStatus from './dialingPlanStatus';
 
 export function getStatusReducer(prefix) {
-  const prefixedTypes = prefixEnum({ enumMap: dialingPlanActionTypes, prefix });
+  const types = prefixEnum({ enumMap: dialingPlanActionTypes, prefix });
   return (state = dialingPlanStatus.pending, { type }) => {
     switch (type) {
-      case prefixedTypes.fetch:
+      case types.fetch:
         return dialingPlanStatus.fetching;
 
-      case prefixedTypes.init:
-      case prefixedTypes.fetchSuccess:
-      case prefixedTypes.fetchError:
+      case types.init:
+      case types.fetchSuccess:
         return dialingPlanStatus.ready;
 
-      case prefixedTypes.reset:
+      case types.fetchError:
+        return dialingPlanStatus.error;
+
+      case types.reset:
         return dialingPlanStatus.pending;
       default:
         return state;
@@ -24,16 +26,16 @@ export function getStatusReducer(prefix) {
 }
 
 export function getErrorReducer(prefix) {
-  const prefixedTypes = prefixEnum({ enumMap: dialingPlanActionTypes, prefix });
+  const types = prefixEnum({ enumMap: dialingPlanActionTypes, prefix });
   return (state = null, { type, error }) => {
     switch (type) {
-      case prefixedTypes.init:
-      case prefixedTypes.fetch:
-      case prefixedTypes.fetchSuccess:
-      case prefixedTypes.reset:
+      case types.init:
+      case types.fetch:
+      case types.fetchSuccess:
+      case types.reset:
         return null;
 
-      case prefixedTypes.fetchError:
+      case types.fetchError:
         return error;
 
       default:

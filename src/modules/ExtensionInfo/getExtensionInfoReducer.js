@@ -4,18 +4,20 @@ import extensionInfoActionTypes from './extensionInfoActionTypes';
 import extensionInfoStatus from './extensionInfoStatus';
 
 export function getStatusReducer(prefix) {
-  const prefixedTypes = prefixEnum({ enumMap: extensionInfoActionTypes, prefix });
+  const types = prefixEnum({ enumMap: extensionInfoActionTypes, prefix });
   return (state = extensionInfoStatus.pending, { type }) => {
     switch (type) {
-      case prefixedTypes.fetch:
+      case types.fetch:
         return extensionInfoStatus.fetching;
 
-      case prefixedTypes.init:
-      case prefixedTypes.fetchSuccess:
-      case prefixedTypes.fetchError:
+      case types.init:
+      case types.fetchSuccess:
         return extensionInfoStatus.ready;
 
-      case prefixedTypes.reset:
+      case types.fetchError:
+        return extensionInfoStatus.error;
+
+      case types.reset:
         return extensionInfoStatus.pending;
       default:
         return state;
@@ -24,16 +26,16 @@ export function getStatusReducer(prefix) {
 }
 
 export function getErrorReducer(prefix) {
-  const prefixedTypes = prefixEnum({ enumMap: extensionInfoActionTypes, prefix });
+  const types = prefixEnum({ enumMap: extensionInfoActionTypes, prefix });
   return (state = null, { type, error }) => {
     switch (type) {
-      case prefixedTypes.init:
-      case prefixedTypes.fetch:
-      case prefixedTypes.fetchSuccess:
-      case prefixedTypes.reset:
+      case types.init:
+      case types.fetch:
+      case types.fetchSuccess:
+      case types.reset:
         return null;
 
-      case prefixedTypes.fetchError:
+      case types.fetchError:
         return error;
 
       default:

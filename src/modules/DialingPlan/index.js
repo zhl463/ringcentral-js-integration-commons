@@ -30,15 +30,16 @@ export default class DialingPlan extends RcModule {
         this._storage.status !== this._storage.storageStatus.pending &&
         this.status === dialingPlanStatus.pending
       ) {
-        this.store.dispatch({
-          type: this.actionTypes.init,
-        });
         if (
           this._auth.isFreshLogin ||
           !this._storage.hasItem(this._storageKey) ||
           Date.now() - this.data.timestamp > this._ttl
         ) {
           this.loadDialingPlan();
+        } else {
+          this.store.dispatch({
+            type: this.actionTypes.init,
+          });
         }
       } else if (
         this._storage.status === this._storage.storageStatus.pending &&

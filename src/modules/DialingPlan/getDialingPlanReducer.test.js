@@ -28,12 +28,16 @@ describe('getStatusReducer', () => {
       [
         dialingPlanActionTypes.init,
         dialingPlanActionTypes.fetchSuccess,
-        dialingPlanActionTypes.fetchError,
       ].forEach(type => {
         expect(reducer('foo', {
           type,
         })).to.equal(dialingPlanStatus.ready);
       });
+    });
+    it('should return error status on fetchError', () => {
+      expect(reducer('foo', {
+        type: dialingPlanActionTypes.fetchError,
+      })).to.equal(dialingPlanStatus.error);
     });
     it('should return pending status on reset', () => {
       expect(reducer('foo', {

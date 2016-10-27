@@ -28,12 +28,16 @@ describe('getStatusReducer', () => {
       [
         blockedNumberActionTypes.init,
         blockedNumberActionTypes.fetchSuccess,
-        blockedNumberActionTypes.fetchError,
       ].forEach(type => {
         expect(reducer('foo', {
           type,
         })).to.equal(blockedNumberStatus.ready);
       });
+    });
+    it('should return error status on fetchError', () => {
+      expect(reducer('foo', {
+        type: blockedNumberActionTypes.fetchError,
+      })).to.equal(blockedNumberStatus.error);
     });
     it('should return pending status on reset', () => {
       expect(reducer('foo', {

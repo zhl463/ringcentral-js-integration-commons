@@ -110,6 +110,15 @@ export default class User extends RcModule {
       this.blockedNumber.status === this.blockedNumber.blockedNumberStatus.fetching
     ) {
       return userStatus.fetching;
+    } else if (
+      this.accountInfo.status === this.accountInfo.accountInfoStatus.error ||
+      this.extensionInfo.status === this.extensionInfo.extensionInfoStatus.error ||
+      this.dialingPlan.status === this.dialingPlan.dialingPlanStatus.error ||
+      this.phoneNumber.status === this.phoneNumber.extensionPhoneNumberStatus.error ||
+      this.forwardingNumber.status === this.forwardingNumber.forwardingNumberStatus.error ||
+      this.blockedNumber.status === this.blockedNumber.blockedNumberStatus.error
+    ) {
+      return userStatus.error;
     }
     return userStatus.ready;
   }

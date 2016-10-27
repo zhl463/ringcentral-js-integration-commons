@@ -29,15 +29,16 @@ export default class AccountInfo extends RcModule {
         this._storage.status !== this._storage.storageStatus.pending &&
         this.status === accountInfoStatus.pending
       ) {
-        this.store.dispatch({
-          type: this.actionTypes.init,
-        });
         if (
           this._auth.isFreshLogin ||
           !this._storage.hasItem(this._storageKey) ||
           Date.now() - this.data > this._ttl
         ) {
           this.loadAccountInfo();
+        } else {
+          this.store.dispatch({
+            type: this.actionTypes.init,
+          });
         }
       } else if (
         this._storage.status === this._storage.storageStatus.pending &&

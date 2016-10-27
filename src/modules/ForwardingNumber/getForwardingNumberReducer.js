@@ -12,8 +12,10 @@ export function getStatusReducer(prefix) {
 
       case prefixedTypes.init:
       case prefixedTypes.fetchSuccess:
-      case prefixedTypes.fetchError:
         return forwardingNumberStatus.ready;
+
+      case prefixedTypes.fetchError:
+        return forwardingNumberStatus.error;
 
       case prefixedTypes.reset:
         return forwardingNumberStatus.pending;

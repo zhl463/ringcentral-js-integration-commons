@@ -28,12 +28,16 @@ describe('getStatusReducer', () => {
       [
         accountInfoActionTypes.init,
         accountInfoActionTypes.fetchSuccess,
-        accountInfoActionTypes.fetchError,
       ].forEach(type => {
         expect(reducer('foo', {
           type,
         })).to.equal(accountInfoStatus.ready);
       });
+    });
+    it('should return error status on fetchError', () => {
+      expect(reducer('foo', {
+        type: accountInfoActionTypes.fetchError,
+      })).to.equal(accountInfoStatus.error);
     });
     it('should return pending status on reset', () => {
       expect(reducer('foo', {
