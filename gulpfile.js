@@ -133,22 +133,21 @@ gulp.task('dev-server', async () => {
   }
   // eslint-disable-next-line global-require
   const devWebpackConfig = require('./dev-server/webpack.config').default;
-  await new Promise((resolve, reject) => {
-    const compiler = webpack(devWebpackConfig, err => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      const devServer = new WebpackDevServer(compiler, {
-        contentBase: path.resolve('dev-server'),
-        publicPath: '/build',
-        hot: true,
-        inline: true,
-      });
-      devServer.listen(8190);
-      resolve();
-    });
+  const compiler = webpack(devWebpackConfig);
+  const server = new WebpackDevServer(compiler, {
+    contentBase: path.resolve('dev-server'),
+    publicPath: '/build',
+    hot: true,
+    inline: true,
+    noInfo: true,
+    stats: {
+      warnings: false,
+      chunks: false,
+      colors: true,
+    },
   });
+  server.listen(8190);
+  console.log('server listening to 8190...');
 });
 
 async function rm(filepath) {

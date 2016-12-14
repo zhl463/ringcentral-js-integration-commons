@@ -1,7 +1,27 @@
 import RcModule from '../../lib/RcModule';
+import url from 'url';
 import getAuthReducer from './getAuthReducer';
-import authActionTypes from './authActionTypes';
+import actionTypes from './actionTypes';
 import authStatus from './authStatus';
+import authMessages from './authMessages';
+import moduleStatus from '../../enums/moduleStatus';
+
+
+
+function getDefaultRedirectUri() {
+  if (typeof window !== 'undefined') {
+    return url.resolve(window.location.href, './redirect.html');
+  }
+  return null;
+}
+
+function getDefaultProxyUri() {
+  if (typeof window !== 'undefined') {
+    return url.resolve(window.location.href, './proxy.html');
+  }
+  return null;
+}
+
 
 /**
  * @class
@@ -11,14 +31,117 @@ export default class Auth extends RcModule {
   /**
    * @constructor
    */
-  constructor({ client, ...options } = {}) {
+  constructor({
+    client,
+    alert,
+    redirectUri = getDefaultRedirectUri(),
+    proxyUri = getDefaultProxyUri(),
+    brand,
+    locale,
+    ...options
+  } = {}) {
     super({
       ...options,
-      actionTypes: authActionTypes,
+      actionTypes,
     });
     this._client = client;
-    this._reducer = getAuthReducer(this.prefix);
+    this._alert = alert;
+    this._brand = brand;
+    this._locale = locale;
+    this._redirectUri = redirectUri;
+    this._proxyUri = proxyUri;
+    this._reducer = getAuthReducer(this.actionTypes);
     this._beforeLogoutHandlers = new Set();
+  }
+  _bindEvents() {
+    const platform = this._client.service.platform();
+    platform.on(platform.events.loginSuccess, () => {
+      this.store.dispatch({
+        type: this.actionTypes.loginSuccess,
+        token: platform.auth().data(),
+      });
+    });
+    platform.on(platform.events.loginError, error => {
+      this.store.dispatch({
+        type: this.actionTypes.loginError,
+        error,
+      });
+      if (error) {
+        this._alert.danger({
+          message: authMessages.loginError,
+          payload: error,
+        });
+      }
+    });
+    platform.on(platform.events.logoutSuccess, () => {
+      this.store.dispatch({
+        type: this.actionTypes.logoutSuccess,
+      });
+    });
+    platform.on(platform.events.logoutError, error => {
+      this.store.dispatch({
+        type: this.actionTypes.logoutError,
+        error,
+      });
+      if (error) {
+        this._alert.danger({
+          message: authMessages.logoutError,
+          payload: error,
+        });
+      }
+    });
+    platform.on(platform.events.refreshSuccess, () => {
+      this.store.dispatch({
+        type: this.actionTypes.refreshSuccess,
+        token: platform.auth().data(),
+      });
+    });
+    platform.on(platform.events.refreshError, error => {
+      // user is still considered logged in if the refreshToken is still valid
+      const refreshTokenValid = platform.auth().refreshTokenValid();
+      this.store.dispatch({
+        type: this.actionTypes.refreshError,
+        error,
+        refreshTokenValid,
+      });
+      if (!refreshTokenValid && this._client.service.platform().auth().data().access_token !== '') {
+        this._alert.danger({
+          message: authMessages.sessionExpired,
+          payload: error,
+          ttl: 0,
+        });
+        // clean the cache so the error doesn't show again
+        platform._cache.clean();
+      }
+    });
+  }
+  initialize() {
+    this._bindEvents();
+    this.store.subscribe(async () => {
+      if (
+        this.pending &&
+        this._locale.ready
+      ) {
+        this.store.dispatch({
+          type: this.actionTypes.init,
+        });
+        const platform = this._client.service.platform();
+        const loggedIn = await platform.loggedIn();
+        this.store.dispatch({
+          type: this.actionTypes.initSuccess,
+          loggedIn,
+          token: loggedIn ? platform.auth().data() : null,
+        });
+      }
+    });
+  }
+
+  get redirectUri() {
+    return this._redirectUri;
+  }
+
+  get proxyUri() {
+    return this._proxyUri;
   }
 
   get ownerId() {
@@ -29,16 +152,24 @@ export default class Auth extends RcModule {
     return this.state.status;
   }
 
-  get error() {
-    return this.state.error;
+  get ready() {
+    return this.state.status === moduleStatus.ready;
+  }
+
+  get initializing() {
+    return this.state.status === moduleStatus.initializing;
+  }
+
+  get pending() {
+    return this.state.status === moduleStatus.pending;
+  }
+
+  get authStatus() {
+    return this.state.authStatus;
   }
 
   get isFreshLogin() {
     return this.state.freshLogin;
-  }
-
-  get authStatus() {
-    return authStatus;
   }
 
   /**
@@ -50,7 +181,7 @@ export default class Auth extends RcModule {
    * @param {String} params.code,
    * @param {String} params.redirectUri,
    * @return {Promise}
-   * @description Login function using username and password
+   * @description Login either with username/password or with authorization code
    */
   async login({ username, password, extension, remember, code, redirectUri }) {
     this.store.dispatch({
@@ -65,53 +196,6 @@ export default class Auth extends RcModule {
       redirectUri,
     });
   }
-  initialize() {
-    const platform = this._client.service.platform();
-    platform.on(platform.events.loginSuccess, () => {
-      this.store.dispatch({
-        type: this.actionTypes.loginSuccess,
-        token: platform.auth().data(),
-      });
-    });
-    platform.on(platform.events.loginError, error => {
-      this.store.dispatch({
-        type: this.actionTypes.loginError,
-        error,
-      });
-    });
-    platform.on(platform.events.logoutSuccess, () => {
-      this.store.dispatch({
-        type: this.actionTypes.logoutSuccess,
-      });
-    });
-    platform.on(platform.events.logoutError, error => {
-      this.store.dispatch({
-        type: this.actionTypes.logoutError,
-        error,
-      });
-    });
-    platform.on(platform.events.refreshSuccess, () => {
-      this.store.dispatch({
-        type: this.actionTypes.refreshSuccess,
-        token: platform.auth().data(),
-      });
-    });
-    platform.on(platform.events.refreshError, error => {
-      this.store.dispatch({
-        type: this.actionTypes.refreshError,
-        error,
-      });
-    });
-    (async () => {
-      const loggedIn = await platform.loggedIn();
-      this.store.dispatch({
-        type: this.actionTypes.init,
-        loggedIn,
-        token: loggedIn ? platform.auth().data() : null,
-      });
-    })();
-  }
-
   /**
    * @function
    * @param {String} options.redirectUri
@@ -135,9 +219,24 @@ export default class Auth extends RcModule {
    * @return {String} code
    */
   parseCallbackUri(callbackUri) {
-    return this._client.getAuthCode(callbackUri);
+    const { query } = url.parse(callbackUri, true);
+    if (query.error) {
+      const error = new Error(query.error);
+      for (const key in query) {
+        if (query::Object.prototype.hasOwnProperty(key)) {
+          error[key] = query[key];
+        }
+      }
+      throw error;
+    }
+    return query.code;
   }
 
+  /**
+   * @function
+   * @description Triggers the beforeLogoutHandlers to run
+   *  and then proceed to logout from ringcentral.
+   */
   async logout() {
     this.store.dispatch({
       type: this.actionTypes.beforeLogout,
@@ -145,12 +244,18 @@ export default class Auth extends RcModule {
     const handlers = [...this._beforeLogoutHandlers];
     try {
       for (const handler of handlers) {
-        await (async () => handler())();
+        const result = await (async () => handler())();
+        if (result) {
+          this.store.dispatch({
+            type: this.actionTypes.cancelLogout,
+          });
+          return Promise.reject(result);
+        }
       }
     } catch (error) {
-      this.store.dispatch({
-        type: this.actionTypes.cancelLogout,
-        error,
+      this._alert.danger({
+        message: authMessages.beforeLogoutError,
+        payload: error,
       });
     }
     this.store.dispatch({
@@ -180,6 +285,93 @@ export default class Auth extends RcModule {
   }
 
   async isLoggedIn() {
-    return await this._client.service.platform().loggedIn();
+    // SDK would return false when there's temporary network issues,
+    // but we should not return use back to welcome string and should
+    // still consider the user as being logged in.
+    await this._client.service.platform().loggedIn();
+    return this.status === authStatus.loggedIn;
+  }
+
+  /**
+   * @function
+   * @description Create the proxy frame and append to document if available.
+   * @param {Function} onLogin - Function to be called when user successfully logged in
+   *  through oAuth.
+   */
+  setupProxyFrame(onLogin) {
+    if (
+      typeof window !== 'undefined' &&
+      typeof document !== 'undefined' &&
+      this._proxyUrl &&
+      this._proxyUrl !== '' &&
+      !this._proxyFrame
+    ) {
+      this._proxyFrame = document.createElement('iframe');
+      this._proxyFrame.src = this.proxyUri;
+      this._proxyFrame.style.display = 'none';
+      document.body.appendChild(this._proxyFrame);
+      this._callbackHandler = async ({ origin, data }) => {
+        // TODO origin check
+        if (data) {
+          const {
+            callbackUri,
+          } = data;
+          if (callbackUri) {
+            try {
+              const code = this.parseCallbackUri(callbackUri);
+              if (code) {
+                await this.login({
+                  code,
+                  redirectUri: this.redirectUri,
+                });
+                if (typeof onLogin === 'function') {
+                  onLogin();
+                }
+              }
+            } catch (error) {
+              let message;
+              switch (error.message) {
+                case 'invalid_request':
+                case 'unauthorized_client':
+                case 'access_denied':
+                case 'unsupported_response_type':
+                case 'invalid_scope':
+                  message = authMessages.accessDenied;
+                  break;
+                case 'server_error':
+                case 'temporarily_unavailable':
+                default:
+                  message = authMessages.internalError;
+                  break;
+              }
+
+              this._alert.danger({
+                message,
+                payload: error,
+              });
+            }
+          }
+        }
+      };
+      window.addEventListener('message', this._callbackHandler);
+    }
+  }
+  clearProxyFrame() {
+    if (this._proxyFrame) {
+      document.body.removeChild(this._proxyFrame);
+      this._proxyFrame = null;
+      window.removeEventListener('message', this._callbackHandler);
+      this._callbackHandler = null;
+    }
+  }
+  openOAuthPage() {
+    if (this._proxyFrame) {
+      this._proxyFrame.contentWindow.postMessage({
+        oAuthUri: `${this.getLoginUrl({
+          redirectUri: this.redirectUri,
+          brandId: this._brand.id,
+        })}&force=true&localeId=${encodeURIComponent(this._locale.currentLocale)}`,
+      }, '*');
+    }
   }
 }

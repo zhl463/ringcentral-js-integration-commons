@@ -21,10 +21,7 @@ const base = {
         loader: 'json',
       },
     ],
-  },
-  plugins: [
-    new webpack.HotModuleReplacementPlugin(),
-  ],
+  }
 };
 
 const index = {
