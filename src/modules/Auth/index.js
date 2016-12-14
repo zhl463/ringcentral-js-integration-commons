@@ -118,7 +118,7 @@ export default class Auth extends RcModule {
     this._bindEvents();
     this.store.subscribe(async () => {
       if (
-        this.pending &&
+        this.status === moduleStatus.pending &&
         this._locale.ready
       ) {
         this.store.dispatch({
