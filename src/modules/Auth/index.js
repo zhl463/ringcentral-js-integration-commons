@@ -293,8 +293,8 @@ export default class Auth extends RcModule {
     if (
       typeof window !== 'undefined' &&
       typeof document !== 'undefined' &&
-      this._proxyUrl &&
-      this._proxyUrl !== '' &&
+      this._proxyUri &&
+      this._proxyUri !== '' &&
       !this._proxyFrame
     ) {
       this._proxyFrame = document.createElement('iframe');
