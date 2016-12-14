@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux';
-import authStatus from './authStatus';
+import loginStatus from './loginStatus';
 import moduleStatus from '../../enums/moduleStatus';
 
 export function getStatusReducer(types) {
@@ -15,33 +15,33 @@ export function getStatusReducer(types) {
   };
 }
 
-export function getAuthStatusReducer(types) {
+export function getLoginStatusReducer(types) {
   return (state = null, { type, loggedIn, refreshTokenValid }) => {
     switch (type) {
       case types.login:
-        return authStatus.loggingIn;
+        return loginStatus.loggingIn;
 
       case types.loginSuccess:
       case types.refreshSuccess:
       case types.cancelLogout:
-        return authStatus.loggedIn;
+        return loginStatus.loggedIn;
 
       case types.loginError:
       case types.logoutSuccess:
       case types.logoutError:
-        return authStatus.notLoggedIn;
+        return loginStatus.notLoggedIn;
 
       case types.refreshError:
-        return refreshTokenValid ? state : authStatus.notLoggedIn;
+        return refreshTokenValid ? state : loginStatus.notLoggedIn;
 
       case types.logout:
-        return authStatus.loggingOut;
+        return loginStatus.loggingOut;
 
       case types.beforeLogout:
-        return authStatus.beforeLogout;
+        return loginStatus.beforeLogout;
 
       case types.initSuccess:
-        return loggedIn ? authStatus.loggedIn : authStatus.notLoggedIn;
+        return loggedIn ? loginStatus.loggedIn : loginStatus.notLoggedIn;
 
       default:
         return state;
@@ -97,7 +97,7 @@ export function getFreshLoginReducer(types) {
 export default function getAuthReducer(types) {
   return combineReducers({
     status: getStatusReducer(types),
-    authStatus: getAuthStatusReducer(types),
+    loginStatus: getLoginStatusReducer(types),
     freshLogin: getFreshLoginReducer(types),
     ownerId: getOwnerIdReducer(types),
   });

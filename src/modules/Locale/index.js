@@ -80,10 +80,6 @@ export default class Locale extends RcModule {
     return this.state.status === moduleStatus.ready;
   }
 
-  get pending() {
-    return this.state.status === moduleStatus.pending;
-  }
-
   /**
    *  @function
    *  @description Sets the desired locale as the current locale. This will also

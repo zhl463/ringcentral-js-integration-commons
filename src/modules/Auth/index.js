@@ -2,11 +2,11 @@ import RcModule from '../../lib/RcModule';
 import url from 'url';
 import getAuthReducer from './getAuthReducer';
 import actionTypes from './actionTypes';
-import authStatus from './authStatus';
+import loginStatus from './loginStatus';
 import authMessages from './authMessages';
 import moduleStatus from '../../enums/moduleStatus';
 
-
+export { loginStatus };
 
 function getDefaultRedirectUri() {
   if (typeof window !== 'undefined') {
@@ -21,7 +21,6 @@ function getDefaultProxyUri() {
   }
   return null;
 }
-
 
 /**
  * @class
@@ -156,16 +155,8 @@ export default class Auth extends RcModule {
     return this.state.status === moduleStatus.ready;
   }
 
-  get initializing() {
-    return this.state.status === moduleStatus.initializing;
-  }
-
-  get pending() {
-    return this.state.status === moduleStatus.pending;
-  }
-
-  get authStatus() {
-    return this.state.authStatus;
+  get loginStatus() {
+    return this.state.loginStatus;
   }
 
   get isFreshLogin() {
@@ -284,12 +275,12 @@ export default class Auth extends RcModule {
     this._beforeLogoutHandlers.remove(handler);
   }
 
-  async isLoggedIn() {
+  async checkIsLoginStatus() {
     // SDK would return false when there's temporary network issues,
     // but we should not return use back to welcome string and should
     // still consider the user as being logged in.
     await this._client.service.platform().loggedIn();
-    return this.status === authStatus.loggedIn;
+    return this.status === loginStatus.loggedIn;
   }
 
   /**

@@ -2,23 +2,23 @@ import { expect } from 'chai';
 import getAuthReducer, {
   getFreshLoginReducer,
   getStatusReducer,
-  getAuthStatusReducer,
+  getLoginStatusReducer,
   getOwnerIdReducer,
 } from './getAuthReducer';
 
 import actionTypes from './actionTypes';
-import authStatus from './authStatus';
+import loginStatus from './loginStatus';
 import moduleStatus from '../../enums/moduleStatus';
 
-describe('getAuthStatusReducer', () => {
+describe('getLoginStatusReducer', () => {
   it('should be a function', () => {
-    expect(getAuthStatusReducer).to.be.a('function');
+    expect(getLoginStatusReducer).to.be.a('function');
   });
   it('should return a reducer', () => {
-    expect(getAuthStatusReducer(actionTypes)).to.be.a('function');
+    expect(getLoginStatusReducer(actionTypes)).to.be.a('function');
   });
-  describe('authStatusReducer', () => {
-    const reducer = getAuthStatusReducer(actionTypes);
+  describe('loginStatusReducer', () => {
+    const reducer = getLoginStatusReducer(actionTypes);
     it('should have initial state of null', () => {
       expect(reducer(undefined, {})).to.equal(null);
     });
@@ -27,61 +27,61 @@ describe('getAuthStatusReducer', () => {
       expect(reducer(originalState, { type: 'foo' }))
         .to.equal(originalState);
     });
-    describe('actionTypes => authStatus', () => {
-      it('actionTypes.login => authStatus.loggingIn', () => {
+    describe('actionTypes => loginStatus', () => {
+      it('actionTypes.login => loginStatus.loggingIn', () => {
         expect(reducer(null, {
           type: actionTypes.login,
-        })).to.equal(authStatus.loggingIn);
+        })).to.equal(loginStatus.loggingIn);
       });
-      it('actionTypes.loginSuccess => authStatus.loggedIn', () => {
+      it('actionTypes.loginSuccess => loginStatus.loggedIn', () => {
         expect(reducer(null, {
           type: actionTypes.loginSuccess,
-        })).to.equal(authStatus.loggedIn);
+        })).to.equal(loginStatus.loggedIn);
       });
-      it('actionTypes.refreshSuccess => authStatus.loggedIn', () => {
+      it('actionTypes.refreshSuccess => loginStatus.loggedIn', () => {
         expect(reducer(null, {
           type: actionTypes.refreshSuccess,
-        })).to.equal(authStatus.loggedIn);
+        })).to.equal(loginStatus.loggedIn);
       });
-      it('actionTypes.cancelLogout => authStatus.loggedIn', () => {
+      it('actionTypes.cancelLogout => loginStatus.loggedIn', () => {
         expect(reducer(null, {
           type: actionTypes.cancelLogout,
-        })).to.equal(authStatus.loggedIn);
+        })).to.equal(loginStatus.loggedIn);
       });
-      it('actionTypes.loginError => authStatus.notLoggedIn', () => {
+      it('actionTypes.loginError => loginStatus.notLoggedIn', () => {
         expect(reducer(null, {
           type: actionTypes.loginError,
-        })).to.equal(authStatus.notLoggedIn);
+        })).to.equal(loginStatus.notLoggedIn);
       });
-      it('actionTypes.logoutSuccess => authStatus.notLoggedIn', () => {
+      it('actionTypes.logoutSuccess => loginStatus.notLoggedIn', () => {
         expect(reducer(null, {
           type: actionTypes.logoutSuccess,
-        })).to.equal(authStatus.notLoggedIn);
+        })).to.equal(loginStatus.notLoggedIn);
       });
-      it('actionTypes.logoutError => authStatus.notLoggedIn', () => {
+      it('actionTypes.logoutError => loginStatus.notLoggedIn', () => {
         expect(reducer(null, {
           type: actionTypes.logoutError,
-        })).to.equal(authStatus.notLoggedIn);
+        })).to.equal(loginStatus.notLoggedIn);
       });
-      it('actionTypes.refreshError => refreshTokenValid ? state : authStatus.notLoggedIn', () => {
+      it('actionTypes.refreshError => refreshTokenValid ? state : loginStatus.notLoggedIn', () => {
         expect(reducer(null, {
           type: actionTypes.refreshError,
           refreshTokenValid: false,
-        })).to.equal(authStatus.notLoggedIn);
-        expect(reducer(authStatus.loggedIn, {
+        })).to.equal(loginStatus.notLoggedIn);
+        expect(reducer(loginStatus.loggedIn, {
           type: actionTypes.refreshError,
           refreshTokenValid: true,
-        })).to.equal(authStatus.loggedIn);
+        })).to.equal(loginStatus.loggedIn);
       });
-      it('actionTypes.logout => authStatus.loggingOut', () => {
+      it('actionTypes.logout => loginStatus.loggingOut', () => {
         expect(reducer(null, {
           type: actionTypes.logout,
-        })).to.equal(authStatus.loggingOut);
+        })).to.equal(loginStatus.loggingOut);
       });
-      it('actionTypes.beforeLogout => authStatus.beforeLogout', () => {
+      it('actionTypes.beforeLogout => loginStatus.beforeLogout', () => {
         expect(reducer(null, {
           type: actionTypes.beforeLogout,
-        })).to.equal(authStatus.beforeLogout);
+        })).to.equal(loginStatus.beforeLogout);
       });
       it('actionTypes.refresh => originalState', () => {
         const originalState = {};
@@ -94,17 +94,17 @@ describe('getAuthStatusReducer', () => {
           type: actionTypes.init,
         })).to.equal('originalState');
       });
-      it('actionTypes.initSuccess && !loggedIn => authStatus.notLoggedIn', () => {
+      it('actionTypes.initSuccess && !loggedIn => loginStatus.notLoggedIn', () => {
         expect(reducer(null, {
           type: actionTypes.initSuccess,
           loggedIn: false,
-        })).to.equal(authStatus.notLoggedIn);
+        })).to.equal(loginStatus.notLoggedIn);
       });
-      it('actionTypes.initSuccess && loggedIn => authStatus.loggedIn', () => {
+      it('actionTypes.initSuccess && loggedIn => loginStatus.loggedIn', () => {
         expect(reducer(null, {
           type: actionTypes.initSuccess,
           loggedIn: true,
-        })).to.equal(authStatus.loggedIn);
+        })).to.equal(loginStatus.loggedIn);
       });
     });
   });
@@ -291,14 +291,14 @@ describe('getAuthReducer', () => {
   describe('authReducer', () => {
     const reducer = getAuthReducer(actionTypes);
     const statusReducer = getStatusReducer(actionTypes);
-    const authStatusReducer = getAuthStatusReducer(actionTypes);
+    const loginStatusReducer = getLoginStatusReducer(actionTypes);
     const freshLoginReducer = getFreshLoginReducer(actionTypes);
     const ownerIdReducer = getOwnerIdReducer(actionTypes);
     it('should return combined state', () => {
       expect(reducer(undefined, {}))
         .to.deep.equal({
           status: statusReducer(undefined, {}),
-          authStatus: authStatusReducer(undefined, {}),
+          loginStatus: loginStatusReducer(undefined, {}),
           freshLogin: freshLoginReducer(undefined, {}),
           ownerId: ownerIdReducer(undefined, {}),
         });
@@ -361,12 +361,12 @@ describe('getAuthReducer', () => {
       ].forEach(action => {
         expect(reducer({
           status: 'status',
-          authStatus: 'authStatus',
+          loginStatus: 'loginStatus',
           freshLogin: 'freshLogin',
           ownerId: 'ownerId',
         }, action)).to.deep.equal({
           status: statusReducer('status', action),
-          authStatus: authStatusReducer('authStatus', action),
+          loginStatus: loginStatusReducer('loginStatus', action),
           freshLogin: freshLoginReducer('freshLogin', action),
           ownerId: ownerIdReducer('ownerId', action),
         });

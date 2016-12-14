@@ -6,4 +6,4 @@ export default new Enum([
   'beforeLogout',
   'loggingOut',
   'notLoggedIn',
-], 'authStatus');
+], 'loginStatus');
