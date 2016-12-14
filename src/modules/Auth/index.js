@@ -280,7 +280,7 @@ export default class Auth extends RcModule {
     // but we should not return use back to welcome string and should
     // still consider the user as being logged in.
     await this._client.service.platform().loggedIn();
-    return this.status === loginStatus.loggedIn;
+    return this.loginStatus === loginStatus.loggedIn;
   }
 
   /**
