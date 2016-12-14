@@ -275,7 +275,7 @@ export default class Auth extends RcModule {
     this._beforeLogoutHandlers.remove(handler);
   }
 
-  async checkIsLoginStatus() {
+  async checkIsLoggedIn() {
     // SDK would return false when there's temporary network issues,
     // but we should not return use back to welcome string and should
     // still consider the user as being logged in.
