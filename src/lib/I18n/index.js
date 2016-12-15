@@ -73,6 +73,11 @@ export default class I18n {
   get setLocale() {
     return setLocale;
   }
+
+  static get currentLocale() {
+    return RUNTIME.locale;
+  }
+
   static get setLocale() {
     return setLocale;
   }

@@ -33,6 +33,9 @@ describe('I18n', () => {
   it('should have static setLocale function', () => {
     expect(I18n.setLocale).to.be.a('function');
   });
+  it('should have currentLocale property', () => {
+    expect(I18n.currentLocale).to.be.a('string');
+  });
   describe('I18n instance', () => {
     const instance = new I18n(loader);
     it('should have currentLocale property', () => {
