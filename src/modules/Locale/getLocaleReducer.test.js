@@ -15,7 +15,7 @@ describe('getStatusReducer', () => {
   it('should return a reducer', () => {
     expect(getStatusReducer(actionTypes)).to.be.a('function');
   });
-  describe('freshLoginReducer', () => {
+  describe('statusReducer', () => {
     const reducer = getStatusReducer(actionTypes);
     it('should have initial state of moduleStatus.pending', () => {
       expect(reducer(undefined, {})).to.equal(moduleStatus.pending);

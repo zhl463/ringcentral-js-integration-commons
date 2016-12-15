@@ -106,6 +106,18 @@ describe('getLoginStatusReducer', () => {
           loggedIn: true,
         })).to.equal(loginStatus.loggedIn);
       });
+      it('actionTypes.tabSync && !loggedIn => loginStatus.notLoggedIn', () => {
+        expect(reducer(null, {
+          type: actionTypes.tabSync,
+          loggedIn: false,
+        })).to.equal(loginStatus.notLoggedIn);
+      });
+      it('actionTypes.tabSync && loggedIn => loginStatus.loggedIn', () => {
+        expect(reducer(null, {
+          type: actionTypes.tabSync,
+          loggedIn: true,
+        })).to.equal(loginStatus.loggedIn);
+      });
     });
   });
 });
@@ -182,6 +194,19 @@ describe('getOwnerIdReducer', () => {
         type: actionTypes.initSuccess,
       })).to.be.null;
     });
+    it('should return ownerId on tabSync with token', () => {
+      expect(reducer(null, {
+        type: actionTypes.tabSync,
+        token: {
+          owner_id: 'foo',
+        },
+      })).to.equal('foo');
+    });
+    it('should return null on tabSync without token', () => {
+      expect(reducer('foo', {
+        type: actionTypes.tabSync,
+      })).to.be.null;
+    });
   });
 });
 
@@ -247,6 +272,18 @@ describe('getFreshLoginReducer', () => {
         loggedIn: false,
       })).to.be.null;
     });
+    it('should return false on authActionType.tabSync && loggedIn', () => {
+      expect(reducer(null, {
+        type: actionTypes.tabSync,
+        loggedIn: true,
+      })).to.be.false;
+    });
+    it('should return null on authActionType.tabSync && !loggedIn', () => {
+      expect(reducer(null, {
+        type: actionTypes.tabSync,
+        loggedIn: false,
+      })).to.be.null;
+    });
   });
 });
 
@@ -258,7 +295,7 @@ describe('getStatusReducer', () => {
   it('should return a reducer', () => {
     expect(getStatusReducer(actionTypes)).to.be.a('function');
   });
-  describe('freshLoginReducer', () => {
+  describe('statusReducer', () => {
     const reducer = getStatusReducer(actionTypes);
     it('should have initial state of moduleStatus.pending', () => {
       expect(reducer(undefined, {})).to.equal(moduleStatus.pending);
@@ -356,6 +393,15 @@ describe('getAuthReducer', () => {
         },
         {
           type: actionTypes.initSuccess,
+          loggedIn: false,
+        },
+        {
+          type: actionTypes.tabSync,
+          loggedIn: true,
+          token,
+        },
+        {
+          type: actionTypes.tabSync,
           loggedIn: false,
         },
       ].forEach(action => {

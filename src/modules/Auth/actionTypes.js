@@ -14,4 +14,5 @@ export default new Enum([
   'cancelLogout',
   'init',
   'initSuccess',
+  'tabSync',
 ], 'authActionTypes');

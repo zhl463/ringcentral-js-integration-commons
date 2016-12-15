@@ -6,8 +6,6 @@ import loginStatus from './loginStatus';
 import authMessages from './authMessages';
 import moduleStatus from '../../enums/moduleStatus';
 
-export { loginStatus };
-
 function getDefaultRedirectUri() {
   if (typeof window !== 'undefined') {
     return url.resolve(window.location.href, './redirect.html');
@@ -37,6 +35,7 @@ export default class Auth extends RcModule {
     proxyUri = getDefaultProxyUri(),
     brand,
     locale,
+    tabManager,
     ...options
   } = {}) {
     super({
@@ -49,6 +48,7 @@ export default class Auth extends RcModule {
     this._locale = locale;
     this._redirectUri = redirectUri;
     this._proxyUri = proxyUri;
+    this._tabManager = tabManager;
     this._reducer = getAuthReducer(this.actionTypes);
     this._beforeLogoutHandlers = new Set();
   }
@@ -115,21 +115,44 @@ export default class Auth extends RcModule {
     });
   }
   initialize() {
+    let loggedIn;
     this._bindEvents();
     this.store.subscribe(async () => {
       if (
         this.status === moduleStatus.pending &&
-        this._locale.ready
+        this._locale.ready &&
+        this._tabManager.ready
       ) {
         this.store.dispatch({
           type: this.actionTypes.init,
         });
         const platform = this._client.service.platform();
-        const loggedIn = await platform.loggedIn();
+        loggedIn = await platform.loggedIn();
         this.store.dispatch({
           type: this.actionTypes.initSuccess,
           loggedIn,
           token: loggedIn ? platform.auth().data() : null,
+        });
+      } else if (
+        this._tabManager.ready &&
+        this.ready &&
+        (
+          loggedIn && this.loginStatus === loginStatus.notLoggedIn ||
+          !loggedIn && this.loginStatus === loginStatus.loggedIn
+        )
+      ) {
+        loggedIn = !loggedIn;
+        this._tabManager.send('loginStatusChange', loggedIn);
+      } else if (
+        this._tabManager.event &&
+        this._tabManager.event.name === 'loginStatusChange' &&
+        this._tabManager.event.args[0] !== loggedIn
+      ) {
+        loggedIn = this._tabManager.event.args[0];
+        this.store.dispatch({
+          type: this.actionTypes.tabSync,
+          loggedIn,
+          token: loggedIn ? this._client.service.platform().auth().data() : null,
         });
       }
     });
