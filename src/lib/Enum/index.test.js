@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Enum, { prefixEnum } from './Enum';
+import Enum, { prefixEnum } from './';
 
 describe('Enum', () => {
   it('should be a constructor functon', () => {

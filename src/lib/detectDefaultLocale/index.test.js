@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import detectDefaultLocale from './detectDefaultLocale';
+import detectDefaultLocale from './';
 
 describe('detectDefaultLocale', () => {
   it('should be a function', () => {
