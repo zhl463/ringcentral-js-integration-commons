@@ -16,8 +16,17 @@ export function getStatusReducer(types) {
   };
 }
 
+function calculateInitialState(reducers) {
+  const initialState = {};
+  /* eslint-disable guard-for-in */
+  for (const key in reducers) {
+    initialState[key] = reducers[key](undefined, {});
+  }
+  return initialState;
+}
+
 export function getDataReducer({ types, reducers }) {
-  return (state = {}, action) => {
+  return (state = calculateInitialState(reducers), action) => {
     switch (action.type) {
       case types.init:
         return action.data;
