@@ -26,8 +26,15 @@ export function getDataReducer({ types, reducers }) {
           ...state,
           [action.key]: action.value,
         };
-      case types.resetSuccess:
-        return {};
+      case types.resetSuccess: {
+        const newState = {};
+        // reset the data to initial states
+        /* eslint-disable guard-for-in */
+        for (const key in reducers) {
+          newState[key] = reducers[key](undefined, action);
+        }
+        return newState;
+      }
       default: {
         const newState = {};
         let hasChange = false;

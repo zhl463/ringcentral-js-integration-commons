@@ -134,13 +134,16 @@ describe('getDataReducer', () => {
         bar: null,
       });
     });
-    it('should return {} on resetSuccess', () => {
+    it('should return initial states on resetSuccess', () => {
       expect(reducer({
         foo: 32,
         bar: 'test',
       }, {
         type: actionTypes.resetSuccess,
-      })).to.deep.equal({});
+      })).to.deep.equal({
+        foo: foo(undefined, {}),
+        bar: bar(undefined, {}),
+      });
     });
     it('should computer new state from reducers', () => {
       expect(reducer({

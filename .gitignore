@@ -36,3 +36,5 @@ node_modules
 
 release
 dev-server
+
+yarn.lock
