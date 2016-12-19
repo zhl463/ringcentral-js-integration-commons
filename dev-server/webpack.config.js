@@ -1,5 +1,4 @@
 import path from 'path';
-import webpack from 'webpack';
 
 const base = {
   devtool: 'inline-source-map',
@@ -21,13 +20,12 @@ const base = {
         loader: 'json',
       },
     ],
-  }
+  },
 };
 
 const index = {
   ...base,
   entry: [
-    'webpack/hot/only-dev-server',
     path.resolve(__dirname, 'index.js'),
   ],
   output: {

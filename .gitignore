@@ -35,6 +35,6 @@ node_modules
 .DS_Store
 
 release
-dev-server
+dev-server/config.js
 
 yarn.lock

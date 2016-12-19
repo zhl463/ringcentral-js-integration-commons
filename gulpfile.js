@@ -124,13 +124,13 @@ function ensurePosixPath(str) {
 // });
 
 gulp.task('dev-server', async () => {
-  if (!(await fs.exists('dev-server'))) {
-    await new Promise(resolve => {
-      gulp.src('dev-server-template/**')
-        .pipe(gulp.dest('dev-server'))
-        .on('end', resolve);
-    });
-  }
+  // if (!(await fs.exists('dev-server'))) {
+  //   await new Promise(resolve => {
+  //     gulp.src('dev-server-template/**')
+  //       .pipe(gulp.dest('dev-server'))
+  //       .on('end', resolve);
+  //   });
+  // }
   // eslint-disable-next-line global-require
   const devWebpackConfig = require('./dev-server/webpack.config').default;
   const compiler = webpack(devWebpackConfig);
