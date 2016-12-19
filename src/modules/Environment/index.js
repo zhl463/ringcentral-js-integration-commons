@@ -1,0 +1,101 @@
+import SDK from 'ringcentral';
+import RcModule from '../../lib/RcModule';
+import moduleStatus from '../../enums/moduleStatus';
+import actionTypes from './actionTypes';
+import getEnvironmentReducer, {
+  getServerReducer,
+  getEnabledReducer,
+} from './getEnvironmentReducer';
+
+/**
+ * @class
+ * @description Environment module manages which api server the app calls.
+ */
+export default class Environment extends RcModule {
+  constructor({
+    client,
+    globalStorage,
+    sdkConfig,
+    ...options
+  }) {
+    super({
+      ...options,
+      actionTypes,
+    });
+    this._client = client;
+    this._globalStorage = globalStorage;
+    this._sdkConfig = sdkConfig;
+    this._reducer = getEnvironmentReducer(this.actionTypes);
+    this._serverStorageKey = 'environmentServer';
+    this._enabledStorageKey = 'environmentEnabled';
+    this._globalStorage.registerReducer({
+      key: this._serverStorageKey,
+      reducer: getServerReducer({
+        types: this.actionTypes,
+        defaultServer: SDK.server.sandbox,
+      }),
+    });
+    this._globalStorage.registerReducer({
+      key: this._enabledStorageKey,
+      reducer: getEnabledReducer(this.actionTypes),
+    });
+  }
+  initialize() {
+    this.store.subscribe(() => {
+      if (
+        this._globalStorage.ready &&
+        !this.ready
+      ) {
+        if (this.enabled) {
+          this._client.server = new SDK({
+            ...this._sdkConfig,
+            server: this.server,
+          });
+        }
+        this.store.dispatch({
+          type: this.actionTypes.init,
+        });
+      }
+    });
+  }
+
+  setData({ server, enabled }) {
+    const environmentChanged =
+      this.enabled !== enabled ||
+      (enabled && this.server !== server);
+    if (environmentChanged) {
+      const newConfig = {
+        ...this._sdkConfig,
+      };
+      if (this.enabled) {
+        newConfig.server = this.server;
+      }
+      this._client.service = new SDK(newConfig);
+    }
+    this.store.dispatch({
+      type: this.actionTypes.setData,
+      server,
+      enabled,
+      environmentChanged,
+    });
+  }
+  get status() {
+    return this.state.status;
+  }
+
+  get ready() {
+    return this.state.status === moduleStatus.ready;
+  }
+
+  get server() {
+    return this._globalStorage.getItem(this._serverStorageKey);
+  }
+
+  get enabled() {
+    return this._globalStorage.getItem(this._enabledStorageKey);
+  }
+
+  get changed() {
+    return this.state.changed;
+  }
+}
