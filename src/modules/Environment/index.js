@@ -67,8 +67,8 @@ export default class Environment extends RcModule {
       const newConfig = {
         ...this._sdkConfig,
       };
-      if (this.enabled) {
-        newConfig.server = this.server;
+      if (enabled) {
+        newConfig.server = server;
       }
       this._client.service = new SDK(newConfig);
     }

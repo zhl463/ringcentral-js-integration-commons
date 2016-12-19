@@ -13,7 +13,7 @@ import Alert from '../src/modules/Alert';
 import Auth from '../src/modules/Auth';
 import Brand from '../src/modules/Brand';
 // import DialingPlan from '../src/modules/DialingPlan';
-// import Environment from '../src/modules/Environment';
+import Environment from '../src/modules/Environment';
 import GlobalStorage from '../src/modules/GlobalStorage';
 import Locale from '../src/modules/Locale';
 import Storage from '../src/modules/Storage';
@@ -54,19 +54,19 @@ class DemoPhone extends RcModule {
     this.addModule('globalStorage', new GlobalStorage({
       getState: () => this.state.globalStorage,
     }));
-    // this.addModule('environment', new Environment({
-    //   client: this.client,
-    //   globalStorage: this.globalStorage,
-    //   sdkConfig: {
-    //     ...config.api,
-    //   },
-    //   getState: () => this.state.environment,
-    // }));
+    this.addModule('environment', new Environment({
+      client: this.client,
+      globalStorage: this.globalStorage,
+      sdkConfig: {
+        ...config.api,
+      },
+      getState: () => this.state.environment,
+    }));
     this.addModule('auth', new Auth({
       alert: this.alert,
       brand: this.brand,
       client: this.client,
-      // environment: this.environment,
+      environment: this.environment,
       locale: this.locale,
       tabManager: this.tabManager,
       getState: () => this.state.auth,
@@ -101,7 +101,7 @@ class DemoPhone extends RcModule {
       // accountInfo: this.accountInfo.reducer,
       alert: this.alert.reducer,
       auth: this.auth.reducer,
-      // environment: this.environment.reducer,
+      environment: this.environment.reducer,
       brand: this.brand.reducer,
       // dialingPlan: this.dialingPlan.reducer,
       locale: this.locale.reducer,
