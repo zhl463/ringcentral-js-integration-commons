@@ -8,16 +8,16 @@ import JSONTree from 'react-json-tree';
 
 import RcModule from '../src/lib/RcModule';
 
-// import AccountInfo from '../src/modules/AccountInfo';
+import AccountInfo from '../src/modules/AccountInfo';
 import Alert from '../src/modules/Alert';
 import Auth from '../src/modules/Auth';
 import Brand from '../src/modules/Brand';
-// import DialingPlan from '../src/modules/DialingPlan';
+import DialingPlan from '../src/modules/DialingPlan';
 import Environment from '../src/modules/Environment';
 import GlobalStorage from '../src/modules/GlobalStorage';
 import Locale from '../src/modules/Locale';
 import Storage from '../src/modules/Storage';
-// import RegionSettings from '../src/modules/RegionSettings';
+import RegionSettings from '../src/modules/RegionSettings';
 import TabManager from '../src/modules/TabManager';
 
 import config from './config';
@@ -28,7 +28,6 @@ const DemoView = connect(state => ({
 }), () => ({
   shouldExpandNode: (keyName, data, level) => true,
 }))(JSONTree);
-
 
 class DemoPhone extends RcModule {
   constructor() {
@@ -75,39 +74,39 @@ class DemoPhone extends RcModule {
       auth: this.auth,
       getState: () => this.state.storage,
     }));
-    // this.addModule('accountInfo', new AccountInfo({
-    //   auth: this.auth,
-    //   client: this.client,
-    //   storage: this.storage,
-    //   tabManager: this.tabManager,
-    //   getState: () => this.state.accountInfo,
-    // }));
-    // this.addModule('dialingPlan', new DialingPlan({
-    //   auth: this.auth,
-    //   client: this.client,
-    //   storage: this.storage,
-    //   tabManager: this.tabManager,
-    //   getState: () => this.state.dialingPlan,
-    // }));
-    // this.addModule('regionSettings', new RegionSettings({
-    //   storage: this.storage,
-    //   accountInfo: this.accountInfo,
-    //   dialingPlan: this.dialingPlan,
-    //   alert: this.alert,
-    //   tabManager: this.tabManager,
-    //   getState: () => this.state.regionSettings,
-    // }));
+    this.addModule('accountInfo', new AccountInfo({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.accountInfo,
+    }));
+    this.addModule('dialingPlan', new DialingPlan({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.dialingPlan,
+    }));
+    this.addModule('regionSettings', new RegionSettings({
+      storage: this.storage,
+      accountInfo: this.accountInfo,
+      dialingPlan: this.dialingPlan,
+      alert: this.alert,
+      tabManager: this.tabManager,
+      getState: () => this.state.regionSettings,
+    }));
     this._reducer = combineReducers({
-      // accountInfo: this.accountInfo.reducer,
+      accountInfo: this.accountInfo.reducer,
       alert: this.alert.reducer,
       auth: this.auth.reducer,
       environment: this.environment.reducer,
       brand: this.brand.reducer,
-      // dialingPlan: this.dialingPlan.reducer,
+      dialingPlan: this.dialingPlan.reducer,
       locale: this.locale.reducer,
       storage: this.storage.reducer,
       globalStorage: this.globalStorage.reducer,
-      // regionSettings: this.regionSettings.reducer,
+      regionSettings: this.regionSettings.reducer,
       tabManager: this.tabManager.reducer,
       lastAction: (state = null, action) => {
         console.log(action);
