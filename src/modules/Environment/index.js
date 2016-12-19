@@ -47,7 +47,7 @@ export default class Environment extends RcModule {
         !this.ready
       ) {
         if (this.enabled) {
-          this._client.server = new SDK({
+          this._client.service = new SDK({
             ...this._sdkConfig,
             server: this.server,
           });
