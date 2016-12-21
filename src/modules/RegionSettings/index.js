@@ -10,7 +10,7 @@ import actionTypes from './actionTypes';
 export default class RegionSettings extends RcModule {
   constructor({
     storage,
-    accountInfo,
+    extensionInfo,
     dialingPlan,
     alert,
     tabManager,
@@ -23,7 +23,7 @@ export default class RegionSettings extends RcModule {
     this._storage = storage;
     this._alert = alert;
     this._dialingPlan = dialingPlan;
-    this._accountInfo = accountInfo;
+    this._extensionInfo = extensionInfo;
     this._tabManager = tabManager;
 
     this._countryCodeKey = 'regionSettingsCountryCode';
@@ -45,7 +45,7 @@ export default class RegionSettings extends RcModule {
       if (
         this._storage.ready &&
         this._dialingPlan.ready &&
-        this._accountInfo.ready &&
+        this._extensionInfo.ready &&
         this.status === moduleStatus.pending
       ) {
         this.store.dispatch({
@@ -63,7 +63,7 @@ export default class RegionSettings extends RcModule {
         this.ready
       ) {
         this.store.dispatch({
-          type: this.actionTypes.reset,
+          type: this.actionTypes.resetSuccess,
         });
       } else if (
         this.ready &&
@@ -113,7 +113,7 @@ export default class RegionSettings extends RcModule {
     }
     if (!countryCode) {
       countryCode = this._dialingPlan.plans.find(plan => (
-        plan.isoCode === this._accountInfo.country.isoCode
+        plan.isoCode === this._extensionInfo.country.isoCode
       )).isoCode;
       this.store.dispatch({
         type: this.actionTypes.setData,

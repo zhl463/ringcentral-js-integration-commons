@@ -1,37 +1,12 @@
 import { expect } from 'chai';
 import getTabManagerReducer, {
-  getStatusReducer,
   getEventReducer,
   getActiveReducer,
 } from './getTabManagerReducer';
+import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
 import actionTypes from './actionTypes';
 import moduleStatus from '../../enums/moduleStatus';
-
-describe('getStatusReducer', () => {
-  it('should be a function', () => {
-    expect(getStatusReducer).to.be.a('function');
-  });
-  it('should return a reducer', () => {
-    expect(getStatusReducer(actionTypes)).to.be.a('function');
-  });
-  describe('statusReducer', () => {
-    const reducer = getStatusReducer(actionTypes);
-    it('should have initial state of moduleStatus.pending', () => {
-      expect(reducer(undefined, {})).to.equal(moduleStatus.pending);
-    });
-    it('should return original state of actionTypes is not recognized', () => {
-      const originalState = {};
-      expect(reducer(originalState, { type: 'foo' }))
-        .to.equal(originalState);
-    });
-    it('should return moduleStatus.ready on init action type', () => {
-      expect(reducer(null, {
-        type: actionTypes.init,
-      })).to.equal(moduleStatus.ready);
-    });
-  });
-});
 
 
 describe('getEventReducer', () => {
@@ -80,13 +55,13 @@ describe('getActiveReducer', () => {
       expect(reducer(originalState, { type: 'foo' }))
         .to.equal(originalState);
     });
-    it('should return action.active on init action type', () => {
+    it('should return action.active on initSuccess action type', () => {
       expect(reducer(null, {
-        type: actionTypes.init,
+        type: actionTypes.initSuccess,
         active: true,
       })).to.be.true;
       expect(reducer(null, {
-        type: actionTypes.init,
+        type: actionTypes.initSuccess,
         active: false,
       })).to.be.false;
     });
@@ -112,7 +87,7 @@ describe('getTabManagerReducer', () => {
   });
   it('should return a combined reducer', () => {
     const reducer = getTabManagerReducer(actionTypes);
-    const statusReducer = getStatusReducer(actionTypes);
+    const statusReducer = getModuleStatusReducer(actionTypes);
     const activeReducer = getActiveReducer(actionTypes);
     const eventReducer = getEventReducer(actionTypes);
     expect(reducer(undefined, {})).to.deep.equal({

@@ -53,7 +53,7 @@ export default class Environment extends RcModule {
           });
         }
         this.store.dispatch({
-          type: this.actionTypes.init,
+          type: this.actionTypes.initSuccess,
         });
       }
     });

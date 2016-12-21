@@ -1,19 +1,6 @@
 import { combineReducers } from 'redux';
 import loginStatus from './loginStatus';
-import moduleStatus from '../../enums/moduleStatus';
-
-export function getStatusReducer(types) {
-  return (state = moduleStatus.pending, { type }) => {
-    switch (type) {
-      case types.init:
-        return moduleStatus.initializing;
-      case types.initSuccess:
-        return moduleStatus.ready;
-      default:
-        return state;
-    }
-  };
-}
+import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
 export function getLoginStatusReducer(types) {
   return (state = null, { type, loggedIn, refreshTokenValid }) => {
@@ -51,7 +38,7 @@ export function getLoginStatusReducer(types) {
 }
 
 export function getOwnerIdReducer(types) {
-  return (state = null, { type, token }) => {
+  return (state = null, { type, token, refreshTokenValid }) => {
     switch (type) {
 
       case types.loginSuccess:
@@ -61,8 +48,10 @@ export function getOwnerIdReducer(types) {
       case types.loginError:
       case types.logoutSuccess:
       case types.logoutError:
-      case types.refreshError:
         return null;
+
+      case types.refreshError:
+        return refreshTokenValid ? state : null;
 
       case types.initSuccess:
       case types.tabSync:
@@ -99,7 +88,7 @@ export function getFreshLoginReducer(types) {
 
 export default function getAuthReducer(types) {
   return combineReducers({
-    status: getStatusReducer(types),
+    status: getModuleStatusReducer(types),
     loginStatus: getLoginStatusReducer(types),
     freshLogin: getFreshLoginReducer(types),
     ownerId: getOwnerIdReducer(types),

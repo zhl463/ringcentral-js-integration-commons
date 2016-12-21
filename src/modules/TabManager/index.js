@@ -20,7 +20,7 @@ export default class TabManager extends RcModule {
   }
   async initialize() {
     this.store.dispatch({
-      type: this.actionTypes.init,
+      type: this.actionTypes.initSuccess,
       active: await this._tabbie.checkIsMain(),
     });
     if (this._tabbie.enabled) {

@@ -4,4 +4,4 @@ export default new Enum([
   'saveSuccess',
   'dialingPlansChanged',
   'areaCodeInvalid',
-], 'region-settings-msg');
+], 'regionSettingsMessages');

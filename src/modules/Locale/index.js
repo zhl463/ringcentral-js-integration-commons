@@ -27,7 +27,7 @@ export default class Locale extends RcModule {
         locale: this.currentLocale,
       });
       this.store.dispatch({
-        type: this.actionTypes.init,
+        type: this.actionTypes.initSuccess,
       });
     })();
   }

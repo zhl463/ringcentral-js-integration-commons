@@ -4,7 +4,9 @@ import sleep from './sleep';
 
 const HEART_BEAT_INTERVAL = 1000;
 // heatbeat older than HEART_BEAT_EXPIRE will be gc'ed
-const HEART_BEAT_EXPIRE = 2000;
+// chrome and firefox throttles intervals when inactive expire time of 2000
+// sometimes would kill live heartbeats and cause the mainTabId to change
+const HEART_BEAT_EXPIRE = 3000;
 const GC_INTERVAL = 5000;
 
 const FIGHT_TIMEOUT = 20;

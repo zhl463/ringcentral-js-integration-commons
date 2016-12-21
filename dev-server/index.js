@@ -12,10 +12,15 @@ import AccountInfo from '../src/modules/AccountInfo';
 import Alert from '../src/modules/Alert';
 import Auth from '../src/modules/Auth';
 import Brand from '../src/modules/Brand';
+import CallingSettings from '../src/modules/CallingSettings';
 import DialingPlan from '../src/modules/DialingPlan';
 import Environment from '../src/modules/Environment';
+import ExtensionInfo from '../src/modules/ExtensionInfo';
+import ExtensionPhoneNumber from '../src/modules/ExtensionPhoneNumber';
+import ForwardingNumber from '../src/modules/ForwardingNumber';
 import GlobalStorage from '../src/modules/GlobalStorage';
 import Locale from '../src/modules/Locale';
+import RolesAndPermissions from '../src/modules/RolesAndPermissions';
 import Storage from '../src/modules/Storage';
 import RegionSettings from '../src/modules/RegionSettings';
 import TabManager from '../src/modules/TabManager';
@@ -81,6 +86,21 @@ class DemoPhone extends RcModule {
       tabManager: this.tabManager,
       getState: () => this.state.accountInfo,
     }));
+    this.addModule('extensionInfo', new ExtensionInfo({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.extensionInfo,
+    }));
+    this.addModule('rolesAndPermissions', new RolesAndPermissions({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      extensionInfo: this.extensionInfo,
+      tabManager: this.tabManager,
+      getState: () => this.state.rolesAndPermissions,
+    }));
     this.addModule('dialingPlan', new DialingPlan({
       auth: this.auth,
       client: this.client,
@@ -88,24 +108,54 @@ class DemoPhone extends RcModule {
       tabManager: this.tabManager,
       getState: () => this.state.dialingPlan,
     }));
+    this.addModule('extensionPhoneNumber', new ExtensionPhoneNumber({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.extensionPhoneNumber,
+    }));
+    this.addModule('forwardingNumber', new ForwardingNumber({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.forwardingNumber,
+    }));
     this.addModule('regionSettings', new RegionSettings({
       storage: this.storage,
-      accountInfo: this.accountInfo,
+      extensionInfo: this.extensionInfo,
       dialingPlan: this.dialingPlan,
       alert: this.alert,
       tabManager: this.tabManager,
       getState: () => this.state.regionSettings,
     }));
+    this.addModule('callingSettings', new CallingSettings({
+      alert: this.alert,
+      brand: this.brand,
+      extensionInfo: this.extensionInfo,
+      extensionPhoneNumber: this.extensionPhoneNumber,
+      forwardingNumber: this.forwardingNumber,
+      storage: this.storage,
+      rolesAndPermissions: this.rolesAndPermissions,
+      tabManager: this._tabManager,
+      getState: () => this.state.callingSettings,
+    }));
     this._reducer = combineReducers({
       accountInfo: this.accountInfo.reducer,
       alert: this.alert.reducer,
       auth: this.auth.reducer,
+      callingSettings: this.callingSettings.reducer,
       environment: this.environment.reducer,
+      extensionInfo: this.extensionInfo.reducer,
+      extensionPhoneNumber: this.extensionPhoneNumber.reducer,
+      forwardingNumber: this.forwardingNumber.reducer,
       brand: this.brand.reducer,
       dialingPlan: this.dialingPlan.reducer,
       locale: this.locale.reducer,
       storage: this.storage.reducer,
       globalStorage: this.globalStorage.reducer,
+      rolesAndPermissions: this.rolesAndPermissions.reducer,
       regionSettings: this.regionSettings.reducer,
       tabManager: this.tabManager.reducer,
       lastAction: (state = null, action) => {

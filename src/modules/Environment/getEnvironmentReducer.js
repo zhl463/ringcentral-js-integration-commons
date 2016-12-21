@@ -1,12 +1,5 @@
 import { combineReducers } from 'redux';
-import moduleStatus from '../../enums/moduleStatus';
-
-export function getStatusReducer(types) {
-  return (state = moduleStatus.pending, { type }) => {
-    if (type === types.init) return moduleStatus.ready;
-    return state;
-  };
-}
+import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
 export function getChangedReducer(types) {
   return (state = false, { type, environmentChanged }) => {
@@ -31,7 +24,7 @@ export function getEnabledReducer(types) {
 
 export default function getEnvironmentReducer(types) {
   return combineReducers({
-    status: getStatusReducer(types),
+    status: getModuleStatusReducer(types),
     changed: getChangedReducer(types),
   });
 }

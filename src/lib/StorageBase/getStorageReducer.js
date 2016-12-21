@@ -1,20 +1,5 @@
 import { combineReducers } from 'redux';
-import moduleStatus from '../../enums/moduleStatus';
-
-export function getStatusReducer(types) {
-  return (state = moduleStatus.pending, { type }) => {
-    switch (type) {
-      case types.init:
-        return moduleStatus.ready;
-      case types.reset:
-        return moduleStatus.resetting;
-      case types.resetSuccess:
-        return moduleStatus.pending;
-      default:
-        return state;
-    }
-  };
-}
+import getModuleStatusReducer from '../getModuleStatusReducer';
 
 function calculateInitialState(reducers) {
   const initialState = {};
@@ -28,7 +13,7 @@ function calculateInitialState(reducers) {
 export function getDataReducer({ types, reducers }) {
   return (state = calculateInitialState(reducers), action) => {
     switch (action.type) {
-      case types.init:
+      case types.initSuccess:
         return action.data;
       case types.sync:
         return {
@@ -63,7 +48,7 @@ export function getStorageKeyReducer(types) {
   return (state = null, { type, storageKey }) => {
     switch (type) {
 
-      case types.init:
+      case types.initSuccess:
         return storageKey;
 
       case types.resetSuccess:
@@ -77,7 +62,7 @@ export function getStorageKeyReducer(types) {
 
 export default function getStorageReducer({ types, reducers }) {
   return combineReducers({
-    status: getStatusReducer(types),
+    status: getModuleStatusReducer(types),
     data: getDataReducer({ types, reducers }),
     storageKey: getStorageKeyReducer(types),
   });

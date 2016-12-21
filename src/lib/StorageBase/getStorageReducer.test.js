@@ -4,44 +4,9 @@ import getStorageReducer, {
   getDataReducer,
   getStorageKeyReducer,
 } from './getStorageReducer';
+import getModuleStatusReducer from '../getModuleStatusReducer';
 
-import actionTypes from './actionTypes';
-import moduleStatus from '../../enums/moduleStatus';
-
-describe('getStatusReducer', () => {
-  it('should be a function', () => {
-    expect(getStatusReducer).to.be.a('function');
-  });
-  it('should return a reducer', () => {
-    expect(getStatusReducer(actionTypes)).to.be.a('function');
-  });
-  describe('statusReducer', () => {
-    const reducer = getStatusReducer(actionTypes);
-    it('should have initial state of moduleStatus.pending', () => {
-      expect(reducer(undefined, {})).to.equal(moduleStatus.pending);
-    });
-    it('should return original state of actionTypes is not recognized', () => {
-      const originalState = {};
-      expect(reducer(originalState, { type: 'foo' }))
-        .to.equal(originalState);
-    });
-    it('should return moduleStatus.ready on init action type', () => {
-      expect(reducer(null, {
-        type: actionTypes.init,
-      })).to.equal(moduleStatus.ready);
-    });
-    it('should return moduleStatus.resetting on reset action type', () => {
-      expect(reducer(null, {
-        type: actionTypes.reset,
-      })).to.equal(moduleStatus.resetting);
-    });
-    it('should return moduleStatus.pending on resetSuccess action type', () => {
-      expect(reducer(null, {
-        type: actionTypes.resetSuccess,
-      })).to.equal(moduleStatus.pending);
-    });
-  });
-});
+import actionTypes from './actionTypesBase';
 
 describe('getStorageKeyReducer', () => {
   it('should be a function', () => {
@@ -60,9 +25,9 @@ describe('getStorageKeyReducer', () => {
       expect(reducer(originalState, { type: 'foo' }))
         .to.equal(originalState);
     });
-    it('should return action.storageKey on init action type', () => {
+    it('should return action.storageKey on initSuccess action type', () => {
       expect(reducer('foo', {
-        type: actionTypes.init,
+        type: actionTypes.initSuccess,
         storageKey: 'foo',
       })).to.equal('foo');
     });
@@ -114,10 +79,10 @@ describe('getDataReducer', () => {
         bar: true,
       });
     });
-    it('should return action.data on init', () => {
+    it('should return action.data on initSuccess', () => {
       const data = {};
       expect(reducer({}, {
-        type: actionTypes.init,
+        type: actionTypes.initSuccess,
         data,
       })).to.equal(data);
     });
@@ -186,7 +151,7 @@ describe('getStorageReducer', () => {
       return state;
     }
     const storageKeyReducer = getStorageKeyReducer(actionTypes);
-    const statusReducer = getStatusReducer(actionTypes);
+    const statusReducer = getModuleStatusReducer(actionTypes);
     const dataReducer = getDataReducer({
       types: actionTypes,
       reducers: {

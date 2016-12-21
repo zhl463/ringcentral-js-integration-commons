@@ -2,7 +2,9 @@ import Enum from '../../lib/Enum';
 
 export default new Enum([
   'init',
-  'reset',
+  'initSuccess',
+  'fetch',
+  'fetchSuccess',
+  'fetchError',
   'resetSuccess',
-  'sync',
-], 'globalStorage');
+]);

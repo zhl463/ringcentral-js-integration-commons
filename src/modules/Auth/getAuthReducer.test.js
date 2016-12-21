@@ -1,14 +1,13 @@
 import { expect } from 'chai';
 import getAuthReducer, {
   getFreshLoginReducer,
-  getStatusReducer,
   getLoginStatusReducer,
   getOwnerIdReducer,
 } from './getAuthReducer';
+import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
 import actionTypes from './actionTypes';
 import loginStatus from './loginStatus';
-import moduleStatus from '../../enums/moduleStatus';
 
 describe('getLoginStatusReducer', () => {
   it('should be a function', () => {
@@ -287,37 +286,6 @@ describe('getFreshLoginReducer', () => {
   });
 });
 
-
-describe('getStatusReducer', () => {
-  it('should be a function', () => {
-    expect(getStatusReducer).to.be.a('function');
-  });
-  it('should return a reducer', () => {
-    expect(getStatusReducer(actionTypes)).to.be.a('function');
-  });
-  describe('statusReducer', () => {
-    const reducer = getStatusReducer(actionTypes);
-    it('should have initial state of moduleStatus.pending', () => {
-      expect(reducer(undefined, {})).to.equal(moduleStatus.pending);
-    });
-    it('should return original state of actionTypes is not recognized', () => {
-      const originalState = {};
-      expect(reducer(originalState, { type: 'foo' }))
-        .to.equal(originalState);
-    });
-    it('should return moduleStatus.initializing on init action type', () => {
-      expect(reducer(null, {
-        type: actionTypes.init,
-      })).to.equal(moduleStatus.initializing);
-    });
-    it('should return moduleStatus.ready on initSuccess action type', () => {
-      expect(reducer(null, {
-        type: actionTypes.initSuccess,
-      })).to.equal(moduleStatus.ready);
-    });
-  });
-});
-
 describe('getAuthReducer', () => {
   it('should be a function', () => {
     expect(getAuthReducer).to.be.a('function');
@@ -327,7 +295,7 @@ describe('getAuthReducer', () => {
   });
   describe('authReducer', () => {
     const reducer = getAuthReducer(actionTypes);
-    const statusReducer = getStatusReducer(actionTypes);
+    const statusReducer = getModuleStatusReducer(actionTypes);
     const loginStatusReducer = getLoginStatusReducer(actionTypes);
     const freshLoginReducer = getFreshLoginReducer(actionTypes);
     const ownerIdReducer = getOwnerIdReducer(actionTypes);

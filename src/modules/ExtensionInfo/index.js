@@ -1,0 +1,81 @@
+import mask from 'json-mask';
+import DataFetcher from '../../lib/DataFetcher';
+
+const DEFAULT_MASK = [
+  'id',
+  'extensionNumber',
+  'contact(*)',
+  'name',
+  'type',
+  'status',
+  'permissions',
+  'profileImage',
+  `regionalSettings(${[
+    'timezone(id,name,bias)',
+    'homeCountry(id,isoCode,callingCode)',
+    'language(localeCode)',
+    'formattingLocale(localeCode)',
+    'timeFormat',
+  ].join(',')})`,
+].join(',');
+
+const DEFAULT_COUNTRY = {
+  id: '1',
+  isoCode: 'US',
+  callingCode: '1',
+};
+
+function extractData(info) {
+  const serviceFeatures = {};
+  info.serviceFeatures.forEach(f => {
+    serviceFeatures[f.featureName] = {
+      enabled: f.enabled,
+    };
+    if (!f.enabled) {
+      serviceFeatures[f.featureName].reason = f.reason;
+    }
+  });
+  const output = mask(info, DEFAULT_MASK);
+  output.serviceFeatures = serviceFeatures;
+  return output;
+}
+
+export default class ExtensionInfo extends DataFetcher {
+  constructor({
+    client,
+    ...options
+  }) {
+    super({
+      name: 'extensionInfo',
+      client,
+      fetchFunction: async () => extractData(await this._client.account().extension().get()),
+      ...options
+    });
+    this.addSelector(
+      'info',
+      () => this.data,
+      data => data || {},
+    );
+  }
+
+
+  get info() {
+    return this._selectors.info();
+  }
+
+  get id() {
+    return this.info.id;
+  }
+
+  get extensionNumber() {
+    return this.info.extensionNumber;
+  }
+
+  get serviceFeatures() {
+    return this.info.serviceFeatures;
+  }
+
+  get country() {
+    return this.info.regionalSettings && this.info.regionalSettings.homeCountry || DEFAULT_COUNTRY;
+  }
+}

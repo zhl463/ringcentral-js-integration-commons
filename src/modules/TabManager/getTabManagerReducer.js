@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux';
-import moduleStatus from '../../enums/moduleStatus';
+import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
 export function getEventReducer(types) {
   return (state = null, { type, event, args }) => {
@@ -12,21 +12,10 @@ export function getEventReducer(types) {
     return null;
   };
 }
-
-export function getStatusReducer(types) {
-  return (state = moduleStatus.pending, { type }) => {
-    switch (type) {
-      case types.init:
-        return moduleStatus.ready;
-      default:
-        return state;
-    }
-  };
-}
 export function getActiveReducer(types) {
   return (state = false, { type, active }) => {
     switch (type) {
-      case types.init:
+      case types.initSuccess:
       case types.mainTabIdChanged:
         return active;
       default:
@@ -37,7 +26,7 @@ export function getActiveReducer(types) {
 
 export default function getTabManagerReducer(types) {
   return combineReducers({
-    status: getStatusReducer(types),
+    status: getModuleStatusReducer(types),
     active: getActiveReducer(types),
     event: getEventReducer(types),
   });

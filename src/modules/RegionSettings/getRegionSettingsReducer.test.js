@@ -1,47 +1,10 @@
 import { expect } from 'chai';
 import getRegionSettingsReducer, {
-  getStatusReducer,
   getCountryCodeReducer,
   getAreaCodeReducer,
 } from './getRegionSettingsReducer';
-
-import moduleStatus from '../../enums/moduleStatus';
+import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import actionTypes from './actionTypes';
-
-describe('getStatusReducer', () => {
-  it('should be a function', () => {
-    expect(getStatusReducer).to.be.a('function');
-  });
-  it('should return a reducer', () => {
-    expect(getStatusReducer(actionTypes)).to.be.a('function');
-  });
-  describe('statusReducer', () => {
-    const reducer = getStatusReducer(actionTypes);
-    it('should have initial state of moduleStatus.pending', () => {
-      expect(reducer(undefined, {})).to.equal(moduleStatus.pending);
-    });
-    it('should return original state of actionTypes is not recognized', () => {
-      const originalState = {};
-      expect(reducer(originalState, { type: 'foo' }))
-        .to.equal(originalState);
-    });
-    it('should return moduleStatus.initializing on init action type', () => {
-      expect(reducer(null, {
-        type: actionTypes.init,
-      })).to.equal(moduleStatus.initializing);
-    });
-    it('should return moduleStatus.ready on initSuccess action type', () => {
-      expect(reducer(null, {
-        type: actionTypes.initSuccess,
-      })).to.equal(moduleStatus.ready);
-    });
-    it('should return moduleStatus.pending on reset action type', () => {
-      expect(reducer(null, {
-        type: actionTypes.reset,
-      })).to.equal(moduleStatus.pending);
-    });
-  });
-});
 
 describe('getCountryCodeReducer', () => {
   it('should be a function', () => {
@@ -114,9 +77,9 @@ describe('getRegionSettingsReducer', () => {
   it('should return a reducer', () => {
     expect(getRegionSettingsReducer(actionTypes)).to.be.a('function');
   });
-  describe('dailingPlanReducer', () => {
+  describe('regionSettingsReducer', () => {
     const reducer = getRegionSettingsReducer(actionTypes);
-    const statusReducer = getStatusReducer(actionTypes);
+    const statusReducer = getModuleStatusReducer(actionTypes);
     it('should be a combined reducer', () => {
       expect(reducer(undefined, {})).to.deep.equal({
         status: statusReducer(undefined, {}),
