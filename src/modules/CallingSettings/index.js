@@ -243,6 +243,17 @@ export default class CallingSettings extends RcModule {
     return this._selectors.otherPhoneNumbers();
   }
 
+  getAvailableNumbers(callWith) {
+    switch (callWith) {
+      case callingOptions.myphone:
+        return this.myPhoneNumbers;
+      case callingOptions.otherphone:
+        return this.otherPhoneNumbers;
+      default:
+        return [];
+    }
+  }
+
   setData({ callWith, myLocation, ringoutPrompt }, withPrompt) {
     // TODO validate myLocation
     this.store.dispatch({
