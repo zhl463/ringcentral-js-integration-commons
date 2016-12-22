@@ -109,6 +109,14 @@ export default class CallingSettings extends RcModule {
         return callWithOptions;
       },
     );
+    this.addSelector('availableNumbers',
+      () => this.myPhoneNumbers,
+      () => this.otherPhoneNumbers,
+      (myPhoneNumbers, otherPhoneNumbers) => ({
+        [callingOptions.myphone]: myPhoneNumbers,
+        [callingOptions.otherphone]: otherPhoneNumbers,
+      }),
+    );
   }
 
   initialize() {
@@ -243,15 +251,8 @@ export default class CallingSettings extends RcModule {
     return this._selectors.otherPhoneNumbers();
   }
 
-  getAvailableNumbers(callWith) {
-    switch (callWith) {
-      case callingOptions.myphone:
-        return this.myPhoneNumbers;
-      case callingOptions.otherphone:
-        return this.otherPhoneNumbers;
-      default:
-        return [];
-    }
+  get availableNumbers() {
+    return this._selectors.availableNumbers();
   }
 
   setData({ callWith, myLocation, ringoutPrompt }, withPrompt) {
