@@ -47,6 +47,15 @@ export default class ExtensionPhoneNumber extends DataFetcher {
         (p.usageType === 'ForwardedNumber' && p.status === 'PortedIn')
       )),
     );
+
+    this.addSelector(
+      'smsSenderNumbers',
+      () => this.numbers,
+      phoneNumbers =>
+        phoneNumbers.filter(
+          p => (p.features && p.features.indexOf('SmsSender') !== -1)
+        ),
+    );
   }
 
   get numbers() {
@@ -67,5 +76,9 @@ export default class ExtensionPhoneNumber extends DataFetcher {
 
   get callerIdNumbers() {
     return this._selectors.callerIdNumbers();
+  }
+
+  get smsSenderNumbers() {
+    return this._selectors.smsSenderNumbers();
   }
 }
