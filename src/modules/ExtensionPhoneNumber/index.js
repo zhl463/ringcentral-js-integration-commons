@@ -1,3 +1,4 @@
+import 'core-js/fn/array/find';
 import fetchList from '../../lib/fetchList';
 import DataFetcher from '../../lib/DataFetcher';
 

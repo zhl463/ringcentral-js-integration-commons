@@ -1,3 +1,4 @@
+import 'core-js/fn/array/find';
 import RcModule from '../../lib/RcModule';
 import getRegionSettingsReducer, {
   getCountryCodeReducer,
