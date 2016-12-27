@@ -214,7 +214,7 @@ export default class Auth extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.login,
     });
-    return await this._client.login({
+    return await this._client.service.platform().login({
       username,
       password,
       extension,
@@ -232,7 +232,7 @@ export default class Auth extends RcModule {
    * @description get OAuth page url
    */
   getLoginUrl({ redirectUri, state, brandId, display, prompt, force }) {
-    return `${this._client.loginUrl({
+    return `${this._client.service.platform().loginUrl({
       redirectUri,
       state,
       brandId,
@@ -288,7 +288,7 @@ export default class Auth extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.logout,
     });
-    return await this._client.logout();
+    return await this._client.service.platform().logout();
   }
 
    /**
