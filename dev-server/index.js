@@ -20,9 +20,11 @@ import ExtensionPhoneNumber from '../src/modules/ExtensionPhoneNumber';
 import ForwardingNumber from '../src/modules/ForwardingNumber';
 import GlobalStorage from '../src/modules/GlobalStorage';
 import Locale from '../src/modules/Locale';
+import Presence from '../src/modules/Presence';
+import RegionSettings from '../src/modules/RegionSettings';
 import RolesAndPermissions from '../src/modules/RolesAndPermissions';
 import Storage from '../src/modules/Storage';
-import RegionSettings from '../src/modules/RegionSettings';
+import Subscription from '../src/modules/Subscription';
 import TabManager from '../src/modules/TabManager';
 
 import config from './config';
@@ -79,84 +81,99 @@ class DemoPhone extends RcModule {
       auth: this.auth,
       getState: () => this.state.storage,
     }));
-    this.addModule('accountInfo', new AccountInfo({
+    // this.addModule('accountInfo', new AccountInfo({
+    //   auth: this.auth,
+    //   client: this.client,
+    //   storage: this.storage,
+    //   tabManager: this.tabManager,
+    //   getState: () => this.state.accountInfo,
+    // }));
+    // this.addModule('extensionInfo', new ExtensionInfo({
+    //   auth: this.auth,
+    //   client: this.client,
+    //   storage: this.storage,
+    //   tabManager: this.tabManager,
+    //   getState: () => this.state.extensionInfo,
+    // }));
+    // this.addModule('rolesAndPermissions', new RolesAndPermissions({
+    //   auth: this.auth,
+    //   client: this.client,
+    //   storage: this.storage,
+    //   extensionInfo: this.extensionInfo,
+    //   tabManager: this.tabManager,
+    //   getState: () => this.state.rolesAndPermissions,
+    // }));
+    // this.addModule('dialingPlan', new DialingPlan({
+    //   auth: this.auth,
+    //   client: this.client,
+    //   storage: this.storage,
+    //   tabManager: this.tabManager,
+    //   getState: () => this.state.dialingPlan,
+    // }));
+    // this.addModule('extensionPhoneNumber', new ExtensionPhoneNumber({
+    //   auth: this.auth,
+    //   client: this.client,
+    //   storage: this.storage,
+    //   tabManager: this.tabManager,
+    //   getState: () => this.state.extensionPhoneNumber,
+    // }));
+    // this.addModule('forwardingNumber', new ForwardingNumber({
+    //   auth: this.auth,
+    //   client: this.client,
+    //   storage: this.storage,
+    //   tabManager: this.tabManager,
+    //   getState: () => this.state.forwardingNumber,
+    // }));
+    // this.addModule('regionSettings', new RegionSettings({
+    //   storage: this.storage,
+    //   extensionInfo: this.extensionInfo,
+    //   dialingPlan: this.dialingPlan,
+    //   alert: this.alert,
+    //   tabManager: this.tabManager,
+    //   getState: () => this.state.regionSettings,
+    // }));
+    // this.addModule('callingSettings', new CallingSettings({
+    //   alert: this.alert,
+    //   brand: this.brand,
+    //   extensionInfo: this.extensionInfo,
+    //   extensionPhoneNumber: this.extensionPhoneNumber,
+    //   forwardingNumber: this.forwardingNumber,
+    //   storage: this.storage,
+    //   rolesAndPermissions: this.rolesAndPermissions,
+    //   tabManager: this._tabManager,
+    //   getState: () => this.state.callingSettings,
+    // }));
+    this.addModule('subscription', new Subscription({
       auth: this.auth,
       client: this.client,
       storage: this.storage,
       tabManager: this.tabManager,
-      getState: () => this.state.accountInfo,
+      getState: () => this.state.subscription,
     }));
-    this.addModule('extensionInfo', new ExtensionInfo({
+    this.addModule('presence', new Presence({
       auth: this.auth,
       client: this.client,
-      storage: this.storage,
-      tabManager: this.tabManager,
-      getState: () => this.state.extensionInfo,
-    }));
-    this.addModule('rolesAndPermissions', new RolesAndPermissions({
-      auth: this.auth,
-      client: this.client,
-      storage: this.storage,
-      extensionInfo: this.extensionInfo,
-      tabManager: this.tabManager,
-      getState: () => this.state.rolesAndPermissions,
-    }));
-    this.addModule('dialingPlan', new DialingPlan({
-      auth: this.auth,
-      client: this.client,
-      storage: this.storage,
-      tabManager: this.tabManager,
-      getState: () => this.state.dialingPlan,
-    }));
-    this.addModule('extensionPhoneNumber', new ExtensionPhoneNumber({
-      auth: this.auth,
-      client: this.client,
-      storage: this.storage,
-      tabManager: this.tabManager,
-      getState: () => this.state.extensionPhoneNumber,
-    }));
-    this.addModule('forwardingNumber', new ForwardingNumber({
-      auth: this.auth,
-      client: this.client,
-      storage: this.storage,
-      tabManager: this.tabManager,
-      getState: () => this.state.forwardingNumber,
-    }));
-    this.addModule('regionSettings', new RegionSettings({
-      storage: this.storage,
-      extensionInfo: this.extensionInfo,
-      dialingPlan: this.dialingPlan,
-      alert: this.alert,
-      tabManager: this.tabManager,
-      getState: () => this.state.regionSettings,
-    }));
-    this.addModule('callingSettings', new CallingSettings({
-      alert: this.alert,
-      brand: this.brand,
-      extensionInfo: this.extensionInfo,
-      extensionPhoneNumber: this.extensionPhoneNumber,
-      forwardingNumber: this.forwardingNumber,
-      storage: this.storage,
-      rolesAndPermissions: this.rolesAndPermissions,
-      tabManager: this._tabManager,
-      getState: () => this.state.callingSettings,
+      subscription: this.subscription,
+      getState: () => this.state.presence,
     }));
     this._reducer = combineReducers({
-      accountInfo: this.accountInfo.reducer,
+      // accountInfo: this.accountInfo.reducer,
       alert: this.alert.reducer,
       auth: this.auth.reducer,
-      callingSettings: this.callingSettings.reducer,
+      // callingSettings: this.callingSettings.reducer,
       environment: this.environment.reducer,
-      extensionInfo: this.extensionInfo.reducer,
-      extensionPhoneNumber: this.extensionPhoneNumber.reducer,
-      forwardingNumber: this.forwardingNumber.reducer,
+      // extensionInfo: this.extensionInfo.reducer,
+      // extensionPhoneNumber: this.extensionPhoneNumber.reducer,
+      // forwardingNumber: this.forwardingNumber.reducer,
       brand: this.brand.reducer,
-      dialingPlan: this.dialingPlan.reducer,
+      // dialingPlan: this.dialingPlan.reducer,
       locale: this.locale.reducer,
       storage: this.storage.reducer,
       globalStorage: this.globalStorage.reducer,
-      rolesAndPermissions: this.rolesAndPermissions.reducer,
-      regionSettings: this.regionSettings.reducer,
+      presence: this.presence.reducer,
+      // rolesAndPermissions: this.rolesAndPermissions.reducer,
+      // regionSettings: this.regionSettings.reducer,
+      subscription: this.subscription.reducer,
       tabManager: this.tabManager.reducer,
       lastAction: (state = null, action) => {
         console.log(action);
@@ -170,6 +187,13 @@ class DemoPhone extends RcModule {
         <DemoView />
       </Provider>
     ), document.querySelector('#viewport'));
+    // let subscribed = false;
+    // this.store.subscribe(() => {
+    //   if (!subscribed && this.subscription.ready) {
+    //     subscribed = true;
+    //     this.subscription.subscribe('/account/~/extension/~/presence');
+    //   }
+    // });
   }
 }
 

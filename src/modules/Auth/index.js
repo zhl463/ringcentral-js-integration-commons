@@ -319,7 +319,7 @@ export default class Auth extends RcModule {
     return this.state.loginStatus === loginStatus.loggedIn;
   }
 
-  loggedIn() {
+  get loggedIn() {
     return this.state.loginStatus === loginStatus.loggedIn ||
       this.state.loginStatus === loginStatus.beforeLogout;
   }

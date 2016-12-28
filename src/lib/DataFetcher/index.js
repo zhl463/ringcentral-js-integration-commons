@@ -5,6 +5,7 @@ import getDataFetcherReducer, {
   getDefaultTimestampReducer,
 } from './getDataFetcherReducer';
 import moduleStatus from '../../enums/moduleStatus';
+import loginStatus from '../../modules/Auth/loginStatus';
 import actionTypesBase from './actionTypesBase';
 
 const DEFAULT_TTL = 30 * 60 * 1000;
@@ -67,7 +68,7 @@ export default class DataFetcher extends RcModule {
   initialize() {
     this.store.subscribe(async () => {
       if (
-        this._auth.loggedIn &&
+        this._auth.loginStatus === loginStatus.loggedIn &&
         this._storage.ready &&
         this.status === moduleStatus.pending
       ) {
