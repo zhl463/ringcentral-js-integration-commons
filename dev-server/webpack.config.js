@@ -25,12 +25,20 @@ const base = {
 
 const index = {
   ...base,
-  entry: [
-    path.resolve(__dirname, 'index.js'),
-  ],
+  entry: {
+    index: [
+      path.resolve(__dirname, 'index'),
+    ],
+    proxy: [
+      path.resolve(__dirname, './proxy'),
+    ],
+    redirect: [
+      path.resolve(__dirname, './redirect'),
+    ],
+  },
   output: {
     path: path.resolve(__dirname, './build'),
-    filename: 'index.js',
+    filename: '[name].js',
     publicPath: '/build',
   },
 };

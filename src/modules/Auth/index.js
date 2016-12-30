@@ -6,6 +6,8 @@ import loginStatus from './loginStatus';
 import authMessages from './authMessages';
 import moduleStatus from '../../enums/moduleStatus';
 
+const DEFAULT_PROXY_RETRY = 5000;
+
 function getDefaultRedirectUri() {
   if (typeof window !== 'undefined') {
     return url.resolve(window.location.href, './redirect.html');
@@ -37,6 +39,7 @@ export default class Auth extends RcModule {
     locale,
     tabManager,
     environment,
+    defaultProxyRetry = DEFAULT_PROXY_RETRY,
     ...options
   } = {}) {
     super({
@@ -51,8 +54,11 @@ export default class Auth extends RcModule {
     this._proxyUri = proxyUri;
     this._tabManager = tabManager;
     this._environment = environment;
+    this._defaultProxyRetry = defaultProxyRetry;
     this._reducer = getAuthReducer(this.actionTypes);
     this._beforeLogoutHandlers = new Set();
+    this._proxyFrame = null;
+    this._proxyFrameLoaded = false;
   }
   _bindEvents() {
     const platform = this._client.service.platform();
@@ -199,6 +205,10 @@ export default class Auth extends RcModule {
     return this.state.freshLogin;
   }
 
+  get proxyLoaded() {
+    return this.state.proxyLoaded;
+  }
+
   /**
    * @function
    * @param {String} options.username
@@ -291,11 +301,11 @@ export default class Auth extends RcModule {
     return await this._client.service.platform().logout();
   }
 
-   /**
-   * @function
-   * @param {Function} handler
-   * @returns {Function}
-   */
+  /**
+  * @function
+  * @param {Function} handler
+  * @returns {Function}
+  */
   addBeforeLogoutHandler(handler) {
     this._beforeLogoutHandlers.add(handler);
     return () => {
@@ -303,10 +313,10 @@ export default class Auth extends RcModule {
     };
   }
 
-   /**
-   * @function
-   * @param {Function} handler
-   */
+  /**
+  * @function
+  * @param {Function} handler
+  */
   removeBeforeLogoutHandler(handler) {
     this._beforeLogoutHandlers.remove(handler);
   }
@@ -322,6 +332,10 @@ export default class Auth extends RcModule {
   get loggedIn() {
     return this.state.loginStatus === loginStatus.loggedIn ||
       this.state.loginStatus === loginStatus.beforeLogout;
+  }
+
+  _callbackHandler = async ({ origin, data }) => {
+
   }
 
   /**
@@ -347,6 +361,7 @@ export default class Auth extends RcModule {
         if (data) {
           const {
             callbackUri,
+            proxyLoaded,
           } = data;
           if (callbackUri) {
             try {
@@ -382,22 +397,45 @@ export default class Auth extends RcModule {
                 payload: error,
               });
             }
+          } else if (proxyLoaded) {
+            clearTimeout(this._retryTimeoutId);
+            this._retryTimeoutId = null;
+            this.store.dispatch({
+              type: this.actionTypes.proxyLoaded,
+            });
           }
         }
       };
       window.addEventListener('message', this._callbackHandler);
+      this._retryTimeoutId = setTimeout(() => {
+        this._retrySetupProxyFrame(onLogin);
+      }, this._defaultProxyRetry);
+    }
+  }
+  _retrySetupProxyFrame(onLogin) {
+    this._retryTimeoutId = null;
+    if (!this.proxyLoaded) {
+      this.clearProxyFrame();
+      this.setupProxyFrame(onLogin);
     }
   }
   clearProxyFrame() {
     if (this._proxyFrame) {
+      if (this._retryTimeoutId) {
+        clearTimeout(this._retryTimeoutId);
+        this._retryTimeoutId = null;
+      }
       document.body.removeChild(this._proxyFrame);
       this._proxyFrame = null;
       window.removeEventListener('message', this._callbackHandler);
       this._callbackHandler = null;
+      this.store.dispatch({
+        type: this.actionTypes.proxyCleared,
+      });
     }
   }
   openOAuthPage() {
-    if (this._proxyFrame) {
+    if (this.proxyLoaded) {
       this._proxyFrame.contentWindow.postMessage({
         oAuthUri: `${this.getLoginUrl({
           redirectUri: this.redirectUri,

@@ -46,9 +46,9 @@ class DemoPhone extends RcModule {
       getState: () => this.state.alert,
     }));
     this.addModule('brand', new Brand({
-      id: 'testBrandId',
-      name: 'Test Brand Name',
-      fullName: 'Test Brand Full Name',
+      id: '1210',
+      name: 'RingCentral',
+      fullName: 'RingCentral',
       getState: () => this.state.brand,
     }));
     this.addModule('locale', new Locale({

@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import getAuthReducer, {
   getFreshLoginReducer,
   getLoginStatusReducer,
+  getProxyLoadedReducer,
   getOwnerIdReducer,
 } from './getAuthReducer';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
@@ -286,6 +287,37 @@ describe('getFreshLoginReducer', () => {
   });
 });
 
+
+describe('getProxyLoadedReducer', () => {
+  it('should be a function', () => {
+    expect(getProxyLoadedReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getProxyLoadedReducer(actionTypes)).to.be.a('function');
+  });
+  describe('proxyLoadedReducer', () => {
+    const reducer = getProxyLoadedReducer(actionTypes);
+    it('should have initial state of false', () => {
+      expect(reducer(undefined, {})).to.be.false;
+    });
+    it('should return original state of actionTypes is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return true on proxyLoaded', () => {
+      expect(reducer('foo', {
+        type: actionTypes.proxyLoaded,
+      })).to.be.true;
+    });
+    it('should return false on proxyCleared', () => {
+      expect(reducer('foo', {
+        type: actionTypes.proxyCleared,
+      })).to.be.false;
+    });
+  });
+});
+
 describe('getAuthReducer', () => {
   it('should be a function', () => {
     expect(getAuthReducer).to.be.a('function');
@@ -299,6 +331,7 @@ describe('getAuthReducer', () => {
     const loginStatusReducer = getLoginStatusReducer(actionTypes);
     const freshLoginReducer = getFreshLoginReducer(actionTypes);
     const ownerIdReducer = getOwnerIdReducer(actionTypes);
+    const proxyLoadedReducer = getProxyLoadedReducer(actionTypes);
     it('should return combined state', () => {
       expect(reducer(undefined, {}))
         .to.deep.equal({
@@ -306,6 +339,7 @@ describe('getAuthReducer', () => {
           loginStatus: loginStatusReducer(undefined, {}),
           freshLogin: freshLoginReducer(undefined, {}),
           ownerId: ownerIdReducer(undefined, {}),
+          proxyLoaded: proxyLoadedReducer(undefined, {}),
         });
       const error = new Error('test');
       const token = {
@@ -378,11 +412,13 @@ describe('getAuthReducer', () => {
           loginStatus: 'loginStatus',
           freshLogin: 'freshLogin',
           ownerId: 'ownerId',
+          proxyLoaded: false,
         }, action)).to.deep.equal({
           status: statusReducer('status', action),
           loginStatus: loginStatusReducer('loginStatus', action),
           freshLogin: freshLoginReducer('freshLogin', action),
           ownerId: ownerIdReducer('ownerId', action),
+          proxyLoaded: proxyLoadedReducer(false, action),
         });
       });
     });
