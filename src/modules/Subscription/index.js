@@ -100,15 +100,11 @@ export default class Subscription extends RcModule {
       });
     });
     this._subscription.on(this._subscription.events.removeSuccess, () => {
-      this._subscription.reset();
-      this._subscription = null;
       this.store.dispatch({
         type: this.actionTypes.removeSuccess,
       });
     });
     this._subscription.on(this._subscription.events.removeError, error => {
-      this._subscription.reset();
-      this._subscription = null;
       this.store.dispatch({
         type: this.actionTypes.removeError,
         error,
@@ -121,8 +117,10 @@ export default class Subscription extends RcModule {
       });
     });
     this._subscription.on(this._subscription.events.renewError, error => {
-      this._subscription.reset();
-      this._subscription = null;
+      if (this._subscription) {
+        this._subscription.reset();
+        this._subscription = null;
+      }
       this.store.dispatch({
         type: this.actionTypes.renewError,
         error,
@@ -218,9 +216,11 @@ export default class Subscription extends RcModule {
       } catch (error) {
         /* falls through */
       }
+      if (this._subscription) { // check again in case subscription object was removed while waiting
+        this._subscription.reset();
+        this._subscription = null;
+      }
       this._removePromise = null;
-      this._subscription.reset();
-      this._subscription = null;
     }
   }
   remove() {
