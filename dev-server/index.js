@@ -13,6 +13,7 @@ import Alert from '../src/modules/Alert';
 import Auth from '../src/modules/Auth';
 import Brand from '../src/modules/Brand';
 import CallingSettings from '../src/modules/CallingSettings';
+import ConnectivityMonitor from '../src/modules/ConnectivityMonitor';
 import DialingPlan from '../src/modules/DialingPlan';
 import Environment from '../src/modules/Environment';
 import ExtensionInfo from '../src/modules/ExtensionInfo';
@@ -67,6 +68,11 @@ class DemoPhone extends RcModule {
         ...config.api,
       },
       getState: () => this.state.environment,
+    }));
+    this.addModule('connectivityMonitor', new ConnectivityMonitor({
+      client: this.client,
+      environment: this.environment,
+      getState: () => this.state.connectivityMonitor,
     }));
     this.addModule('auth', new Auth({
       alert: this.alert,
@@ -161,6 +167,7 @@ class DemoPhone extends RcModule {
       alert: this.alert.reducer,
       auth: this.auth.reducer,
       // callingSettings: this.callingSettings.reducer,
+      connectivityMonitor: this.connectivityMonitor.reducer,
       environment: this.environment.reducer,
       // extensionInfo: this.extensionInfo.reducer,
       // extensionPhoneNumber: this.extensionPhoneNumber.reducer,

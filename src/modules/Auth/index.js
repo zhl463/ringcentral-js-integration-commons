@@ -209,6 +209,10 @@ export default class Auth extends RcModule {
     return this.state.proxyLoaded;
   }
 
+  get proxyRetryCount() {
+    return this.state.proxyRetryCount;
+  }
+
   /**
    * @function
    * @param {String} options.username
@@ -333,11 +337,67 @@ export default class Auth extends RcModule {
     return this.state.loginStatus === loginStatus.loggedIn ||
       this.state.loginStatus === loginStatus.beforeLogout;
   }
+  _createProxyFrame = (onLogin) => {
+    this._proxyFrame = document.createElement('iframe');
+    this._proxyFrame.src = this.proxyUri;
+    this._proxyFrame.style.display = 'none';
 
-  _callbackHandler = async ({ origin, data }) => {
+    document.body.appendChild(this._proxyFrame);
+    this._callbackHandler = async ({ origin, data }) => {
+      // TODO origin check
+      if (data) {
+        const {
+          callbackUri,
+          proxyLoaded,
+        } = data;
+        if (callbackUri) {
+          try {
+            const code = this.parseCallbackUri(callbackUri);
+            if (code) {
+              await this.login({
+                code,
+                redirectUri: this.redirectUri,
+              });
+              if (typeof onLogin === 'function') {
+                onLogin();
+              }
+            }
+          } catch (error) {
+            let message;
+            switch (error.message) {
+              case 'invalid_request':
+              case 'unauthorized_client':
+              case 'access_denied':
+              case 'unsupported_response_type':
+              case 'invalid_scope':
+                message = authMessages.accessDenied;
+                break;
+              case 'server_error':
+              case 'temporarily_unavailable':
+              default:
+                message = authMessages.internalError;
+                break;
+            }
 
+            this._alert.danger({
+              message,
+              payload: error,
+            });
+          }
+        } else if (proxyLoaded) {
+          clearTimeout(this._retryTimeoutId);
+          this._retryTimeoutId = null;
+          this.store.dispatch({
+            type: this.actionTypes.proxyLoaded,
+          });
+        }
+      }
+    };
+    window.addEventListener('message', this._callbackHandler);
+    this._retryTimeoutId = setTimeout(() => {
+      this._retrySetupProxyFrame(onLogin);
+    }, this._defaultProxyRetry);
   }
-
   /**
    * @function
    * @description Create the proxy frame and append to document if available.
@@ -352,72 +412,27 @@ export default class Auth extends RcModule {
       this._proxyUri !== '' &&
       !this._proxyFrame
     ) {
-      this._proxyFrame = document.createElement('iframe');
-      this._proxyFrame.src = this.proxyUri;
-      this._proxyFrame.style.display = 'none';
-      document.body.appendChild(this._proxyFrame);
-      this._callbackHandler = async ({ origin, data }) => {
-        // TODO origin check
-        if (data) {
-          const {
-            callbackUri,
-            proxyLoaded,
-          } = data;
-          if (callbackUri) {
-            try {
-              const code = this.parseCallbackUri(callbackUri);
-              if (code) {
-                await this.login({
-                  code,
-                  redirectUri: this.redirectUri,
-                });
-                if (typeof onLogin === 'function') {
-                  onLogin();
-                }
-              }
-            } catch (error) {
-              let message;
-              switch (error.message) {
-                case 'invalid_request':
-                case 'unauthorized_client':
-                case 'access_denied':
-                case 'unsupported_response_type':
-                case 'invalid_scope':
-                  message = authMessages.accessDenied;
-                  break;
-                case 'server_error':
-                case 'temporarily_unavailable':
-                default:
-                  message = authMessages.internalError;
-                  break;
-              }
-
-              this._alert.danger({
-                message,
-                payload: error,
-              });
-            }
-          } else if (proxyLoaded) {
-            clearTimeout(this._retryTimeoutId);
-            this._retryTimeoutId = null;
-            this.store.dispatch({
-              type: this.actionTypes.proxyLoaded,
-            });
-          }
-        }
-      };
-      window.addEventListener('message', this._callbackHandler);
-      this._retryTimeoutId = setTimeout(() => {
-        this._retrySetupProxyFrame(onLogin);
-      }, this._defaultProxyRetry);
+      this.store.dispatch({
+        type: this.actionTypes.proxySetup,
+      });
+      this._createProxyFrame(onLogin);
     }
   }
   _retrySetupProxyFrame(onLogin) {
     this._retryTimeoutId = null;
     if (!this.proxyLoaded) {
-      this.clearProxyFrame();
-      this.setupProxyFrame(onLogin);
+      this.store.dispatch({
+        type: this.actionTypes.proxyRetry,
+      });
+      this._destroyProxyFrame();
+      this._createProxyFrame(onLogin);
     }
+  }
+  _destroyProxyFrame() {
+    document.body.removeChild(this._proxyFrame);
+    this._proxyFrame = null;
+    window.removeEventListener('message', this._callbackHandler);
+    this._callbackHandler = null;
   }
   clearProxyFrame() {
     if (this._proxyFrame) {
@@ -425,10 +440,7 @@ export default class Auth extends RcModule {
         clearTimeout(this._retryTimeoutId);
         this._retryTimeoutId = null;
       }
-      document.body.removeChild(this._proxyFrame);
-      this._proxyFrame = null;
-      window.removeEventListener('message', this._callbackHandler);
-      this._callbackHandler = null;
+      this._destroyProxyFrame();
       this.store.dispatch({
         type: this.actionTypes.proxyCleared,
       });

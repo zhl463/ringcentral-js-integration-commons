@@ -15,6 +15,8 @@ export default new Enum([
   'init',
   'initSuccess',
   'tabSync',
+  'proxySetup',
+  'proxyRetry',
   'proxyLoaded',
   'proxyCleared',
 ], 'authActionTypes');
