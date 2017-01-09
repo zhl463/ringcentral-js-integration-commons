@@ -86,6 +86,7 @@ export default class Auth extends RcModule {
       });
     });
     platform.on(platform.events.logoutError, error => {
+      platform._cache.clean();
       this.store.dispatch({
         type: this.actionTypes.logoutError,
         error,
