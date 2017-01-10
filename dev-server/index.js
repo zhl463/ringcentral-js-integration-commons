@@ -22,6 +22,7 @@ import ForwardingNumber from '../src/modules/ForwardingNumber';
 import GlobalStorage from '../src/modules/GlobalStorage';
 import Locale from '../src/modules/Locale';
 import Presence from '../src/modules/Presence';
+import RateLimiter from '../src/modules/RateLimiter';
 import RegionSettings from '../src/modules/RegionSettings';
 import RolesAndPermissions from '../src/modules/RolesAndPermissions';
 import Storage from '../src/modules/Storage';
@@ -74,6 +75,7 @@ class DemoPhone extends RcModule {
       environment: this.environment,
       getState: () => this.state.connectivityMonitor,
     }));
+
     this.addModule('auth', new Auth({
       alert: this.alert,
       brand: this.brand,
@@ -86,6 +88,12 @@ class DemoPhone extends RcModule {
     this.addModule('storage', new Storage({
       auth: this.auth,
       getState: () => this.state.storage,
+    }));
+    this.addModule('rateLimiter', new RateLimiter({
+      client: this.client,
+      environment: this.environment,
+      globalStorage: this.globalStorage,
+      getState: () => this.state.rateLimiter,
     }));
     // this.addModule('accountInfo', new AccountInfo({
     //   auth: this.auth,
@@ -123,13 +131,13 @@ class DemoPhone extends RcModule {
     //   tabManager: this.tabManager,
     //   getState: () => this.state.extensionPhoneNumber,
     // }));
-    // this.addModule('forwardingNumber', new ForwardingNumber({
-    //   auth: this.auth,
-    //   client: this.client,
-    //   storage: this.storage,
-    //   tabManager: this.tabManager,
-    //   getState: () => this.state.forwardingNumber,
-    // }));
+    this.addModule('forwardingNumber', new ForwardingNumber({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.forwardingNumber,
+    }));
     // this.addModule('regionSettings', new RegionSettings({
     //   storage: this.storage,
     //   extensionInfo: this.extensionInfo,
@@ -171,13 +179,14 @@ class DemoPhone extends RcModule {
       environment: this.environment.reducer,
       // extensionInfo: this.extensionInfo.reducer,
       // extensionPhoneNumber: this.extensionPhoneNumber.reducer,
-      // forwardingNumber: this.forwardingNumber.reducer,
+      forwardingNumber: this.forwardingNumber.reducer,
       brand: this.brand.reducer,
       // dialingPlan: this.dialingPlan.reducer,
       locale: this.locale.reducer,
       storage: this.storage.reducer,
       globalStorage: this.globalStorage.reducer,
       presence: this.presence.reducer,
+      rateLimiter: this.rateLimiter.reducer,
       // rolesAndPermissions: this.rolesAndPermissions.reducer,
       // regionSettings: this.regionSettings.reducer,
       subscription: this.subscription.reducer,
