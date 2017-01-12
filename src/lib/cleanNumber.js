@@ -1,15 +1,19 @@
 const cleanRegex = /[^\d*+#]/g;
 const plusRegex = /\+/g;
-
+const extensionDelimiter = /[*#]/g;
 /**
  * @function
  * @param {String} phoneNumber
  * @description Remove any characters except numeric, #, *, and leading +
  */
 export default function cleanNumber(phoneNumber) {
-  // remove everything except numerics,#, *, and leading +
-  const result = phoneNumber.replace(cleanRegex, '');
-  return result[0] === '+' ?
-    `+${result.substring(1).replace(plusRegex, '')}` :
-    result;
+  const cleaned = phoneNumber.replace(cleanRegex, '');
+  const hasPlus = cleaned[0] === '+';
+  const output = cleaned.replace(plusRegex, '')
+    .split(extensionDelimiter)
+    .slice(0, 2)
+    .join('*');
+  return hasPlus ?
+    `+${output}` :
+    output;
 }
