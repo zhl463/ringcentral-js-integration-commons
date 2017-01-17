@@ -12,6 +12,7 @@ import AccountExtension from '../src/modules/AccountExtension';
 import AccountInfo from '../src/modules/AccountInfo';
 import Alert from '../src/modules/Alert';
 import Auth from '../src/modules/Auth';
+import BlockedNumber from '../src/modules/BlockedNumber';
 import Brand from '../src/modules/Brand';
 import Call from '../src/modules/Call';
 import CallingSettings from '../src/modules/CallingSettings';
@@ -39,9 +40,7 @@ const DemoView = connect(state => ({
   data: state,
   invertTheme: false,
 }), () => ({
-  shouldExpandNode: (keyName, data, level) => {
-    return !level;
-  },
+  shouldExpandNode: (keyName, data, level) => !level,
 }))(JSONTree);
 
 class DemoPhone extends RcModule {
@@ -153,6 +152,13 @@ class DemoPhone extends RcModule {
       tabManager: this.tabManager,
       getState: () => this.state.forwardingNumber,
     }));
+    this.addModule('blockedNumber', new BlockedNumber({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.blockedNumber,
+    }));
     this.addModule('regionSettings', new RegionSettings({
       storage: this.storage,
       extensionInfo: this.extensionInfo,
@@ -208,6 +214,7 @@ class DemoPhone extends RcModule {
       accountExtension: this.accountExtension.reducer,
       alert: this.alert.reducer,
       auth: this.auth.reducer,
+      blockedNumber: this.blockedNumber.reducer,
       call: this.call.reducer,
       callingSettings: this.callingSettings.reducer,
       connectivityMonitor: this.connectivityMonitor.reducer,
