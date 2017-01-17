@@ -9,13 +9,14 @@ import loginStatus from '../../modules/Auth/loginStatus';
 import actionTypesBase from './actionTypesBase';
 
 const DEFAULT_TTL = 30 * 60 * 1000;
-const DEFAULT_RETRY = 60 * 1000;
+const DEFAULT_RETRY = 62 * 1000;
 
 export default class DataFetcher extends RcModule {
   constructor({
     auth,
     client,
     storage,
+    subscription,
     tabManager,
     ttl = DEFAULT_TTL,
     timeToRetry = DEFAULT_RETRY,
@@ -28,6 +29,8 @@ export default class DataFetcher extends RcModule {
     dataStorageKey = `${name}Data`,
     timestampStorageKey = `${name}Timestamp`,
     fetchFunction,
+    subscriptionFilters,
+    subscriptionHandler,
     ...options
   }) {
     if (!name) {
@@ -43,11 +46,14 @@ export default class DataFetcher extends RcModule {
     this._auth = auth;
     this._storage = storage;
     this._client = client;
+    this._subscription = subscription;
     this._tabManager = tabManager;
     this._ttl = ttl;
     this._timeToRetry = timeToRetry;
     this._polling = polling;
     this._fetchFunction = fetchFunction;
+    this._subscriptionFilters = subscriptionFilters;
+    this._subscriptionHandler = subscriptionHandler;
 
     this._dataStorageKey = dataStorageKey;
     this._timestampStorageKey = timestampStorageKey;
@@ -65,46 +71,63 @@ export default class DataFetcher extends RcModule {
     this._promise = null;
     this._timeoutId = null;
   }
-  initialize() {
-    this.store.subscribe(async () => {
+  _onStateChange = async () => {
+    if (
+      this._auth.loginStatus === loginStatus.loggedIn &&
+      this._storage.ready &&
+      (!this._subscription || this._subscription.ready) &&
+      this.status === moduleStatus.pending
+    ) {
+      this.store.dispatch({
+        type: this.actionTypes.init,
+      });
       if (
-        this._auth.loginStatus === loginStatus.loggedIn &&
-        this._storage.ready &&
-        this.status === moduleStatus.pending
+        (!this._tabManager || this._tabManager.active) &&
+        (
+          this._auth.isFreshLogin ||
+          !this.timestamp ||
+          Date.now() - this.timestamp > this._ttl
+        )
       ) {
-        this.store.dispatch({
-          type: this.actionTypes.init,
-        });
-        if (
-          (!this._tabManager || this._tabManager.active) &&
-          (
-            this._auth.isFreshLogin ||
-            !this.timestamp ||
-            Date.now() - this.timestamp > this._ttl
-          )
-        ) {
-          await this.fetchData();
+        await this.fetchData();
+      } else {
+        if (this._polling) {
+          this._startPolling();
         } else {
-          if (this._polling) {
-            this._startPolling();
-          } else {
-            this._retry();
-          }
+          this._retry();
         }
-        this.store.dispatch({
-          type: this.actionTypes.initSuccess,
-        });
-      } else if (
-        (!this._auth.loggedIn || !this._storage.ready) &&
-        this.ready
-      ) {
-        this._clearTimeout();
-        this._promise = null;
-        this.store.dispatch({
-          type: this.actionTypes.resetSuccess,
-        });
       }
-    });
+      if (this._subscription && this._subscriptionFilters) {
+        this._subscription.subscribe(this._subscriptionFilters);
+      }
+      this.store.dispatch({
+        type: this.actionTypes.initSuccess,
+      });
+    } else if (
+      (
+        !this._auth.loggedIn ||
+        !this._storage.ready ||
+        (this._subscription && !this._subscription.ready)
+      ) &&
+      this.ready
+    ) {
+      this._clearTimeout();
+      this._promise = null;
+      this.store.dispatch({
+        type: this.actionTypes.resetSuccess,
+      });
+    } else if (
+      this.ready &&
+      this._subscription &&
+      this._subscription.ready &&
+      this._subscriptionHandler &&
+      this._subscription.message
+    ) {
+      this._subscriptionHandler(this._subscription.message);
+    }
+  }
+  initialize() {
+    this.store.subscribe(this._onStateChange);
   }
 
   get data() {

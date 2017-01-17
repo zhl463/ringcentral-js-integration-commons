@@ -1,5 +1,5 @@
 import { formatLocal } from 'phoneformat.js';
-import cleanNumber from '../cleanNumber';
+import parseNumber from '../parseNumber';
 
 const SWITCH_US_CA = {
   US: 'CA',
@@ -21,22 +21,16 @@ export default function formatNumber({
   countryCode = 'US',
   areaCode = '',
 }) {
-  const cleaned = cleanNumber(`${phoneNumber}`);
-  const hasPlus = cleaned[0] === '+';
-  const withoutPlus = hasPlus ? cleaned.substring(1) : cleaned;
-
-  if (
-    withoutPlus === '' ||
-    withoutPlus[0] === '*' // service number
-  ) return withoutPlus;
-
-  const [
+  const {
+    hasPlus,
     number,
     extension,
-  ] = withoutPlus.split('*');
+    isServiceNumber,
+  } = parseNumber(phoneNumber);
 
+  if (isServiceNumber) return `*${number}`;
   // extension or special number
-  if (number.length <= 5) return number;
+  if (number === '' || number.length <= 5) return number;
 
   let formattedNumber;
   if (countryCode === 'CA' || countryCode === 'US') {

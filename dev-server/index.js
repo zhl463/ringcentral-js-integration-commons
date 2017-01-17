@@ -8,10 +8,12 @@ import JSONTree from 'react-json-tree';
 
 import RcModule from '../src/lib/RcModule';
 
+import AccountExtension from '../src/modules/AccountExtension';
 import AccountInfo from '../src/modules/AccountInfo';
 import Alert from '../src/modules/Alert';
 import Auth from '../src/modules/Auth';
 import Brand from '../src/modules/Brand';
+import Call from '../src/modules/Call';
 import CallingSettings from '../src/modules/CallingSettings';
 import ConnectivityMonitor from '../src/modules/ConnectivityMonitor';
 import DialingPlan from '../src/modules/DialingPlan';
@@ -24,7 +26,9 @@ import Locale from '../src/modules/Locale';
 import Presence from '../src/modules/Presence';
 import RateLimiter from '../src/modules/RateLimiter';
 import RegionSettings from '../src/modules/RegionSettings';
+import Ringout from '../src/modules/Ringout';
 import RolesAndPermissions from '../src/modules/RolesAndPermissions';
+import Softphone from '../src/modules/Softphone';
 import Storage from '../src/modules/Storage';
 import Subscription from '../src/modules/Subscription';
 import TabManager from '../src/modules/TabManager';
@@ -35,14 +39,17 @@ const DemoView = connect(state => ({
   data: state,
   invertTheme: false,
 }), () => ({
-  shouldExpandNode: (keyName, data, level) => true,
+  shouldExpandNode: (keyName, data, level) => {
+    return !level;
+  },
 }))(JSONTree);
 
 class DemoPhone extends RcModule {
   constructor() {
     super();
     this.addModule('client', new RingCentralClient(new SDK({
-      ...config.api
+      ...config.api,
+      clearCacheOnRefreshError: false,
     })));
     this.addModule('alert', new Alert({
       getState: () => this.state.alert,
@@ -75,7 +82,6 @@ class DemoPhone extends RcModule {
       environment: this.environment,
       getState: () => this.state.connectivityMonitor,
     }));
-
     this.addModule('auth', new Auth({
       alert: this.alert,
       brand: this.brand,
@@ -95,42 +101,51 @@ class DemoPhone extends RcModule {
       globalStorage: this.globalStorage,
       getState: () => this.state.rateLimiter,
     }));
-    // this.addModule('accountInfo', new AccountInfo({
-    //   auth: this.auth,
-    //   client: this.client,
-    //   storage: this.storage,
-    //   tabManager: this.tabManager,
-    //   getState: () => this.state.accountInfo,
-    // }));
-    // this.addModule('extensionInfo', new ExtensionInfo({
-    //   auth: this.auth,
-    //   client: this.client,
-    //   storage: this.storage,
-    //   tabManager: this.tabManager,
-    //   getState: () => this.state.extensionInfo,
-    // }));
-    // this.addModule('rolesAndPermissions', new RolesAndPermissions({
-    //   auth: this.auth,
-    //   client: this.client,
-    //   storage: this.storage,
-    //   extensionInfo: this.extensionInfo,
-    //   tabManager: this.tabManager,
-    //   getState: () => this.state.rolesAndPermissions,
-    // }));
-    // this.addModule('dialingPlan', new DialingPlan({
-    //   auth: this.auth,
-    //   client: this.client,
-    //   storage: this.storage,
-    //   tabManager: this.tabManager,
-    //   getState: () => this.state.dialingPlan,
-    // }));
-    // this.addModule('extensionPhoneNumber', new ExtensionPhoneNumber({
-    //   auth: this.auth,
-    //   client: this.client,
-    //   storage: this.storage,
-    //   tabManager: this.tabManager,
-    //   getState: () => this.state.extensionPhoneNumber,
-    // }));
+    this.addModule('softphone', new Softphone({
+      brand: this.brand,
+    }));
+    this.addModule('ringout', new Ringout({
+      auth: this.auth,
+      client: this.client,
+      getState: () => this.state.ringout,
+    }));
+
+    this.addModule('accountInfo', new AccountInfo({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.accountInfo,
+    }));
+    this.addModule('extensionInfo', new ExtensionInfo({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.extensionInfo,
+    }));
+    this.addModule('rolesAndPermissions', new RolesAndPermissions({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      extensionInfo: this.extensionInfo,
+      tabManager: this.tabManager,
+      getState: () => this.state.rolesAndPermissions,
+    }));
+    this.addModule('dialingPlan', new DialingPlan({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.dialingPlan,
+    }));
+    this.addModule('extensionPhoneNumber', new ExtensionPhoneNumber({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.extensionPhoneNumber,
+    }));
     this.addModule('forwardingNumber', new ForwardingNumber({
       auth: this.auth,
       client: this.client,
@@ -138,31 +153,49 @@ class DemoPhone extends RcModule {
       tabManager: this.tabManager,
       getState: () => this.state.forwardingNumber,
     }));
-    // this.addModule('regionSettings', new RegionSettings({
-    //   storage: this.storage,
-    //   extensionInfo: this.extensionInfo,
-    //   dialingPlan: this.dialingPlan,
-    //   alert: this.alert,
-    //   tabManager: this.tabManager,
-    //   getState: () => this.state.regionSettings,
-    // }));
-    // this.addModule('callingSettings', new CallingSettings({
-    //   alert: this.alert,
-    //   brand: this.brand,
-    //   extensionInfo: this.extensionInfo,
-    //   extensionPhoneNumber: this.extensionPhoneNumber,
-    //   forwardingNumber: this.forwardingNumber,
-    //   storage: this.storage,
-    //   rolesAndPermissions: this.rolesAndPermissions,
-    //   tabManager: this._tabManager,
-    //   getState: () => this.state.callingSettings,
-    // }));
+    this.addModule('regionSettings', new RegionSettings({
+      storage: this.storage,
+      extensionInfo: this.extensionInfo,
+      dialingPlan: this.dialingPlan,
+      alert: this.alert,
+      tabManager: this.tabManager,
+      getState: () => this.state.regionSettings,
+    }));
+    this.addModule('callingSettings', new CallingSettings({
+      alert: this.alert,
+      brand: this.brand,
+      extensionInfo: this.extensionInfo,
+      extensionPhoneNumber: this.extensionPhoneNumber,
+      forwardingNumber: this.forwardingNumber,
+      storage: this.storage,
+      rolesAndPermissions: this.rolesAndPermissions,
+      tabManager: this._tabManager,
+      getState: () => this.state.callingSettings,
+    }));
     this.addModule('subscription', new Subscription({
       auth: this.auth,
       client: this.client,
       storage: this.storage,
       tabManager: this.tabManager,
       getState: () => this.state.subscription,
+    }));
+    this.addModule('accountExtension', new AccountExtension({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      subscription: this.subscription,
+      getState: () => this.state.accountExtension,
+    }));
+    this.addModule('call', new Call({
+      alert: this.alert,
+      client: this.client,
+      storage: this.storage,
+      regionSettings: this.regionSettings,
+      callingSettings: this.callingSettings,
+      softphone: this.softphone,
+      ringout: this.ringout,
+      accountExtension: this.accountExtension,
+      getState: () => this.state.call,
     }));
     this.addModule('presence', new Presence({
       auth: this.auth,
@@ -171,24 +204,27 @@ class DemoPhone extends RcModule {
       getState: () => this.state.presence,
     }));
     this._reducer = combineReducers({
-      // accountInfo: this.accountInfo.reducer,
+      accountInfo: this.accountInfo.reducer,
+      accountExtension: this.accountExtension.reducer,
       alert: this.alert.reducer,
       auth: this.auth.reducer,
-      // callingSettings: this.callingSettings.reducer,
+      call: this.call.reducer,
+      callingSettings: this.callingSettings.reducer,
       connectivityMonitor: this.connectivityMonitor.reducer,
       environment: this.environment.reducer,
-      // extensionInfo: this.extensionInfo.reducer,
-      // extensionPhoneNumber: this.extensionPhoneNumber.reducer,
+      extensionInfo: this.extensionInfo.reducer,
+      extensionPhoneNumber: this.extensionPhoneNumber.reducer,
       forwardingNumber: this.forwardingNumber.reducer,
       brand: this.brand.reducer,
-      // dialingPlan: this.dialingPlan.reducer,
+      dialingPlan: this.dialingPlan.reducer,
       locale: this.locale.reducer,
       storage: this.storage.reducer,
       globalStorage: this.globalStorage.reducer,
       presence: this.presence.reducer,
       rateLimiter: this.rateLimiter.reducer,
-      // rolesAndPermissions: this.rolesAndPermissions.reducer,
-      // regionSettings: this.regionSettings.reducer,
+      ringout: this.ringout.reducer,
+      rolesAndPermissions: this.rolesAndPermissions.reducer,
+      regionSettings: this.regionSettings.reducer,
       subscription: this.subscription.reducer,
       tabManager: this.tabManager.reducer,
       lastAction: (state = null, action) => {

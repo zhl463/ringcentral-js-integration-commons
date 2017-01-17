@@ -1,4 +1,4 @@
-import cleanNumber from '../cleanNumber';
+import parseNumber from '../parseNumber';
 import { formatE164 } from 'phoneformat.js';
 
 /**
@@ -16,21 +16,17 @@ export default function normalizeNumber({
   countryCode = 'US',
   areaCode = '',
 }) {
-  const cleaned = cleanNumber(`${phoneNumber}`);
-  const hasPlus = cleaned[0] === '+';
-  const withoutPlus = hasPlus ? cleaned.substring(1) : cleaned;
-  if (
-    withoutPlus === '' ||
-    withoutPlus[0] === '*' // service number
-  ) return withoutPlus;
-
-  const [
+  const {
+    hasPlus,
     number,
     extension,
-  ] = withoutPlus.split('*');
+    isServiceNumber,
+  } = parseNumber(phoneNumber);
 
-  // extension or special number
-  if (number.length <= 5) return number;
+  // service number
+  if (isServiceNumber) return `*${number}`;
+  // extension or special number or empty string
+  if (number === '' || number.length <= 5) return number;
 
   let normalizedNumber;
   if (
