@@ -83,9 +83,9 @@ export default class RateLimiter extends RcModule {
     client.on(client.events.requestError, this._requestErrorHandler);
     client.on(client.events.beforeRequest, this._beforeRequestHandler);
     this._unbindHandlers = () => {
-      client.off(client.events.requestSuccess, this._requestSuccessHandler);
-      client.off(client.events.requestError, this._requestErrorHandler);
-      client.off(client.events.beforeRequest, this._beforeRequestHandler);
+      client.removeListener(client.events.requestSuccess, this._requestSuccessHandler);
+      client.removeListener(client.events.requestError, this._requestErrorHandler);
+      client.removeListener(client.events.beforeRequest, this._beforeRequestHandler);
       this._unbindHandlers = null;
     };
   }
