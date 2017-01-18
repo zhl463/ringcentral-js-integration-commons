@@ -16,6 +16,7 @@
       "LabeledStatement",
       "WithStatement"
     ],
+    "no-await-in-loop": 1,
     "no-console": 0,
     "no-unused-vars": 1,
     "no-underscore-dangle": 0,

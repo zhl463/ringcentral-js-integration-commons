@@ -1,10 +1,11 @@
-import RcModule from '../../lib/RcModule';
 import url from 'url';
+import RcModule from '../../lib/RcModule';
 import getAuthReducer from './getAuthReducer';
 import actionTypes from './actionTypes';
 import loginStatus from './loginStatus';
 import authMessages from './authMessages';
 import moduleStatus from '../../enums/moduleStatus';
+import parseCallbackUri from '../../lib/parseCallbackUri';
 
 const DEFAULT_PROXY_RETRY = 5000;
 
@@ -59,16 +60,19 @@ export default class Auth extends RcModule {
     this._beforeLogoutHandlers = new Set();
     this._proxyFrame = null;
     this._proxyFrameLoaded = false;
+    this._unbindEvents = null;
   }
   _bindEvents() {
+    if (this._unbindEvents) this._unbindEvents();
+
     const platform = this._client.service.platform();
-    platform.on(platform.events.loginSuccess, () => {
+    const onLoginSuccess = () => {
       this.store.dispatch({
         type: this.actionTypes.loginSuccess,
         token: platform.auth().data(),
       });
-    });
-    platform.on(platform.events.loginError, error => {
+    };
+    const onLoginError = (error) => {
       this.store.dispatch({
         type: this.actionTypes.loginError,
         error,
@@ -79,13 +83,13 @@ export default class Auth extends RcModule {
           payload: error,
         });
       }
-    });
-    platform.on(platform.events.logoutSuccess, () => {
+    };
+    const onLogoutSuccess = () => {
       this.store.dispatch({
         type: this.actionTypes.logoutSuccess,
       });
-    });
-    platform.on(platform.events.logoutError, error => {
+    };
+    const onLogoutError = (error) => {
       platform._cache.clean();
       this.store.dispatch({
         type: this.actionTypes.logoutError,
@@ -97,14 +101,14 @@ export default class Auth extends RcModule {
           payload: error,
         });
       }
-    });
-    platform.on(platform.events.refreshSuccess, () => {
+    };
+    const onRefreshSuccess = () => {
       this.store.dispatch({
         type: this.actionTypes.refreshSuccess,
         token: platform.auth().data(),
       });
-    });
-    platform.on(platform.events.refreshError, error => {
+    };
+    const onRefreshError = (error) => {
       // user is still considered logged in if the refreshToken is still valid
       const refreshTokenValid = platform.auth().refreshTokenValid();
       this.store.dispatch({
@@ -121,7 +125,21 @@ export default class Auth extends RcModule {
         // clean the cache so the error doesn't show again
         platform._cache.clean();
       }
-    });
+    };
+    platform.addListener(platform.events.loginSuccess, onLoginSuccess);
+    platform.addListener(platform.events.loginError, onLoginError);
+    platform.addListener(platform.events.logoutSuccess, onLogoutSuccess);
+    platform.addListener(platform.events.logoutError, onLogoutError);
+    platform.addListener(platform.events.refreshSuccess, onRefreshSuccess);
+    platform.addListener(platform.events.refreshError, onRefreshError);
+    this._unbindEvents = () => {
+      platform.removeListener(platform.events.loginSuccess, onLoginSuccess);
+      platform.removeListener(platform.events.loginError, onLoginError);
+      platform.removeListener(platform.events.logoutSuccess, onLogoutSuccess);
+      platform.removeListener(platform.events.logoutError, onLogoutError);
+      platform.removeListener(platform.events.refreshSuccess, onRefreshSuccess);
+      platform.removeListener(platform.events.refreshError, onRefreshError);
+    };
   }
   initialize() {
     let loggedIn;
@@ -150,8 +168,8 @@ export default class Auth extends RcModule {
         this.ready
       ) {
         if (
-          loggedIn && this.loginStatus === loginStatus.notLoggedIn ||
-          !loggedIn && this.loginStatus === loginStatus.loggedIn
+          (loggedIn && this.loginStatus === loginStatus.notLoggedIn) ||
+          (!loggedIn && this.loginStatus === loginStatus.loggedIn)
         ) {
           loggedIn = !loggedIn;
           this._tabManager.send('loginStatusChange', loggedIn);
@@ -229,7 +247,7 @@ export default class Auth extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.login,
     });
-    return await this._client.service.platform().login({
+    return this._client.service.platform().login({
       username,
       password,
       extension,
@@ -254,24 +272,6 @@ export default class Auth extends RcModule {
       display,
       prompt,
     })}${force ? '&force' : ''}`;
-  }
-  /**
-   * @function
-   * @param {String} callbackUri
-   * @return {String} code
-   */
-  parseCallbackUri(callbackUri) {
-    const { query } = url.parse(callbackUri, true);
-    if (query.error) {
-      const error = new Error(query.error);
-      for (const key in query) {
-        if (query::Object.prototype.hasOwnProperty(key)) {
-          error[key] = query[key];
-        }
-      }
-      throw error;
-    }
-    return query.code;
   }
 
   /**
@@ -303,7 +303,7 @@ export default class Auth extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.logout,
     });
-    return await this._client.service.platform().logout();
+    return this._client.service.platform().logout();
   }
 
   /**
@@ -353,7 +353,7 @@ export default class Auth extends RcModule {
         } = data;
         if (callbackUri) {
           try {
-            const code = this.parseCallbackUri(callbackUri);
+            const code = parseCallbackUri(callbackUri);
             if (code) {
               await this.login({
                 code,
