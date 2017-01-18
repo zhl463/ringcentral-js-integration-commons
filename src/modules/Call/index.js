@@ -147,7 +147,7 @@ export default class Call extends RcModule {
     } else if (
       !isServiceNumber &&
       !hasPlus &&
-      number === 7 &&
+      number.length === 7 &&
       (countryCode === 'CA' || countryCode === 'US') &&
       areaCode === ''
     ) {
