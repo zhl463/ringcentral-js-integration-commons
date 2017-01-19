@@ -89,6 +89,10 @@ export default class RateLimiter extends RcModule {
     };
   }
 
+  get ttl() {
+    return this.throttling ? this._throttleDuration - (Date.now() - this.timestamp) : 0;
+  }
+  
   get status() {
     return this.state.status;
   }
