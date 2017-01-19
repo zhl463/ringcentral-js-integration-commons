@@ -81,10 +81,10 @@ export default class CallingSettings extends RcModule {
       () => this._extensionPhoneNumber.directNumbers,
       (flipNumbers, callerIdNumbers, directNumbers) => {
         const filterMapping = {};
-        callerIdNumbers.forEach(item => {
+        callerIdNumbers.forEach((item) => {
           filterMapping[item.phoneNumber] = true;
         });
-        directNumbers.forEach(item => {
+        directNumbers.forEach((item) => {
           filterMapping[item.phoneNumber] = true;
         });
         return flipNumbers

@@ -1,6 +1,7 @@
 import SymbolMap from 'data-types/symbol-map';
-import Subscribable from './Subscribable';
 import uuid from 'uuid';
+import Subscribable from './Subscribable';
+
 
 class MemoryStorage {
   getItem() {
@@ -22,7 +23,7 @@ export default class NamedStorage extends Subscribable {
     this._storageKey = storageKey;
     this._id = uuid.v4();
     if (typeof localStorage !== 'undefined' && typeof window !== 'undefined') {
-      this._storageHandler = event => {
+      this._storageHandler = (event) => {
         if (event.key === this._storageKey) {
           try {
             const {

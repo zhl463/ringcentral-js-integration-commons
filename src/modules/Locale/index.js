@@ -1,5 +1,5 @@
-import RcModule from '../../lib/RcModule';
 import formatMessage from 'format-message';
+import RcModule from '../../lib/RcModule';
 
 import I18n from '../../lib/I18n';
 import moduleStatus from '../../enums/moduleStatus';
@@ -7,6 +7,38 @@ import actionTypes from './actionTypes';
 import getLocaleReducer from './getLocaleReducer';
 
 /* eslint-disable global-require */
+
+/**
+ *  @function
+ *  @description Check if the current environement requires the Intl polyfill.
+ *  @return {Promise}
+ */
+function checkIntl() {
+  return new Promise((resolve) => {
+    if (!global.Intl) {
+      if (process.browser) {
+        require.ensure([
+          'intl',
+          'intl/locale-data/jsonp/en',
+          'intl/locale-data/jsonp/de',
+          'intl/locale-data/jsonp/fr',
+        ], (require) => {
+          require('intl');
+          require('intl/locale-data/jsonp/en');
+          require('intl/locale-data/jsonp/de');
+          require('intl/locale-data/jsonp/fr');
+
+          resolve();
+        }, 'intl');
+      } else {
+        require('intl');
+        resolve();
+      }
+    } else {
+      resolve();
+    }
+  });
+}
 
 export default class Locale extends RcModule {
   constructor({
@@ -21,7 +53,7 @@ export default class Locale extends RcModule {
   }
   initialize() {
     (async () => {
-      await this._checkIntl();
+      await checkIntl();
       await I18n.setLocale(this.currentLocale);
       formatMessage.setup({
         locale: this.currentLocale,
@@ -30,39 +62,6 @@ export default class Locale extends RcModule {
         type: this.actionTypes.initSuccess,
       });
     })();
-  }
-
-  /**
-   *  @function
-   *  @description Check if the current environement requires the Intl polyfill.
-   *  @return {Promise}
-   */
-  _checkIntl() {
-    return new Promise(resolve => {
-      if (!global.Intl) {
-        if (process.browser) {
-          require.ensure([
-            'intl',
-            'intl/locale-data/jsonp/en',
-            'intl/locale-data/jsonp/de',
-            'intl/locale-data/jsonp/fr',
-          ], require => {
-            require('intl');
-            require('intl/locale-data/jsonp/en');
-            require('intl/locale-data/jsonp/de');
-            require('intl/locale-data/jsonp/fr');
-
-            resolve();
-          }, 'intl');
-        } else {
-          require('intl');
-
-          resolve();
-        }
-      } else {
-        resolve();
-      }
-    });
   }
 
   /**

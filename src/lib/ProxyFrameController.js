@@ -30,7 +30,7 @@ export default class ProxyFrameController {
   constructor({
     prefix,
   } = {}) {
-    window.oAuthCallback = callbackUri => {
+    window.oAuthCallback = (callbackUri) => {
       window.parent.postMessage({
         callbackUri,
       }, '*');
@@ -48,7 +48,7 @@ export default class ProxyFrameController {
     });
 
     const key = `${prefix}-redirect-callbackUri`;
-    window.addEventListener('storage', e => {
+    window.addEventListener('storage', (e) => {
       if (e.key === key && e.newValue && e.newValue !== '') {
         const callbackUri = e.newValue;
         window.parent.postMessage({

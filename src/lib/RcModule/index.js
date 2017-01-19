@@ -1,5 +1,5 @@
-import { prefixEnum } from './Enum';
 import { createSelector } from 'reselect';
+import { prefixEnum } from '../Enum';
 
 /**
  * @function
@@ -184,7 +184,10 @@ export default class RcModule {
   _setStore(store) {
     this._store = store;
     for (const subModule in this) {
-      if (this.hasOwnProperty(subModule) && this[subModule] instanceof RcModule) {
+      if (
+        this::Object.prototype.hasOwnProperty(subModule) &&
+        this[subModule] instanceof RcModule
+      ) {
         this[subModule]._setStore(store);
       }
     }
@@ -199,7 +202,10 @@ export default class RcModule {
       this.initialize();
     }
     for (const subModule in this) {
-      if (this.hasOwnProperty(subModule) && this[subModule] instanceof RcModule) {
+      if (
+        this::Object.prototype.hasOwnProperty(subModule) &&
+        this[subModule] instanceof RcModule
+      ) {
         this[subModule]._initModule();
       }
     }

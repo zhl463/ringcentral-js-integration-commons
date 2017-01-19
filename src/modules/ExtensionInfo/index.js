@@ -27,7 +27,7 @@ const DEFAULT_COUNTRY = {
 
 function extractData(info) {
   const serviceFeatures = {};
-  info.serviceFeatures.forEach(f => {
+  info.serviceFeatures.forEach((f) => {
     serviceFeatures[f.featureName] = {
       enabled: f.enabled,
     };
@@ -76,6 +76,7 @@ export default class ExtensionInfo extends DataFetcher {
   }
 
   get country() {
-    return this.info.regionalSettings && this.info.regionalSettings.homeCountry || DEFAULT_COUNTRY;
+    return (this.info.regionalSettings && this.info.regionalSettings.homeCountry) ||
+      DEFAULT_COUNTRY;
   }
 }

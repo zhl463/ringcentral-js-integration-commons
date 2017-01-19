@@ -7,6 +7,7 @@ import getRegionSettingsReducer, {
 import moduleStatus from '../../enums/moduleStatus';
 import regionSettingsMessages from '../RegionSettings/regionSettingsMessages';
 import actionTypes from './actionTypes';
+import validateAreaCode from '../../lib/validateAreaCode';
 
 export default class RegionSettings extends RcModule {
   constructor({
@@ -90,17 +91,6 @@ export default class RegionSettings extends RcModule {
     return this._dialingPlan.plans;
   }
 
-  validateAreaCode(code) {
-    return !(
-      code.length > 0 &&
-      (
-        code.length !== 3 ||
-        code[0] === '0'
-        // /^(0|1|8)/.test(code)
-      )
-    );
-  }
-
   checkRegionSettings() {
     let countryCode = this._storage.getItem(this._countryCodeKey);
     if (countryCode && !this._dialingPlan.plans.find(plan => (
@@ -128,7 +118,7 @@ export default class RegionSettings extends RcModule {
     areaCode,
     countryCode,
   }) {
-    if (typeof areaCode !== 'undefined' && !this.validateAreaCode(areaCode)) {
+    if (typeof areaCode !== 'undefined' && !validateAreaCode(areaCode)) {
       this._alert.danger({
         message: regionSettingsMessages.areaCodeInvalid,
       });

@@ -12,7 +12,7 @@ export default class RedirectController {
         // fall back to use localStorage as a vessel to avoid opener is null bug
         const key = `${prefix}-redirect-callbackUri`;
         localStorage.removeItem(key);
-        window.addEventListener('storage', e => {
+        window.addEventListener('storage', (e) => {
           if (e.key === key && (!e.newValue || e.newValue === '')) {
             window.close();
           }

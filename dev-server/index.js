@@ -40,7 +40,7 @@ const DemoView = connect(state => ({
   data: state,
   invertTheme: false,
 }), () => ({
-  shouldExpandNode: (keyName, data, level) => !level,
+  shouldExpandNode: (keyName, data, level) => level < 2,
 }))(JSONTree);
 
 class DemoPhone extends RcModule {

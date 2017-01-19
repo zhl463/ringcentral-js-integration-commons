@@ -5,7 +5,7 @@ const DEFAULT_TTL = 24 * 60 * 60 * 1000;
 
 function extractData(permissions) {
   const output = {};
-  permissions.permissions.forEach(item => {
+  permissions.permissions.forEach((item) => {
     output[item.permission.id] = true;
   });
   return output;
@@ -19,13 +19,14 @@ export default class RolesAndPermissions extends DataFetcher {
     ...options
   }) {
     super({
+      ...options,
       name: 'rolesAndPermissions',
       client,
       ttl,
       fetchFunction: async () => extractData(
         await this._client.account().extension().authzProfile().get()
       ),
-      ...options
+      readyCheckFn: () => this._extensionInfo.ready,
     });
     this._extensionInfo = extensionInfo;
     this.addSelector(
@@ -33,44 +34,6 @@ export default class RolesAndPermissions extends DataFetcher {
       () => this.data,
       data => data || {},
     );
-  }
-  initialize() {
-    this.store.subscribe(async () => {
-      if (
-        this._auth.loggedIn &&
-        this._storage.ready &&
-        this._extensionInfo.ready &&
-        this.status === moduleStatus.pending
-      ) {
-        this.store.dispatch({
-          type: this.actionTypes.init,
-        });
-        if (
-          (!this._tabManager || this._tabManager.active) &&
-          (
-            this._auth.isFreshLogin ||
-            !this.timestamp ||
-            Date.now() - this.timestamp > this._ttl
-          )
-        ) {
-          await this.fetchData();
-        } else {
-          this._retry();
-        }
-        this.store.dispatch({
-          type: this.actionTypes.initSuccess,
-        });
-      } else if (
-        (!this._auth.loggedIn || !this._storage.ready || !this._extensionInfo.ready) &&
-        this.ready
-      ) {
-        this._clearTimeout();
-        this._promise = null;
-        this.store.dispatch({
-          type: this.actionTypes.resetSuccess,
-        });
-      }
-    });
   }
 
   get serviceFeatures() {

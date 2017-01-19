@@ -27,10 +27,11 @@ export default class Alert extends RcModule {
   }
 
   // this module has no dependency, and is always ready
+  // eslint-disable-next-line class-methods-use-this
   get status() {
     return moduleStatus.ready;
   }
-
+  // eslint-disable-next-line class-methods-use-this
   get ready() {
     return true;
   }

@@ -113,6 +113,6 @@ export default class AccountExtension extends DataFetcher {
   }
 
   isAvailableExtension(extensionNumber) {
-    return !!this.availableExtensions.find((item) => item.ext === extensionNumber);
+    return !!this.availableExtensions.find(item => item.ext === extensionNumber);
   }
 }

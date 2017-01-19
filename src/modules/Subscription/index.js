@@ -93,7 +93,7 @@ export default class Subscription extends RcModule {
         /* falls through */
       }
     }
-    this._subscription.on(this._subscription.events.notification, message => {
+    this._subscription.on(this._subscription.events.notification, (message) => {
       this.store.dispatch({
         type: this.actionTypes.notification,
         message,
@@ -104,7 +104,7 @@ export default class Subscription extends RcModule {
         type: this.actionTypes.removeSuccess,
       });
     });
-    this._subscription.on(this._subscription.events.removeError, error => {
+    this._subscription.on(this._subscription.events.removeError, (error) => {
       this.store.dispatch({
         type: this.actionTypes.removeError,
         error,
@@ -116,7 +116,7 @@ export default class Subscription extends RcModule {
         subscription: this._subscription.subscription(),
       });
     });
-    this._subscription.on(this._subscription.events.renewError, error => {
+    this._subscription.on(this._subscription.events.renewError, (error) => {
       if (this._subscription) {
         this._subscription.reset();
         this._subscription = null;
@@ -138,7 +138,7 @@ export default class Subscription extends RcModule {
         subscription: this._subscription.subscription(),
       });
     });
-    this._subscription.on(this._subscription.events.subscribeError, error => {
+    this._subscription.on(this._subscription.events.subscribeError, (error) => {
       this.store.dispatch({
         type: this.actionTypes.subscribeError,
         error,

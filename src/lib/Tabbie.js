@@ -47,7 +47,7 @@ export default class Tabbie {
         // avoid setting mainTabId repeatedly which may result in forced rendering
         if (!document.hidden && (await this.getMainTabId()) !== this.id) this._setAsMainTab();
       });
-      window.addEventListener('storage', async e => {
+      window.addEventListener('storage', async (e) => {
         if (e.key === this._mainTabKey) {
           // use the newest main tab id from localhost instead of from the event
           // to avoid race conditions
@@ -93,7 +93,7 @@ export default class Tabbie {
   }
   _gc = () => {
     const expiredCut = Date.now() - this._heartBeatExpire;
-    this._getHeartBeatKeys().forEach(async key => {
+    this._getHeartBeatKeys().forEach(async (key) => {
       if (localStorage.getItem(key) < expiredCut) {
         localStorage.removeItem(key);
         if (key.replace(this._heartBeatRegExp, '') === await this.getMainTabId()) {
@@ -106,7 +106,7 @@ export default class Tabbie {
   _getHeartBeatKeys() {
     const length = localStorage.length;
     const keys = new Set();
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < length; i += 1) {
       const key = localStorage.key(i);
       if (key && key !== '' && this._heartBeatRegExp.test(key)) keys.add(key);
     }
@@ -133,7 +133,7 @@ export default class Tabbie {
     const mainTabId = localStorage.getItem(this._mainTabKey);
     if (mainTabId) return mainTabId;
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       this.once('mainTabIdChanged', resolve);
     });
   }

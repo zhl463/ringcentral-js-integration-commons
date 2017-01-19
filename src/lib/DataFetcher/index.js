@@ -31,6 +31,7 @@ export default class DataFetcher extends RcModule {
     fetchFunction,
     subscriptionFilters,
     subscriptionHandler,
+    readyCheckFn,
     ...options
   }) {
     if (!name) {
@@ -54,6 +55,7 @@ export default class DataFetcher extends RcModule {
     this._fetchFunction = fetchFunction;
     this._subscriptionFilters = subscriptionFilters;
     this._subscriptionHandler = subscriptionHandler;
+    this._readyCheckFn = readyCheckFn;
 
     this._dataStorageKey = dataStorageKey;
     this._timestampStorageKey = timestampStorageKey;
@@ -73,8 +75,9 @@ export default class DataFetcher extends RcModule {
   }
   _onStateChange = async () => {
     if (
-      this._auth.loginStatus === loginStatus.loggedIn &&
+      this._auth.loggedIn &&
       this._storage.ready &&
+      (!this._readyCheckFn || this._readyCheckFn()) &&
       (!this._subscription || this._subscription.ready) &&
       this.status === moduleStatus.pending
     ) {
@@ -90,12 +93,10 @@ export default class DataFetcher extends RcModule {
         )
       ) {
         await this.fetchData();
+      } else if (this._polling) {
+        this._startPolling();
       } else {
-        if (this._polling) {
-          this._startPolling();
-        } else {
-          this._retry();
-        }
+        this._retry();
       }
       if (this._subscription && this._subscriptionFilters) {
         this._subscription.subscribe(this._subscriptionFilters);
@@ -107,6 +108,7 @@ export default class DataFetcher extends RcModule {
       (
         !this._auth.loggedIn ||
         !this._storage.ready ||
+        (this._readyCheckFn && !this._readyCheckFn()) ||
         (this._subscription && !this._subscription.ready)
       ) &&
       this.ready
@@ -149,7 +151,7 @@ export default class DataFetcher extends RcModule {
   _clearTimeout() {
     if (this._timeoutId) clearTimeout(this._timeoutId);
   }
-  _startPolling(t = this.timestamp + this._ttl + 10 - Date.now()) {
+  _startPolling(t = (this.timestamp + this._ttl + 10) - Date.now()) {
     this._clearTimeout();
     this._timeoutId = setTimeout(() => {
       this._timeoutId = null;
@@ -159,12 +161,10 @@ export default class DataFetcher extends RcModule {
         } else {
           this._startPolling();
         }
+      } else if (this.timestamp && Date.now() - this.timestamp < this._ttl) {
+        this._startPolling();
       } else {
-        if (this.timestamp && Date.now() - this.timestamp < this._ttl) {
-          this._startPolling();
-        } else {
-          this._startPolling(this._timeToRetry);
-        }
+        this._startPolling(this._timeToRetry);
       }
     }, t);
   }

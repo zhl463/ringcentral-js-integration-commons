@@ -9,9 +9,9 @@ export default class ForwardingNumber extends DataFetcher {
     super({
       name: 'forwardingNumber',
       client,
-      fetchFunction: async () => (await fetchList(params => (
+      fetchFunction: async () => fetchList(params => (
         this._client.account().extension().forwardingNumber().list(params)
-      ))),
+      )),
       ...options,
     });
 

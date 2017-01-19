@@ -2,7 +2,6 @@ import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import subscriptionStatus from './subscriptionStatus';
 
-
 export function getCachedSubscriptionReducer(types) {
   return (state = null, { type, subscription }) => {
     switch (type) {
@@ -63,7 +62,7 @@ export function getFiltersReducer(types) {
 
       case types.addFilters: {
         const filterMap = {};
-        return state.concat(filters).filter(f => {
+        return state.concat(filters).filter((f) => {
           if (!filterMap[f]) {
             filterMap[f] = true;
             return true;
@@ -73,7 +72,7 @@ export function getFiltersReducer(types) {
       }
       case types.removeFilters: {
         const filterMap = {};
-        filters.forEach(f => {
+        filters.forEach((f) => {
           filterMap[f] = true;
         });
         return state.filter(f => !filterMap[f]);

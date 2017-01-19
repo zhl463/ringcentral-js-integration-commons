@@ -1,5 +1,5 @@
-import parseNumber from '../parseNumber';
 import { formatE164 } from 'phoneformat.js';
+import parseNumber from '../parseNumber';
 
 /**
  * @function

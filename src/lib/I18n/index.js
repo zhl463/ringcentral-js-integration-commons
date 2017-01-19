@@ -65,11 +65,11 @@ export default class I18n {
     }
     return key;
   }
-
+  // eslint-disable-next-line class-methods-use-this
   get currentLocale() {
     return RUNTIME.locale;
   }
-
+  // eslint-disable-next-line class-methods-use-this
   get setLocale() {
     return setLocale;
   }

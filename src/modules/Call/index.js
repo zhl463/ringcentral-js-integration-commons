@@ -206,40 +206,14 @@ export default class Call extends RcModule {
         this._softphone.makeCall(toNumber);
         break;
       case callingModes.ringout:
-        try {
-          await this._ringout.makeCall({
-            fromNumber,
-            toNumber,
-            prompt: this._callingSettings.ringoutPrompt,
-          });
-        } catch (e) {
-          if (e.message === ringoutErrors.pollingFailed) {
-            this._alertGenericError(e.error);
-          } else if (e.message === ringoutErrors.firstLegConnectFailed) {
-            this._alert.warning({
-              message: callErrors.connectFailed,
-              payroll: e.error
-            });
-          }
-        }
+        await this._ringout.makeCall({
+          fromNumber,
+          toNumber,
+          prompt: this._callingSettings.ringoutPrompt,
+        });
         break;
       default:
         break;
-    }
-  }
-
-  _alertGenericError(e) {
-    const networkErr = /Network/.test(e);
-    if (networkErr) {
-      this._alert.danger({
-        message: callErrors.networkError,
-        payroll: e
-      });
-    } else {
-      this._alert.danger({
-        message: callErrors.internalError,
-        payroll: e
-      });
     }
   }
 

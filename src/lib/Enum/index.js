@@ -13,7 +13,7 @@ export default class Enum extends KeyValueMap {
    */
   constructor(values = [], prefix = '') {
     const definition = {};
-    values.forEach(value => {
+    values.forEach((value) => {
       definition[value] = prefix !== '' ? `${prefix}-${value}` : value;
     });
     super(definition);

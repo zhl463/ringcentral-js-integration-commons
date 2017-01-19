@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import RcModule from './RcModule';
-import Enum, { prefixEnum } from './Enum';
 import { createStore, combineReducers } from 'redux';
 import uuid from 'uuid';
+import RcModule from './';
+import Enum, { prefixEnum } from '../Enum';
 
 describe('RcModule', () => {
   it('should be a constructor function', () => {

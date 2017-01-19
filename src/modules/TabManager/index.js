@@ -24,7 +24,7 @@ export default class TabManager extends RcModule {
       active: await this._tabbie.checkIsMain(),
     });
     if (this._tabbie.enabled) {
-      this._tabbie.on('mainTabIdChanged', async mainTabId => {
+      this._tabbie.on('mainTabIdChanged', async (mainTabId) => {
         this.store.dispatch({
           type: this.actionTypes.mainTabIdChanged,
           mainTabId,

@@ -12,8 +12,8 @@ export default function parseNumber(phoneNumber) {
   ] = withoutPlus.split('*');
   return {
     hasPlus: hasPlus && number !== '',
-    number: isServiceNumber && extension || number || '',
-    extension: !isServiceNumber && extension || '',
+    number: (isServiceNumber && extension) || number || '',
+    extension: (!isServiceNumber && extension) || '',
     isServiceNumber,
   };
 }

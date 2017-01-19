@@ -28,7 +28,7 @@ export default class Subscribable {
    * @function
    */
   trigger() {
-    [...this._handlers].forEach(handler => {
+    [...this._handlers].forEach((handler) => {
       try {
         handler();
       } catch (e) {

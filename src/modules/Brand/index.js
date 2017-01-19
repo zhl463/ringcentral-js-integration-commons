@@ -20,10 +20,12 @@ export default class Brand extends RcModule {
     return this.state.fullName;
   }
 
+  // eslint-disable-next-line class-methods-use-this
   get status() {
     return moduleStatus.ready;
   }
 
+  // eslint-disable-next-line class-methods-use-this
   get ready() {
     return true;
   }

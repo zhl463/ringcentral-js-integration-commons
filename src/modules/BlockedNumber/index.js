@@ -10,9 +10,9 @@ export default class BlockedNumber extends DataFetcher {
       ...options,
       name: 'blockedNumber',
       client,
-      fetchFunction: async () => (await fetchList(params => (
+      fetchFunction: async () => fetchList(params => (
         this._client.account().extension().blockedNumber().list(params)
-      ))),
+      )),
     });
     this.addSelector(
       'numbers',

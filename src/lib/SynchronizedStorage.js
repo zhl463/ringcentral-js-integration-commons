@@ -15,7 +15,7 @@ export default class SynchronizedStorage {
     this._storageKey = storageKey;
     this._id = uuid.v4();
     if (typeof localStorage !== 'undefined' && typeof window !== 'undefined') {
-      this._storageHandler = event => {
+      this._storageHandler = (event) => {
         if (event.key.substring(0, this._storageKey.length) === this._storageKey) {
           try {
             const {
@@ -46,7 +46,7 @@ export default class SynchronizedStorage {
   getLocalStorageKeys() {
     const len = this._localStorage.length;
     const keys = [];
-    for (let i = 0; i < len; i++) {
+    for (let i = 0; i < len; i += 1) {
       const key = this._localStorage.key(i);
       if (key && key !== '') {
         keys.push(key);
@@ -56,7 +56,7 @@ export default class SynchronizedStorage {
   }
   getData() {
     const output = {};
-    this.getLocalStorageKeys().forEach(key => {
+    this.getLocalStorageKeys().forEach((key) => {
       if (key.substring(0, this._storageKey.length) === this._storageKey) {
         const dataKey = key.substring(this._storageKey.length + 1);
         output[dataKey] = this.getItem(dataKey);
