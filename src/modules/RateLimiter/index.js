@@ -76,9 +76,9 @@ export default class RateLimiter extends RcModule {
         timestamp: Date.now(),
       });
       if (!wasThrottling && this._alert) {
-        this._alert({
+        this._alert.danger({
           message: errorMessages.rateLimitReached,
-          ttl: 0,
+          ttl: this.ttl,
           allowDuplicates: false,
         });
       }
