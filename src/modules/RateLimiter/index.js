@@ -65,6 +65,15 @@ export default class RateLimiter extends RcModule {
       });
     }
   }
+  showAlert() {
+    if (this.throttling && this._alert) {
+      this._alert.danger({
+        message: errorMessages.rateLimitReached,
+        ttl: this.ttl,
+        allowDuplicates: false,
+      });
+    }
+  }
   _requestErrorHandler = (apiResponse) => {
     if (
       apiResponse instanceof Error &&
@@ -75,12 +84,8 @@ export default class RateLimiter extends RcModule {
         type: this.actionTypes.startThrottle,
         timestamp: Date.now(),
       });
-      if (!wasThrottling && this._alert) {
-        this._alert.danger({
-          message: errorMessages.rateLimitReached,
-          ttl: this.ttl,
-          allowDuplicates: false,
-        });
+      if (!wasThrottling) {
+        this.showAlert();
       }
       setTimeout(this._checkTimestamp, this._throttleDuration);
     }

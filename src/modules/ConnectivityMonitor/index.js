@@ -51,6 +51,15 @@ export default class ConnectivityMonitor extends RcModule {
     }
     this._clearTimeout();
   }
+  showAlert() {
+    if (!this.connectivity && this._alert) {
+      this._alert.danger({
+        message: connectivityMonitorMessages.disconnected,
+        ttl: 0,
+        allowDuplicates: false,
+      });
+    }
+  }
   _requestErrorHandler = (apiResponse) => {
     if (
       apiResponse instanceof Error &&
@@ -60,13 +69,7 @@ export default class ConnectivityMonitor extends RcModule {
         this.store.dispatch({
           type: this.actionTypes.connectFail,
         });
-        if (this._alert) {
-          this._alert.danger({
-            message: connectivityMonitorMessages.disconnected,
-            ttl: 0,
-            allowDuplicates: false,
-          });
-        }
+        this.showAlert();
       }
       this._retry();
     }
