@@ -111,6 +111,10 @@ export default class RateLimiter extends RcModule {
     return this._storage.getItem(this._storageKey);
   }
 
+  get throttleDuration() {
+    return this._throttleDuration;
+  }
+
   get throttling() {
     return Date.now() - this._storage.getItem(this._storageKey) <= this._throttleDuration;
   }
