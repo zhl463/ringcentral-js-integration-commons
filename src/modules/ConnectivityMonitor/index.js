@@ -48,6 +48,15 @@ export default class ConnectivityMonitor extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.connectSuccess,
       });
+      if (this._alert) {
+        // dismiss disconnected alerts if found
+        const alertIds = this._alert.messages.filter(m => (
+          m.message === connectivityMonitorMessages.disconnected
+        )).map(m => m.id);
+        if (alertIds.length) {
+          this._alert.dismiss(alertIds);
+        }
+      }
     }
     this._clearTimeout();
   }
