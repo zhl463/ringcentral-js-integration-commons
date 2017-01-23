@@ -55,6 +55,16 @@ describe('getMessagesReducer', () => {
         timestamp: 1234
       }]);
     });
+    it('should return state if allowDuplicates === false and message already exists', () => {
+      const originalState = [{
+        message: 'foo',
+      }];
+      expect(reducer(originalState, {
+        type: actionTypes.alert,
+        message: 'foo',
+        allowDuplicates: false,
+      })).to.equal(originalState);
+    });
     it('should remove messages specified by the ids on dismiss', () => {
       expect(reducer([{ id: 'foo' }, { id: 'bar' }, { id: 'rogue' }], {
         type: actionTypes.dismiss,

@@ -10,9 +10,13 @@ export function getMessagesReducer(types) {
     ids,
     timestamp,
     id,
+    allowDuplicates,
   }) => {
     switch (type) {
       case types.alert:
+        if (!allowDuplicates && state.find(item => item.message === message)) {
+          return state;
+        }
         return [
           ...state,
           {

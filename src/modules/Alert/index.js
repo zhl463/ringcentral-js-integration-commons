@@ -67,6 +67,7 @@ export default class Alert extends RcModule {
     payload,
     level = alertLevels.info,
     ttl = this._ttl,
+    allowDuplicates = true,
   }) {
     this.store.dispatch({
       type: this.actionTypes.alert,
@@ -74,6 +75,7 @@ export default class Alert extends RcModule {
       payload,
       level,
       ttl,
+      allowDuplicates,
       id: uuid.v4(),
       timestamp: Date.now(),
     });

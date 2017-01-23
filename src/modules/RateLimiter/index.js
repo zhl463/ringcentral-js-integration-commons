@@ -10,6 +10,7 @@ const DEFAULT_THROTTLE_DURATION = 61 * 1000;
 
 export default class RateLimiter extends RcModule {
   constructor({
+    alert,
     client,
     environment,
     globalStorage,
@@ -20,6 +21,7 @@ export default class RateLimiter extends RcModule {
       ...options,
       actionTypes,
     });
+    this._alert = alert;
     this._client = client;
     this._environment = environment;
     this._storage = globalStorage;
@@ -68,10 +70,18 @@ export default class RateLimiter extends RcModule {
       apiResponse instanceof Error &&
       apiResponse.message === 'Request rate exceeded'
     ) {
+      const wasThrottling = this.throttling;
       this.store.dispatch({
         type: this.actionTypes.startThrottle,
         timestamp: Date.now(),
       });
+      if (!wasThrottling && this._alert) {
+        this._alert({
+          message: errorMessages.rateLimitReached,
+          ttl: 0,
+          allowDuplicates: false,
+        });
+      }
       setTimeout(this._checkTimestamp, this._throttleDuration);
     }
   }
@@ -92,7 +102,7 @@ export default class RateLimiter extends RcModule {
   get ttl() {
     return this.throttling ? this._throttleDuration - (Date.now() - this.timestamp) : 0;
   }
-  
+
   get status() {
     return this.state.status;
   }

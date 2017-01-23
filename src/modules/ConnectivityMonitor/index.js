@@ -2,11 +2,13 @@ import RcModule from '../../lib/RcModule';
 import actionTypes from './actionTypes';
 import moduleStatus from '../../enums/moduleStatus';
 import getConnectivityMonitorReducer from './getConnectivityMonitorReducer';
+import connectivityMonitorMessages from './connectivityMonitorMessages';
 
 const DEFAULT_TIME_TO_RETRY = 5000;
 
 export default class ConnectivityMonitor extends RcModule {
   constructor({
+    alert,
     client,
     environment,
     timeToRetry = DEFAULT_TIME_TO_RETRY,
@@ -16,6 +18,7 @@ export default class ConnectivityMonitor extends RcModule {
       ...options,
       actionTypes,
     });
+    this._alert = alert;
     this._client = client;
     this._environment = environment;
     this._timeToRetry = timeToRetry;
@@ -57,6 +60,13 @@ export default class ConnectivityMonitor extends RcModule {
         this.store.dispatch({
           type: this.actionTypes.connectFail,
         });
+        if (this._alert) {
+          this._alert.danger({
+            message: connectivityMonitorMessages.disconnected,
+            ttl: 0,
+            allowDuplicates: false,
+          });
+        }
       }
       this._retry();
     }

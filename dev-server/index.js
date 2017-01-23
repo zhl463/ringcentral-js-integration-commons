@@ -77,6 +77,7 @@ class DemoPhone extends RcModule {
       getState: () => this.state.environment,
     }));
     this.addModule('connectivityMonitor', new ConnectivityMonitor({
+      alert: this.alert,
       client: this.client,
       environment: this.environment,
       getState: () => this.state.connectivityMonitor,
@@ -95,6 +96,7 @@ class DemoPhone extends RcModule {
       getState: () => this.state.storage,
     }));
     this.addModule('rateLimiter', new RateLimiter({
+      alert: this.alert,
       client: this.client,
       environment: this.environment,
       globalStorage: this.globalStorage,
