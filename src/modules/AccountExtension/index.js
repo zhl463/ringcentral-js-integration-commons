@@ -73,7 +73,7 @@ export default class AccountExtension extends DataFetcher {
                 if (isEssential(extensionData)) {
                   if (this.isAvailableExtension(extensionData.extensionNumber)) {
                     this.store.dispatch({
-                      type: this.actionTypes.update,
+                      type: this.actionTypes.add,
                       data: simplifyExtensionData(extensionData),
                       timestamp: Date.now(),
                     });
