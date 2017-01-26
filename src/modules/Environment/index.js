@@ -41,22 +41,35 @@ export default class Environment extends RcModule {
     });
   }
   initialize() {
-    this.store.subscribe(() => {
-      if (
-        this._globalStorage.ready &&
-        !this.ready
-      ) {
-        if (this.enabled) {
-          this._client.service = new SDK({
-            ...this._sdkConfig,
-            server: this.server,
-          });
-        }
-        this.store.dispatch({
-          type: this.actionTypes.initSuccess,
-        });
-      }
-    });
+    this.store.subscribe(this._onStateChange);
+  }
+  _onStateChange() {
+    if (this._shouldInit()) {
+      this._initClientService();
+      this.store.dispatch({
+        type: this.actionTypes.initSuccess,
+      });
+    }
+  }
+  _shouldInit() {
+    return this._globalStorage.ready && !this.ready;
+  }
+  _initClientService() {
+    if (this.enabled) {
+      this._client.service = new SDK({
+        ...this._sdkConfig,
+        server: this.server,
+      });
+    }
+  }
+  _changeEnvironment(enabled, server) {
+    const newConfig = {
+      ...this._sdkConfig,
+    };
+    if (enabled) {
+      newConfig.server = server;
+    }
+    this._client.service = new SDK(newConfig);
   }
 
   setData({ server, enabled }) {
@@ -64,13 +77,7 @@ export default class Environment extends RcModule {
       this.enabled !== enabled ||
       (enabled && this.server !== server);
     if (environmentChanged) {
-      const newConfig = {
-        ...this._sdkConfig,
-      };
-      if (enabled) {
-        newConfig.server = server;
-      }
-      this._client.service = new SDK(newConfig);
+      this._changeEnvironment(enabled, server);
     }
     this.store.dispatch({
       type: this.actionTypes.setData,
