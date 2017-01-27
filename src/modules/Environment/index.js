@@ -41,7 +41,7 @@ export default class Environment extends RcModule {
     });
   }
   initialize() {
-    this.store.subscribe(this._onStateChange);
+    this.store.subscribe(() => this._onStateChange());
   }
   _onStateChange() {
     if (this._shouldInit()) {
