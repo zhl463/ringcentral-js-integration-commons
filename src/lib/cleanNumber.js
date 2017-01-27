@@ -4,8 +4,8 @@ const extensionDelimiter = /[*#]/g;
 /**
  * @function
  * @param {String} phoneNumber
- * @description Remove any characters except numeric, #, *, and leading +. We do not consider the 
- * situation that a number contains several *, # or a combination of these 2 symbols strictly.
+ * @description Remove any characters except numeric, #, *, and leading +. We only consider 
+ * first occurence of * or #. Things after subsequent * or # will be removed.
  */
 export default function cleanNumber(phoneNumber) {
   const cleaned = phoneNumber.replace(cleanRegex, '');
