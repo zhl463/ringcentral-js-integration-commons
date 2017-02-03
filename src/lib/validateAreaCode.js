@@ -1,7 +1,13 @@
 export default function validateAreaCode(code) {
-  return !(
-    code === undefined ||
-    code.trim().length === 0 ||
-    (code.length > 0 && (code.length !== 3 || code[0] === '0'))
-  );
+  if (code === undefined) {
+    return true;
+  }
+  if (code === null) {
+    return false;
+  }
+  const areaCode = code.trim();
+  if (areaCode.length === 0) {
+    return true;
+  }
+  return (areaCode.length === 3) && areaCode[0] !== '0';
 }

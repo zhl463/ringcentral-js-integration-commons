@@ -118,20 +118,20 @@ export default class RegionSettings extends RcModule {
     areaCode,
     countryCode,
   }) {
-    if (typeof areaCode !== 'undefined' && !validateAreaCode(areaCode)) {
+    if (!validateAreaCode(areaCode)) {
       this._alert.danger({
         message: regionSettingsMessages.areaCodeInvalid,
       });
-    } else {
-      this.store.dispatch({
-        type: this.actionTypes.setData,
-        countryCode,
-        areaCode,
-      });
-      this._alert.info({
-        message: regionSettingsMessages.saveSuccess,
-      });
+      return;
     }
+    this.store.dispatch({
+      type: this.actionTypes.setData,
+      countryCode,
+      areaCode: areaCode && areaCode.trim(),
+    });
+    this._alert.info({
+      message: regionSettingsMessages.saveSuccess,
+    });
   }
 
   setCountryCode(countryCode) {
