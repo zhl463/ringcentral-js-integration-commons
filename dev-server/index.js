@@ -33,6 +33,7 @@ import Softphone from '../src/modules/Softphone';
 import Storage from '../src/modules/Storage';
 import Subscription from '../src/modules/Subscription';
 import TabManager from '../src/modules/TabManager';
+import NumberValidate from '../src/modules/NumberValidate';
 
 import config from './config';
 
@@ -211,6 +212,12 @@ class DemoPhone extends RcModule {
       subscription: this.subscription,
       getState: () => this.state.presence,
     }));
+    this.addModule('numberValidate', new NumberValidate({
+      client: this.client,
+      accountExtension: this.accountExtension,
+      regionSettings: this.regionSettings,
+      getState: () => this.state.numberValidate,
+    }));
     this._reducer = combineReducers({
       accountInfo: this.accountInfo.reducer,
       accountExtension: this.accountExtension.reducer,
@@ -236,6 +243,7 @@ class DemoPhone extends RcModule {
       regionSettings: this.regionSettings.reducer,
       subscription: this.subscription.reducer,
       tabManager: this.tabManager.reducer,
+      numberValidate: this.numberValidate.reducer,
       lastAction: (state = null, action) => {
         console.log(action);
         return action;
