@@ -1,4 +1,5 @@
 import RcModule from '../../lib/RcModule';
+import isBlank from '../../lib/isBlank';
 import moduleStatus from '../../enums/moduleStatus';
 import normalizeNumber from '../../lib/normalizeNumber';
 import cleanNumber from '../../lib/cleanNumber';
@@ -48,15 +49,8 @@ export default class NumberValidate extends RcModule {
     });
   }
 
-  _isBlank(phoneNumber) {
-    if (!phoneNumber) {
-      return true;
-    }
-    return !/\S/.test(phoneNumber);
-  }
-
   isNoToNumber(phoneNumber) {
-    if (this._isBlank(phoneNumber)) {
+    if (isBlank(phoneNumber)) {
       return true;
     }
     const cleaned = cleanNumber(phoneNumber);

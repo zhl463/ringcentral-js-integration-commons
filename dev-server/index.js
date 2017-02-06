@@ -34,6 +34,8 @@ import Storage from '../src/modules/Storage';
 import Subscription from '../src/modules/Subscription';
 import TabManager from '../src/modules/TabManager';
 import NumberValidate from '../src/modules/NumberValidate';
+import MessageSender from '../src/modules/MessageSender';
+import ComposeText from '../src/modules/ComposeText';
 
 import config from './config';
 
@@ -218,6 +220,21 @@ class DemoPhone extends RcModule {
       regionSettings: this.regionSettings,
       getState: () => this.state.numberValidate,
     }));
+    this.addModule('messageSender', new MessageSender({
+      alert: this.alert,
+      client: this.client,
+      getState: () => this.state.messageSender,
+      extensionPhoneNumber: this.extensionPhoneNumber,
+      extensionInfo: this.extensionInfo,
+      numberValidate: this.numberValidate,
+    }));
+    this.addModule('composeText', new ComposeText({
+      alert: this.alert,
+      storage: this.storage,
+      getState: () => this.state.composeText,
+      messageSender: this.messageSender,
+      numberValidate: this.numberValidate,
+    }));
     this._reducer = combineReducers({
       accountInfo: this.accountInfo.reducer,
       accountExtension: this.accountExtension.reducer,
@@ -244,6 +261,8 @@ class DemoPhone extends RcModule {
       subscription: this.subscription.reducer,
       tabManager: this.tabManager.reducer,
       numberValidate: this.numberValidate.reducer,
+      messageSender: this.messageSender.reducer,
+      composeText: this.composeText.reducer,
       lastAction: (state = null, action) => {
         console.log(action);
         return action;
