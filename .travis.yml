@@ -12,6 +12,7 @@ deploy:
     script: ../scripts/start_release.sh
     on:
       node: '6'
+      condition: "$TRAVIS_TAG == ''"
       branches:
         only:
           - master

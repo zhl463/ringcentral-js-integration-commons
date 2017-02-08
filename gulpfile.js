@@ -221,7 +221,6 @@ async function exec(command) {
   return new Promise((resolve, reject) => {
     cp.exec(command, (error, stdout, stderr) => {
       if (error) {
-        console.error(`exec error: ${error}`);
         reject(error);
         return;
       }
@@ -231,12 +230,16 @@ async function exec(command) {
 }
 
 async function getVersionFromTag() {
-  let tag = await exec('git describe --abbrev=0 --tags');
-  tag = tag.replace(/\r?\n|\r/g, '');
-  if (/^\d+.\d+.\d+/.test(tag)) {
-    return tag;
+  try {
+    let tag = await exec('git describe --exact-match --tags $(git rev-parse HEAD)');
+    tag = tag.replace(/\r?\n|\r/g, '');
+    if (/^\d+.\d+.\d+/.test(tag)) {
+      return tag;
+    }
+    return null;
+  } catch (e) {
+    return null;
   }
-  return null;
 }
 
 gulp.task('release-clean', async () => {
