@@ -217,6 +217,28 @@ async function spawn(cmd, opts = {}) {
   });
 }
 
+async function exec(command) {
+  return new Promise((resolve, reject) => {
+    cp.exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        reject(error);
+        return;
+      }
+      resolve(stdout);
+    });
+  });
+}
+
+async function getVersionFromTag() {
+  let tag = await exec('git describe --abbrev=0 --tags');
+  tag = tag.replace(/\r?\n|\r/g, '');
+  if (/^\d+.\d+.\d+/.test(tag)) {
+    return tag;
+  }
+  return null;
+}
+
 gulp.task('release-clean', async () => {
   if (!await fs.exists('release')) {
     await fs.mkdir('release');
@@ -228,7 +250,7 @@ gulp.task('release-clean', async () => {
 });
 
 gulp.task('release-copy', ['build', 'release-clean'], () => (
-  gulp.src('build/**')
+  gulp.src(['build/**', 'README.md'])
     .pipe(gulp.dest('release'))
 ));
 
@@ -236,5 +258,9 @@ gulp.task('release', ['release-copy'], async () => {
   const packageInfo = JSON.parse(await fs.readFile('package.json'));
   delete packageInfo.scripts;
   packageInfo.main = 'rc-phone.js';
+  const version = await getVersionFromTag();
+  if (version) {
+    packageInfo.version = version;
+  }
   await fs.writeFile('release/package.json', JSON.stringify(packageInfo, null, 2));
 });
