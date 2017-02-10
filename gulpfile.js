@@ -232,7 +232,6 @@ async function exec(command) {
 async function getVersionFromTag() {
   try {
     let tag = await exec('git describe --exact-match --tags $(git rev-parse HEAD)');
-    console.log(tag);
     tag = tag.replace(/\r?\n|\r/g, '');
     if (/^\d+.\d+.\d+/.test(tag)) {
       return tag;
@@ -263,7 +262,6 @@ gulp.task('release', ['release-copy'], async () => {
   delete packageInfo.scripts;
   packageInfo.main = 'rc-phone.js';
   const version = await getVersionFromTag();
-  console.log(version);
   if (version) {
     packageInfo.version = version;
   }
