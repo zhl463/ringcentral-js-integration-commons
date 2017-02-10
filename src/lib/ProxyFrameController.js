@@ -53,6 +53,7 @@ export default class ProxyFrameController {
         const callbackUri = e.newValue;
         window.parent.postMessage({
           callbackUri,
+          fromLocalStorage: true,
         }, '*');
         localStorage.removeItem(key);
       }

@@ -148,7 +148,7 @@ export default class Auth extends RcModule {
       if (
         this.status === moduleStatus.pending &&
         this._locale.ready &&
-        (!this._tabManager || this._tabManager.ready) &&
+        this._tabManager.ready &&
         (!this._environment || this._environment.ready)
       ) {
         this.store.dispatch({
@@ -163,7 +163,6 @@ export default class Auth extends RcModule {
         });
       }
       if (
-        this._tabManager &&
         this._tabManager.ready &&
         this.ready
       ) {
@@ -350,8 +349,9 @@ export default class Auth extends RcModule {
         const {
           callbackUri,
           proxyLoaded,
+          fromLocalStorage,
         } = data;
-        if (callbackUri) {
+        if (callbackUri && (fromLocalStorage !== true || this._tabManager.active)) {
           try {
             const code = parseCallbackUri(callbackUri);
             if (code) {
