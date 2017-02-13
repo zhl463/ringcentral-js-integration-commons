@@ -37,6 +37,7 @@ import NumberValidate from '../src/modules/NumberValidate';
 import MessageSender from '../src/modules/MessageSender';
 import ComposeText from '../src/modules/ComposeText';
 import MessageStore from '../src/modules/MessageStore';
+import Messages from '../src/modules/Messages';
 
 import config from './config';
 
@@ -244,6 +245,10 @@ class DemoPhone extends RcModule {
       subscription: this.subscription,
       getState: () => this.state.messageStore,
     }));
+    this.addModule('messages', new Messages({
+      messageStore: this.messageStore,
+      getState: () => this.state.messages,
+    }));
     this._reducer = combineReducers({
       accountInfo: this.accountInfo.reducer,
       accountExtension: this.accountExtension.reducer,
@@ -273,6 +278,7 @@ class DemoPhone extends RcModule {
       messageSender: this.messageSender.reducer,
       composeText: this.composeText.reducer,
       messageStore: this.messageStore.reducer,
+      messages: this.messages.reducer,
       lastAction: (state = null, action) => {
         console.log(action);
         return action;
