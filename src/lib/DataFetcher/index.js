@@ -92,7 +92,11 @@ export default class DataFetcher extends RcModule {
           Date.now() - this.timestamp > this._ttl
         )
       ) {
-        await this.fetchData();
+        try {
+          await this.fetchData();
+        } catch (e) {
+          console.error('fetchData error:', e);
+        }
       } else if (this._polling) {
         this._startPolling();
       } else {
