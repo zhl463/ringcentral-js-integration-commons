@@ -1,3 +1,4 @@
+import 'core-js/fn/array/find';
 import RcModule from '../../lib/RcModule';
 import isBlank from '../../lib/isBlank';
 import moduleStatus from '../../enums/moduleStatus';

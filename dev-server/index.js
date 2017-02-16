@@ -10,13 +10,18 @@ import RcModule from '../src/lib/RcModule';
 
 import AccountExtension from '../src/modules/AccountExtension';
 import AccountInfo from '../src/modules/AccountInfo';
+import ActiveCalls from '../src/modules/ActiveCalls';
 import Alert from '../src/modules/Alert';
 import Auth from '../src/modules/Auth';
 import BlockedNumber from '../src/modules/BlockedNumber';
 import Brand from '../src/modules/Brand';
 import Call from '../src/modules/Call';
+import CallHistory from '../src/modules/CallHistory';
 import CallingSettings from '../src/modules/CallingSettings';
+import CallMonitor from '../src/modules/CallMonitor';
+import CallLog from '../src/modules/CallLog';
 import ConnectivityMonitor from '../src/modules/ConnectivityMonitor';
+import DetailedPresence from '../src/modules/DetailedPresence';
 import DialingPlan from '../src/modules/DialingPlan';
 import Environment from '../src/modules/Environment';
 import ExtensionInfo from '../src/modules/ExtensionInfo';
@@ -117,7 +122,6 @@ class DemoPhone extends RcModule {
       client: this.client,
       getState: () => this.state.ringout,
     }));
-
     this.addModule('accountInfo', new AccountInfo({
       auth: this.auth,
       client: this.client,
@@ -194,6 +198,25 @@ class DemoPhone extends RcModule {
       tabManager: this.tabManager,
       getState: () => this.state.subscription,
     }));
+    this.addModule('detailedPresence', new DetailedPresence({
+      auth: this.auth,
+      client: this.client,
+      subscription: this.subscription,
+      getState: () => this.state.detailedPresence,
+    }));
+    this.addModule('activeCalls', new ActiveCalls({
+      auth: this.auth,
+      client: this.client,
+      subscription: this.subscription,
+      getState: () => this.state.activeCalls,
+    }));
+    this.addModule('callLog', new CallLog({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      subscription: this.subscription,
+      getState: () => this.state.callLog,
+    }));
     this.addModule('accountExtension', new AccountExtension({
       auth: this.auth,
       client: this.client,
@@ -239,6 +262,18 @@ class DemoPhone extends RcModule {
       messageSender: this.messageSender,
       numberValidate: this.numberValidate,
     }));
+    this.addModule('callMonitor', new CallMonitor({
+      detailedPresence: this.detailedPresence,
+      activeCalls: this.activeCalls,
+      regionSettings: this.regionSettings,
+      getState: () => this.state.callMonitor,
+    }));
+    this.addModule('callHistory', new CallHistory({
+      activeCalls: this.activeCalls,
+      callLog: this.callLog,
+      detailedPresence: this.detailedPresence,
+      getState: () => this.state.callHistory,
+    }));
     this.addModule('contactSearch', new ContactSearch({
       auth: this.auth,
       storage: this.storage,
@@ -277,17 +312,22 @@ class DemoPhone extends RcModule {
     this._reducer = combineReducers({
       accountInfo: this.accountInfo.reducer,
       accountExtension: this.accountExtension.reducer,
+      activeCalls: this.activeCalls.reducer,
       alert: this.alert.reducer,
       auth: this.auth.reducer,
       blockedNumber: this.blockedNumber.reducer,
       call: this.call.reducer,
+      callHistory: this.callHistory.reducer,
       callingSettings: this.callingSettings.reducer,
+      callMonitor: this.callMonitor.reducer,
+      callLog: this.callLog.reducer,
       connectivityMonitor: this.connectivityMonitor.reducer,
       environment: this.environment.reducer,
       extensionInfo: this.extensionInfo.reducer,
       extensionPhoneNumber: this.extensionPhoneNumber.reducer,
       forwardingNumber: this.forwardingNumber.reducer,
       brand: this.brand.reducer,
+      detailedPresence: this.detailedPresence.reducer,
       dialingPlan: this.dialingPlan.reducer,
       locale: this.locale.reducer,
       storage: this.storage.reducer,
