@@ -254,7 +254,7 @@ gulp.task('release-clean', async () => {
 });
 
 gulp.task('release-copy', ['build', 'release-clean'], () => (
-  gulp.src(['build/**', '!build/integration-test/**', '!build/integration-test', 'README.md', 'LICENSE'])
+  gulp.src(['build/**', 'README.md', 'LICENSE'])
     .pipe(gulp.dest('release'))
 ));
 
