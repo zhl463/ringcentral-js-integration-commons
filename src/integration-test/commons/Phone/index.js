@@ -33,15 +33,16 @@ import TabManager from '../../../modules/TabManager';
 import NumberValidate from '../../../modules/NumberValidate';
 import MessageSender from '../../../modules/MessageSender';
 import ComposeText from '../../../modules/ComposeText';
+import ContactSearch from '../../../modules/ContactSearch';
+
+import Messages from '../../../modules/Messages';
+import MessageStore from '../../../modules/MessageStore';
+import Conversation from '../../../modules/Conversation';
 
 // import DynamicsAdapter from '../../../modules/DynamicsInteraction';
 
 // import { callMonitorReducer } from '../CallMonitor/reducers';
-// import ContactSearch from '../ContactSearch';
 
-// import Messages from '../Messages';
-// import MessageStore from '../MessageStore';
-// import Conversation from '../Conversation';
 
 // import CallLog from '../CallLog';
 // import AutoLogger from '../AutoLogger';
@@ -350,17 +351,23 @@ export default class Phone extends RcModule {
     //   formatDateTimeFn: args => this.adapter.dateTimeIntlProvider().formatDateTime(args),
     // });
 
-    // this.addModule('contactSearch', new ContactSearch({
-    //   ...options,
-    //   auth: this.auth,
-    //   storage: this.storage,
-    //   getState: () => this.state.contactSearch,
-    // }));
-    // this.contactSearch.addSearchSource({
-    //   sourceName: 'dynamics',
-    //   searchFn: (...args) => this.adapter.searchEntities(...args),
-    //   readyCheckFn: () => this.adapter.ready,
-    // });
+    this.addModule('contactSearch', new ContactSearch({
+      ...options,
+      auth: this.auth,
+      storage: this.storage,
+      getState: () => this.state.contactSearch,
+    }));
+    this.contactSearch.addSearchSource({
+      sourceName: 'test',
+      searchFn: ({ searchString }) => [{
+        entityType: 'account',
+        name: searchString,
+        phoneNumber: '+1234567890',
+        phoneType: 'phone',
+      }],
+      formatFn: entities => entities,
+      readyCheckFn: () => true,
+    });
 
     this.addModule('numberValidate', new NumberValidate({
       ...options,
@@ -389,32 +396,30 @@ export default class Phone extends RcModule {
       numberValidate: this.numberValidate,
     }));
 
-    // this.addModule('messageStore', new MessageStore({
-    //   ...options,
-    //   auth: this.auth,
-    //   storage: this.storage,
-    //   alert: this.alert,
-    //   client: this.client,
-    //   subscription: this.subscription,
-    //   getState: () => this.state.messageStore,
-    // }));
+    this.addModule('messageStore', new MessageStore({
+      ...options,
+      alert: this.alert,
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      subscription: this.subscription,
+      getState: () => this.state.messageStore,
+    }));
 
-    // this.addModule('conversation', new Conversation({
-    //   ...options,
-    //   auth: this.auth,
-    //   alert: this.alert,
-    //   messageSender: this.messageSender,
-    //   extensionInfo: this.extensionInfo,
-    //   messageStore: this.messageStore,
-    //   getState: () => this.state.conversation,
-    // }));
+    this.addModule('conversation', new Conversation({
+      ...options,
+      auth: this.auth,
+      messageSender: this.messageSender,
+      extensionInfo: this.extensionInfo,
+      messageStore: this.messageStore,
+      getState: () => this.state.conversation,
+    }));
 
-    // this.addModule('messages', new Messages({
-    //   ...options,
-    //   alert: this.alert,
-    //   messageStore: this.messageStore,
-    //   getState: () => this.state.messages,
-    // }));
+    this.addModule('messages', new Messages({
+      ...options,
+      messageStore: this.messageStore,
+      getState: () => this.state.messages,
+    }));
 
     // this.addModule('adapter', new DynamicsAdapter({
     //   ...options,
@@ -468,13 +473,13 @@ export default class Phone extends RcModule {
       // autoLogger: this.autoLogger.reducer,
       globalStorage: this.globalStorage.reducer,
       // dateTimeIntl: this.dateTimeIntl.reducer,
-      // contactSearch: this.contactSearch.reducer,
+      contactSearch: this.contactSearch.reducer,
       numberValidate: this.numberValidate.reducer,
       messageSender: this.messageSender.reducer,
       composeText: this.composeText.reducer,
-      // messageStore: this.messageStore.reducer,
-      // conversation: this.conversation.reducer,
-      // messages: this.messages.reducer,
+      messageStore: this.messageStore.reducer,
+      conversation: this.conversation.reducer,
+      messages: this.messages.reducer,
       // adapter: this.adapter.reducer,
     });
   }

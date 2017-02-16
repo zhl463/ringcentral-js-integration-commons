@@ -281,9 +281,9 @@ class DemoPhone extends RcModule {
     }));
     this.contactSearch.addSearchSource({
       sourceName: 'test',
-      searchFn: str => [{
+      searchFn: ({ searchString }) => [{
         entityType: 'account',
-        name: str,
+        name: ({ searchString }),
         phoneNumber: '+1234567890',
         phoneType: 'phone',
       }],

@@ -160,7 +160,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
     });
 
     conditionalDescribe('Should Allow Alert', () => {
-      beforeEach(async () => {
+      beforeEach(async function () {
         composeText.clean();
         const isAlertClear = await waitUntilEqual(() => {
           alert.dismissAll();
