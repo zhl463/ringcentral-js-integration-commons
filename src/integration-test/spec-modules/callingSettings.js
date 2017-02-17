@@ -128,6 +128,7 @@ export default (auth, client, alert, account, callingSettings, extensionPhoneNum
     });
     conditionalDescribe('Should Remember after Logout', function() {
       it('Should Remember Calling Settings after Re-login', async function () {
+        this.timeout(20000);
         callingSettings.setData({
           callWith: callingOptions.customphone,
           myLocation: '456',
@@ -139,7 +140,6 @@ export default (auth, client, alert, account, callingSettings, extensionPhoneNum
           ...account
         });
         await waitUntilEqual(() => auth.loginStatus, 'LoginStatus', loginStatus.loggedIn, 3);
-        waitInSeconds(2);
         expect(callingSettings.ringoutPrompt).to.equals('456');
         expect(callingSettings.myLocation).to.equals('456');
         expect(callingSettings.callWith).to.equals(callingOptions.customphone);
