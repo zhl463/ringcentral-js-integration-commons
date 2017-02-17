@@ -176,7 +176,7 @@ export default class DetailedPresence extends Presence {
           dndStatus,
           timestamp: Date.now(),
         });
-        this._presenceCallPromise = null;
+        this._promise = null;
       }
     } catch (error) {
       if (this._auth.ownerId === ownerId) {
@@ -184,7 +184,7 @@ export default class DetailedPresence extends Presence {
           type: this.actionTypes.fetchError,
           error,
         });
-        this._presenceCallPromise = null;
+        this._promise = null;
       }
     }
   }
