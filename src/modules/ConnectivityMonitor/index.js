@@ -64,7 +64,6 @@ export default class ConnectivityMonitor extends RcModule {
     if (!this.connectivity && this._alert) {
       this._alert.danger({
         message: connectivityMonitorMessages.disconnected,
-        ttl: 0,
         allowDuplicates: false,
       });
     }
