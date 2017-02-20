@@ -32,6 +32,7 @@ export default class MessageStore extends RcModule {
     this._ttl = ttl;
     this._auth = auth;
     this._promise = null;
+    this._lastSubscriptionMessage = null;
     this.syncConversation = this.syncConversation.bind(this);
     storage.registerReducer({ key: this._storageKey, reducer: this._cacheReducer });
   }
@@ -51,7 +52,9 @@ export default class MessageStore extends RcModule {
       this._initMessageStore();
     } else if (this._shouldReset()) {
       this._resetModuleStatus();
-    } else if (this.ready) {
+    } else if (
+      this.ready
+    ) {
       this._subscriptionHandler();
     }
   }
@@ -106,11 +109,13 @@ export default class MessageStore extends RcModule {
     const accountExtesionEndPoint = /\/message-store$/;
     const message = this._subscription.message;
     if (
-      message !== null &&
+      message &&
+      message !== this._lastSubscriptionMessage &&
       accountExtesionEndPoint.test(message.event) &&
       message.body &&
       message.body.changes
     ) {
+      this._lastSubscriptionMessage = this._subscription.message;
       this._syncMessages();
     }
   }

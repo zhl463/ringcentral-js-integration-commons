@@ -46,6 +46,8 @@ import MessageStore from '../src/modules/MessageStore';
 import Conversation from '../src/modules/Conversation';
 import Messages from '../src/modules/Messages';
 
+import DateTimeIntl from '../src/modules/DateTimeIntl';
+
 import config from './config';
 
 const DemoView = connect(state => ({
@@ -309,6 +311,12 @@ class DemoPhone extends RcModule {
       messageStore: this.messageStore,
       getState: () => this.state.messages,
     }));
+    this.addModule('dateTimeIntl', new DateTimeIntl({
+      auth: this.auth,
+      locale: this.locale,
+      storage: this.storage,
+      getState: () => this.state.dateTimeIntl,
+    }));
     this._reducer = combineReducers({
       accountInfo: this.accountInfo.reducer,
       accountExtension: this.accountExtension.reducer,
@@ -346,6 +354,7 @@ class DemoPhone extends RcModule {
       messageStore: this.messageStore.reducer,
       conversation: this.conversation.reducer,
       messages: this.messages.reducer,
+      dateTimeIntl: this.dateTimeIntl.reducer,
       lastAction: (state = null, action) => {
         console.log(action);
         return action;
