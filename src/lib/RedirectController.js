@@ -5,20 +5,26 @@ export default class RedirectController {
   } = {}) {
     window.addEventListener('load', () => {
       const callbackUri = window.location.href;
-      if (window.opener && window.opener.oAuthCallback) {
-        window.opener.oAuthCallback(callbackUri);
-        window.close();
-      } else {
-        // fall back to use localStorage as a vessel to avoid opener is null bug
-        const key = `${prefix}-redirect-callbackUri`;
-        localStorage.removeItem(key);
-        window.addEventListener('storage', (e) => {
-          if (e.key === key && (!e.newValue || e.newValue === '')) {
-            window.close();
-          }
-        });
-        localStorage.setItem(key, callbackUri);
+      // RCINT-3477 some devices will have reference to opener, but will throw exception
+      // when tring to access opener
+      try {
+        if (window.opener && window.opener.oAuthCallback) {
+          window.opener.oAuthCallback(callbackUri);
+          window.close();
+          return;
+        }
+      } catch (e) {
+        /* ignore error */
       }
+      // fall back to use localStorage as a vessel to avoid opener is null bug
+      const key = `${prefix}-redirect-callbackUri`;
+      localStorage.removeItem(key);
+      window.addEventListener('storage', (e) => {
+        if (e.key === key && (!e.newValue || e.newValue === '')) {
+          window.close();
+        }
+      });
+      localStorage.setItem(key, callbackUri);
     });
   }
 }
