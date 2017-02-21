@@ -8,7 +8,7 @@ import getMessagesReducer, {
   getSearchingResultsReducer,
 } from './getMessagesReducer';
 
-import messagesActionTypes from './messagesActionTypes';
+import actionTypes from './actionTypes';
 
 describe('Messages :: getCurrentMessagesReducer', () => {
   it('getCurrentMessagesReducer should be a function', () => {
@@ -18,7 +18,7 @@ describe('Messages :: getCurrentMessagesReducer', () => {
     expect(getCurrentMessagesReducer()).to.be.a('function');
   });
   describe('messagesReducer', () => {
-    const reducer = getCurrentMessagesReducer(messagesActionTypes);
+    const reducer = getCurrentMessagesReducer(actionTypes);
     it('should have initial state of empty array', () => {
       expect(reducer(undefined, {})).to.deep.equal([]);
     });
@@ -30,7 +30,7 @@ describe('Messages :: getCurrentMessagesReducer', () => {
 
     it('should return messages on updateMessages', () => {
       [
-        messagesActionTypes.updateMessages
+        actionTypes.updateMessages
       ].forEach(type => {
         const messages = ['1', '3'];
         expect(reducer('foo', {
@@ -41,7 +41,7 @@ describe('Messages :: getCurrentMessagesReducer', () => {
     });
     it('should return concated messages on pushMessages', () => {
       [
-        messagesActionTypes.pushMessages,
+        actionTypes.pushMessages,
       ].forEach(type => {
         const originalMessages = ['1', '3'];
         const messages = ['2', '1'];
@@ -63,7 +63,7 @@ describe('Messages :: getCurrentPageReducer', () => {
     expect(getCurrentPageReducer()).to.be.a('function');
   });
   describe('currentPageReducer', () => {
-    const reducer = getCurrentPageReducer(messagesActionTypes);
+    const reducer = getCurrentPageReducer(actionTypes);
     it('should have initial state of one', () => {
       expect(reducer(undefined, {})).to.equal(1);
     });
@@ -76,7 +76,7 @@ describe('Messages :: getCurrentPageReducer', () => {
 
     it('should return next page on nextPage', () => {
       [
-        messagesActionTypes.nextPage
+        actionTypes.nextPage
       ].forEach(type => {
         expect(reducer(2, {
           type,
@@ -86,7 +86,7 @@ describe('Messages :: getCurrentPageReducer', () => {
 
     it('should return one on resetPage', () => {
       [
-        messagesActionTypes.resetPage,
+        actionTypes.resetPage,
       ].forEach(type => {
         expect(reducer(3, {
           type,
@@ -104,7 +104,7 @@ describe('Messages :: getLastUpdatedAtReducer', () => {
     expect(getLastUpdatedAtReducer()).to.be.a('function');
   });
   describe('lastUpdatedAtReducer', () => {
-    const reducer = getLastUpdatedAtReducer(messagesActionTypes);
+    const reducer = getLastUpdatedAtReducer(actionTypes);
     it('should have initial state of null', () => {
       expect(reducer(undefined, {})).to.equal(null);
     });
@@ -115,15 +115,15 @@ describe('Messages :: getLastUpdatedAtReducer', () => {
       .to.equal(originalState);
     });
 
-    it('should return new updateAt on updateLastUpdatedAt', () => {
+    it('should return new timestamp on pushMessages and updateMessages', () => {
       [
-        messagesActionTypes.updateLastUpdatedAt
+        actionTypes.pushMessages,
+        actionTypes.updateMessages,
       ].forEach(type => {
-        const updatedAt = '123321';
+        const now = Date.now();
         expect(reducer('', {
           type,
-          updatedAt,
-        })).to.equal(updatedAt);
+        })).to.least(now);
       });
     });
   });
@@ -137,7 +137,7 @@ describe('Messages :: getMessageStoreUpdatedAt', () => {
     expect(getMessageStoreUpdatedAt()).to.be.a('function');
   });
   describe('messageStoreUpdatedAt', () => {
-    const reducer = getMessageStoreUpdatedAt(messagesActionTypes);
+    const reducer = getMessageStoreUpdatedAt(actionTypes);
     it('should have initial state of null', () => {
       expect(reducer(undefined, {})).to.equal(null);
     });
@@ -148,15 +148,16 @@ describe('Messages :: getMessageStoreUpdatedAt', () => {
       .to.equal(originalState);
     });
 
-    it('should return new updateAt on updateMessageStoreUpdateAt', () => {
+    it('should return new messagesTimestamp on pushMessages and updateMessages', () => {
       [
-        messagesActionTypes.updateMessageStoreUpdateAt
+        actionTypes.pushMessages,
+        actionTypes.updateMessages
       ].forEach(type => {
-        const updatedAt = '123321';
+        const messagesTimestamp = '123321';
         expect(reducer('', {
           type,
-          updatedAt,
-        })).to.equal(updatedAt);
+          messagesTimestamp,
+        })).to.equal(messagesTimestamp);
       });
     });
   });
@@ -170,7 +171,7 @@ describe('Messages :: getSearingStringReducer', () => {
     expect(getSearingStringReducer()).to.be.a('function');
   });
   describe('searingStringReducer', () => {
-    const reducer = getSearingStringReducer(messagesActionTypes);
+    const reducer = getSearingStringReducer(actionTypes);
     it('should have initial state of blank string', () => {
       expect(reducer(undefined, {})).to.equal('');
     });
@@ -183,7 +184,7 @@ describe('Messages :: getSearingStringReducer', () => {
 
     it('should return new searchingString on updateSearchingString', () => {
       [
-        messagesActionTypes.updateSearchingString
+        actionTypes.updateSearchingString
       ].forEach(type => {
         const searchingString = '123321';
         expect(reducer('', {
@@ -194,7 +195,7 @@ describe('Messages :: getSearingStringReducer', () => {
     });
     it('should return blank string on cleanSearchingString', () => {
       [
-        messagesActionTypes.cleanSearchingString
+        actionTypes.cleanSearchingString
       ].forEach(type => {
         expect(reducer('123', {
           type,
@@ -212,7 +213,7 @@ describe('Messages :: getSearchingResultsReducer', () => {
     expect(getSearchingResultsReducer()).to.be.a('function');
   });
   describe('searchingResultsReducer', () => {
-    const reducer = getSearchingResultsReducer(messagesActionTypes);
+    const reducer = getSearchingResultsReducer(actionTypes);
     it('should have initial state of empty array', () => {
       expect(reducer(undefined, {})).to.deep.equal([]);
     });
@@ -225,7 +226,7 @@ describe('Messages :: getSearchingResultsReducer', () => {
 
     it('should return new searchResults on updateSearchResults', () => {
       [
-        messagesActionTypes.updateSearchResults
+        actionTypes.updateSearchResults
       ].forEach(type => {
         const searchResults = ['123', '321'];
         expect(reducer([], {

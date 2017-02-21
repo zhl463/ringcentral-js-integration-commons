@@ -3,7 +3,7 @@ import getMessageStoreReducer, {
   getMessageStoreStatusReducer,
 } from './getMessageStoreReducer';
 
-import messageStoreActionTypes from './messageStoreActionTypes';
+import actionTypes from './actionTypes';
 import messageStoreStatus from './messageStoreStatus';
 
 describe('MessageStore :: getMessageStoreStatusReducer', () => {
@@ -14,7 +14,7 @@ describe('MessageStore :: getMessageStoreStatusReducer', () => {
     expect(getMessageStoreStatusReducer()).to.be.a('function');
   });
   describe('statusReducer', () => {
-    const reducer = getMessageStoreStatusReducer(messageStoreActionTypes);
+    const reducer = getMessageStoreStatusReducer(actionTypes);
     it('should have initial state of idle', () => {
       expect(reducer(undefined, {})).to.equal(messageStoreStatus.idle);
     });
@@ -26,7 +26,7 @@ describe('MessageStore :: getMessageStoreStatusReducer', () => {
 
     it('should return syncing status on sync', () => {
       [
-        messageStoreActionTypes.sync
+        actionTypes.sync
       ].forEach(type => {
         expect(reducer('foo', {
           type,
@@ -35,8 +35,8 @@ describe('MessageStore :: getMessageStoreStatusReducer', () => {
     });
     it('should return idle status on sync error and sync success', () => {
       [
-        messageStoreActionTypes.syncError,
-        messageStoreActionTypes.syncOver,
+        actionTypes.syncError,
+        actionTypes.syncOver,
       ].forEach(type => {
         expect(reducer('foo', {
           type,

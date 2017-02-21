@@ -12,5 +12,4 @@ export default new Enum([
   'saveMessages',
   'saveSyncToken',
   'cleanUp',
-  'updateUnreadCounts',
 ], 'messageStore');

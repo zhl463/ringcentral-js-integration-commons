@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { createStore } from 'redux';
 import Messages from './index';
 import getMessagesReducer from './getMessagesReducer';
-import actionTypes from './messagesActionTypes';
+import actionTypes from './actionTypes';
 
 describe('Messages Unit Test', () => {
   let messages;
@@ -181,22 +181,17 @@ describe('Messages Unit Test', () => {
 
   describe('_initMessages', () => {
     it('should call _updateMessages and update state', () => {
-      messages._messageStore = {
-        messagesTimestamp: 1486954544921
-      };
       sinon.stub(messages, '_updateMessages');
       sinon.stub(messages, '_getCurrnetPageMessages').callsFake(() => [1]);
       messages._initMessages();
       sinon.assert.calledWith(messages._updateMessages, [1]);
       expect(store.getState().currentPage).to.equal(1);
-      expect(store.getState().messageStoreUpdatedAt).to.equal(1486954544921);
     });
   });
 
   describe('_reloadMessages', () => {
     it('should call _updateMessages and update state when current page is one', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544922,
         messages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
       };
       messages._perPage = 10;
@@ -204,12 +199,10 @@ describe('Messages Unit Test', () => {
       sinon.stub(messages, '_updateMessages');
       messages._reloadMessages();
       sinon.assert.calledWith(messages._updateMessages, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
-      expect(store.getState().messageStoreUpdatedAt).to.equal(1486954544922);
     });
 
     it('should call _updateMessages and update state when current page is two', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544923,
         messages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
       };
       messages._perPage = 10;
@@ -217,12 +210,10 @@ describe('Messages Unit Test', () => {
       sinon.stub(messages, '_updateMessages');
       messages._reloadMessages();
       sinon.assert.calledWith(messages._updateMessages, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
-      expect(store.getState().messageStoreUpdatedAt).to.equal(1486954544923);
     });
 
     it('should call _updateMessages and update state when messageStore.message is empty', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544923,
         messages: [],
       };
       messages._perPage = 10;
@@ -230,7 +221,6 @@ describe('Messages Unit Test', () => {
       sinon.stub(messages, '_updateMessages');
       messages._reloadMessages();
       sinon.assert.calledWith(messages._updateMessages, []);
-      expect(store.getState().messageStoreUpdatedAt).to.equal(1486954544923);
     });
   });
 
@@ -255,7 +245,6 @@ describe('Messages Unit Test', () => {
 
     it('should get all messages when page is one and messageStore.message length is less then perPage', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544923,
         messages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       };
       messages._perPage = 10;
@@ -265,7 +254,6 @@ describe('Messages Unit Test', () => {
 
     it('should get messages with perPage length when page is one and messageStore.message length is more then perPage', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544923,
         messages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
       };
       messages._perPage = 10;
@@ -275,7 +263,6 @@ describe('Messages Unit Test', () => {
 
     it('should get messages in currentPage when page is two and messageStore.message length is less then twice perPage', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544923,
         messages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
       };
       messages._perPage = 10;
@@ -296,6 +283,9 @@ describe('Messages Unit Test', () => {
 
   describe('loadNextPageMessages', () => {
     it('should not change currentPage when _getCurrnetPageMessages return empty array', () => {
+      messages._messageStore = {
+        messagesTimestamp: 1486954544923,
+      };
       sinon.stub(messages, 'currentPage', { get: () => 1 });
       sinon.stub(messages, '_getCurrnetPageMessages').callsFake(() => []);
       messages.loadNextPageMessages();
@@ -303,6 +293,9 @@ describe('Messages Unit Test', () => {
     });
 
     it('should add currentPage when _getCurrnetPageMessages return array with number', () => {
+      messages._messageStore = {
+        messagesTimestamp: 1486954544923,
+      };
       sinon.stub(messages, 'currentPage', { get: () => 1 });
       sinon.stub(messages, '_getCurrnetPageMessages').callsFake(() => [1]);
       messages.loadNextPageMessages();

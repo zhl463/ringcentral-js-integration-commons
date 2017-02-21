@@ -18,11 +18,11 @@ export function getConversationsReducer(types) {
 }
 
 export function getMessagesReducer(types) {
-  return (state = {}, { type, data }) => {
+  return (state = {}, { type, messages }) => {
     switch (type) {
       case types.saveMessages: {
         return {
-          data,
+          data: messages,
           timestamp: Date.now(),
         };
       }
@@ -51,7 +51,7 @@ export function getSyncTokenReducer(types) {
 export function getUnreadCountsReducer(types) {
   return (state = 0, { type, unreadCounts }) => {
     switch (type) {
-      case types.updateUnreadCounts:
+      case types.saveMessages:
         return unreadCounts;
       default:
         return state;

@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { createStore } from 'redux';
 import Conversation from './index';
 import getConversationReducer from './getConversationReducer';
-import actionTypes from './conversationActionTypes';
+import actionTypes from './actionTypes';
 
 describe('Conversation Unit Test', () => {
   let conversation;
@@ -27,7 +27,6 @@ describe('Conversation Unit Test', () => {
       '_updateConversationRecipients',
       '_loadConversation',
       '_updateRecipients',
-      '_updateSenderNumber',
       '_getCurrentSenderNumber',
       '_getRecipients',
       '_getReplyOnMessageId',
@@ -74,7 +73,7 @@ describe('Conversation Unit Test', () => {
       sinon.stub(conversation, '_initModuleStatus');
       sinon.stub(conversation, '_resetModuleStatus');
       sinon.stub(conversation, '_loadConversation');
-      sinon.stub(conversation, 'conversation', { get: () => ({ id: '123' }) });
+      sinon.stub(conversation, 'id', { get: () => '123' });
       conversation._messageStore = {
         findConversationById: id => ({ id }),
         readMessages: () => null,
@@ -92,7 +91,7 @@ describe('Conversation Unit Test', () => {
       sinon.stub(conversation, '_initModuleStatus');
       sinon.stub(conversation, '_resetModuleStatus');
       sinon.stub(conversation, '_loadConversation');
-      sinon.stub(conversation, 'conversation', { get: () => ({ id: '123' }) });
+      sinon.stub(conversation, 'id', { get: () => '123' });
       conversation._messageStore = {
         findConversationById: () => null,
         readMessages: () => null,
@@ -562,7 +561,7 @@ describe('Conversation Unit Test', () => {
         conversationsTimestamp: 12345678
       };
       sinon.stub(conversation, 'ready', { get: () => true });
-      sinon.stub(conversation, 'conversation', { get: () => ({}) });
+      sinon.stub(conversation, 'id', { get: () => '123' });
       sinon.stub(conversation, 'messageStoreUpdatedAt', { get: () => null });
       expect(conversation._shouldReloadConversation()).to.equal(true);
     });
@@ -572,7 +571,7 @@ describe('Conversation Unit Test', () => {
         conversationsTimestamp: 12345678
       };
       sinon.stub(conversation, 'ready', { get: () => true });
-      sinon.stub(conversation, 'conversation', { get: () => null });
+      sinon.stub(conversation, 'id', { get: () => null });
       sinon.stub(conversation, 'messageStoreUpdatedAt', { get: () => null });
       expect(conversation._shouldReloadConversation()).to.equal(false);
     });
@@ -582,7 +581,7 @@ describe('Conversation Unit Test', () => {
         conversationsTimestamp: 12345678
       };
       sinon.stub(conversation, 'ready', { get: () => true });
-      sinon.stub(conversation, 'conversation', { get: () => null });
+      sinon.stub(conversation, 'id', { get: () => null });
       sinon.stub(conversation, 'messageStoreUpdatedAt', { get: () => 12345678 });
       expect(conversation._shouldReloadConversation()).to.equal(false);
     });
@@ -592,7 +591,7 @@ describe('Conversation Unit Test', () => {
         conversationsTimestamp: 12345678
       };
       sinon.stub(conversation, 'ready', { get: () => true });
-      sinon.stub(conversation, 'conversation', { get: () => ({}) });
+      sinon.stub(conversation, 'id', { get: () => '123' });
       sinon.stub(conversation, 'messageStoreUpdatedAt', { get: () => 12345678 });
       expect(conversation._shouldReloadConversation()).to.equal(false);
     });
@@ -602,7 +601,7 @@ describe('Conversation Unit Test', () => {
         conversationsTimestamp: 12345678
       };
       sinon.stub(conversation, 'ready', { get: () => false });
-      sinon.stub(conversation, 'conversation', { get: () => ({}) });
+      sinon.stub(conversation, 'id', { get: () => '123' });
       sinon.stub(conversation, 'messageStoreUpdatedAt', { get: () => null });
       expect(conversation._shouldReloadConversation()).to.equal(false);
     });
@@ -612,7 +611,7 @@ describe('Conversation Unit Test', () => {
         conversationsTimestamp: 12345678
       };
       sinon.stub(conversation, 'ready', { get: () => false });
-      sinon.stub(conversation, 'conversation', { get: () => null });
+      sinon.stub(conversation, 'id', { get: () => null });
       sinon.stub(conversation, 'messageStoreUpdatedAt', { get: () => null });
       expect(conversation._shouldReloadConversation()).to.equal(false);
     });
@@ -622,7 +621,7 @@ describe('Conversation Unit Test', () => {
         conversationsTimestamp: 12345678
       };
       sinon.stub(conversation, 'ready', { get: () => false });
-      sinon.stub(conversation, 'conversation', { get: () => null });
+      sinon.stub(conversation, 'id', { get: () => null });
       sinon.stub(conversation, 'messageStoreUpdatedAt', { get: () => 12345678 });
       expect(conversation._shouldReloadConversation()).to.equal(false);
     });
@@ -632,7 +631,7 @@ describe('Conversation Unit Test', () => {
         conversationsTimestamp: 12345678
       };
       sinon.stub(conversation, 'ready', { get: () => false });
-      sinon.stub(conversation, 'conversation', { get: () => ({}) });
+      sinon.stub(conversation, 'id', { get: () => '123' });
       sinon.stub(conversation, 'messageStoreUpdatedAt', { get: () => 12345678 });
       expect(conversation._shouldReloadConversation()).to.equal(false);
     });
@@ -681,7 +680,7 @@ describe('Conversation Unit Test', () => {
       sinon.stub(conversation, 'recipients', {
         get: () => [{ extensionNumber: '123' }, { extensionNumber: '321' }]
       });
-      sinon.stub(conversation, 'conversation', { get: () => null });
+      sinon.stub(conversation, 'id', { get: () => null });
       sinon.stub(conversation, '_updateConversationRecipients');
       conversation.changeDefaultRecipient('321');
       sinon.assert.notCalled(conversation._updateConversationRecipients);
@@ -691,7 +690,7 @@ describe('Conversation Unit Test', () => {
       sinon.stub(conversation, 'recipients', {
         get: () => [{ extensionNumber: '123' }, { extensionNumber: '321' }]
       });
-      sinon.stub(conversation, 'conversation', { get: () => ({ id: '123' }) });
+      sinon.stub(conversation, 'id', { get: () => '123' });
       sinon.stub(conversation, '_updateConversationRecipients');
       conversation.changeDefaultRecipient('321');
       sinon.assert.calledWith(
@@ -703,14 +702,14 @@ describe('Conversation Unit Test', () => {
 
   describe('_updateConversationRecipients', () => {
     it('should not call _updateRecipients if conversation is null', () => {
-      sinon.stub(conversation, 'conversation', { get: () => null });
+      sinon.stub(conversation, 'id', { get: () => null });
       sinon.stub(conversation, '_updateRecipients');
       conversation._updateConversationRecipients(['321']);
       sinon.assert.notCalled(conversation._updateRecipients);
     });
 
     it('should not call _updateRecipients if conversation id is undefined', () => {
-      sinon.stub(conversation, 'conversation', { get: () => ({}) });
+      sinon.stub(conversation, 'id', { get: () => undefined });
       sinon.stub(conversation, '_updateRecipients');
       conversation._updateConversationRecipients(['321']);
       sinon.assert.notCalled(conversation._updateRecipients);
@@ -720,7 +719,7 @@ describe('Conversation Unit Test', () => {
       conversation._messageStore = {
         updateConversationRecipientList: () => null,
       };
-      sinon.stub(conversation, 'conversation', { get: () => ({ id: '123' }) });
+      sinon.stub(conversation, 'id', { get: () => '123' });
       sinon.stub(conversation, '_updateRecipients');
       conversation._updateConversationRecipients(['321']);
       sinon.assert.calledOnce(conversation._updateRecipients);
@@ -728,38 +727,34 @@ describe('Conversation Unit Test', () => {
   });
 
   describe('_loadConversation', () => {
-    it('should call _updateRecipients, _updateSenderNumber and _getRecipients', () => {
+    it('should call _getRecipients and _getCurrentSenderNumber', () => {
       conversation._messageStore = {
-        conversationsTimestamp: 12345678
+        conversationsTimestamp: 12345678,
       };
-      sinon.stub(conversation, '_updateRecipients');
-      sinon.stub(conversation, '_getCurrentSenderNumber');
-      sinon.stub(conversation, '_updateSenderNumber');
+      sinon.stub(conversation, '_getCurrentSenderNumber').callsFake(() => ({}));
       sinon.stub(conversation, '_getRecipients').callsFake(() => ['123']);
       const conversationData = {
         id: '123456',
+        messages: [],
       };
       conversation._loadConversation(conversationData);
-      sinon.assert.calledOnce(conversation._updateRecipients);
-      sinon.assert.calledOnce(conversation._updateSenderNumber);
+      sinon.assert.calledOnce(conversation._getCurrentSenderNumber);
       sinon.assert.calledOnce(conversation._getRecipients);
     });
 
-    it('should call _updateRecipients, _updateSenderNumber and not call _getRecipients if conversation recipients exist', () => {
+    it('should call _getCurrentSenderNumber and not call _getRecipients if conversation recipients exist', () => {
       conversation._messageStore = {
         conversationsTimestamp: 12345678
       };
-      sinon.stub(conversation, '_updateRecipients');
-      sinon.stub(conversation, '_getCurrentSenderNumber');
-      sinon.stub(conversation, '_updateSenderNumber');
+      sinon.stub(conversation, '_getCurrentSenderNumber').callsFake(() => ({}));
       sinon.stub(conversation, '_getRecipients').callsFake(() => ['123']);
       const conversationData = {
         id: '123456',
         recipients: ['123'],
+        messages: [],
       };
       conversation._loadConversation(conversationData);
-      sinon.assert.calledOnce(conversation._updateRecipients);
-      sinon.assert.calledOnce(conversation._updateSenderNumber);
+      sinon.assert.calledOnce(conversation._getCurrentSenderNumber);
       sinon.assert.notCalled(conversation._getRecipients);
     });
   });
@@ -859,54 +854,40 @@ describe('Conversation Unit Test', () => {
 
   describe('_getReplyOnMessageId', () => {
     it('should get last message id successfully', () => {
-      sinon.stub(conversation, 'conversation', {
-        get: () => ({
-          messages: [{
-            id: 12345678,
-            type: 'SMS',
-            direction: 'Inbound',
-            to: [{
-              phoneNumber: '+1234567890',
-            }],
-            from: { phoneNumber: '+1234567891' },
+      sinon.stub(conversation, 'messages', {
+        get: () => [{
+          id: 12345678,
+          type: 'SMS',
+          direction: 'Inbound',
+          to: [{
+            phoneNumber: '+1234567890',
           }],
-        })
+          from: { phoneNumber: '+1234567891' },
+        }]
       });
       const result = conversation._getReplyOnMessageId();
       expect(result).to.equal(12345678);
     });
 
-    it('should return null if last message length is 0', () => {
-      sinon.stub(conversation, 'conversation', {
-        get: () => ({
-          messages: [],
-        })
+    it('should return null if messages length is 0', () => {
+      sinon.stub(conversation, 'messages', {
+        get: () => []
       });
       const result = conversation._getReplyOnMessageId();
       expect(result).to.equal(null);
     });
 
-    it('should return null if conversation messages is undefined', () => {
-      sinon.stub(conversation, 'conversation', {
-        get: () => ({})
-      });
-      const result = conversation._getReplyOnMessageId();
-      expect(result).to.equal(null);
-    });
-
-    it('should return null if conversation is null', () => {
-      sinon.stub(conversation, 'conversation', {
+    it('should return null if messages is null', () => {
+      sinon.stub(conversation, 'messages', {
         get: () => null
       });
       const result = conversation._getReplyOnMessageId();
       expect(result).to.equal(null);
     });
 
-    it('should return null if message id is undefined', () => {
-      sinon.stub(conversation, 'conversation', {
-        get: () => ({
-          messages: [{}],
-        })
+    it('should return null if laset message id is undefined', () => {
+      sinon.stub(conversation, 'messages', {
+        get: () => [{}]
       });
       const result = conversation._getReplyOnMessageId();
       expect(result).to.equal(null);

@@ -1,7 +1,7 @@
 import RcModule from '../../lib/RcModule';
 import moduleStatus from '../../enums/moduleStatus';
 
-import messagesActionTypes from './messagesActionTypes';
+import actionTypes from './actionTypes';
 import getMessagesReducer from './getMessagesReducer';
 
 export default class Messages extends RcModule {
@@ -12,7 +12,7 @@ export default class Messages extends RcModule {
   }) {
     super({
       ...options,
-      actionTypes: messagesActionTypes,
+      actionTypes,
     });
     this._messageStore = messageStore;
     this._perPage = perPage;
@@ -66,10 +66,6 @@ export default class Messages extends RcModule {
   _initMessages() {
     const messages = this._getCurrnetPageMessages(1);
     this.store.dispatch({
-      type: this.actionTypes.updateMessageStoreUpdateAt,
-      updatedAt: this._messageStore.messagesTimestamp,
-    });
-    this.store.dispatch({
       type: this.actionTypes.resetPage,
     });
     this._updateMessages(messages);
@@ -82,10 +78,6 @@ export default class Messages extends RcModule {
   }
 
   _reloadMessages() {
-    this.store.dispatch({
-      type: this.actionTypes.updateMessageStoreUpdateAt,
-      updatedAt: this._messageStore.messagesTimestamp,
-    });
     const page = this.currentPage;
     const allMessages = this._messageStore.messages;
     let bottomIndex = allMessages.length - (this._perPage * page);
@@ -99,11 +91,8 @@ export default class Messages extends RcModule {
   _updateMessages(messages) {
     this.store.dispatch({
       type: this.actionTypes.updateMessages,
+      messagesTimestamp: this._messageStore.messagesTimestamp,
       messages,
-    });
-    this.store.dispatch({
-      type: this.actionTypes.updateLastUpdatedAt,
-      updatedAt: Date.now(),
     });
   }
 
@@ -135,14 +124,11 @@ export default class Messages extends RcModule {
     }
     this.store.dispatch({
       type: this.actionTypes.pushMessages,
+      messagesTimestamp: this._messageStore.messagesTimestamp,
       messages,
     });
     this.store.dispatch({
       type: this.actionTypes.nextPage,
-    });
-    this.store.dispatch({
-      type: this.actionTypes.updateLastUpdatedAt,
-      updatedAt: Date.now(),
     });
   }
 

@@ -9,9 +9,6 @@ export default new Enum([
   'replySuccess',
   'replyError',
   'load',
-  'update',
+  'unload',
   'updateRecipients',
-  'updateSenderNumber',
-  'cleanUp',
-  'updateMessageStoreUpdatedAt',
 ], 'conversation');

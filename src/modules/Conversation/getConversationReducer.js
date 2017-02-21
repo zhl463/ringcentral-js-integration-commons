@@ -16,13 +16,12 @@ export function getConversationStatusReducer(types) {
   };
 }
 
-export function getCurrentConversationReducer(types) {
-  return (state = null, { type, conversation }) => {
+export function getConversationIdReducer(types) {
+  return (state = null, { type, conversationId }) => {
     switch (type) {
       case types.load:
-      case types.update:
-        return conversation;
-      case types.cleanUp:
+        return conversationId;
+      case types.unload:
         return null;
       default:
         return state;
@@ -30,12 +29,25 @@ export function getCurrentConversationReducer(types) {
   };
 }
 
-export function getCurrentSenderNumberReducer(types) {
+export function getMessagesReducer(types) {
+  return (state = [], { type, messages }) => {
+    switch (type) {
+      case types.load:
+        return messages;
+      case types.unload:
+        return [];
+      default:
+        return state;
+    }
+  };
+}
+
+export function getSenderNumberReducer(types) {
   return (state = null, { type, senderNumber }) => {
     switch (type) {
-      case types.updateSenderNumber:
+      case types.load:
         return senderNumber;
-      case types.cleanUp:
+      case types.unload:
         return null;
       default:
         return state;
@@ -43,12 +55,13 @@ export function getCurrentSenderNumberReducer(types) {
   };
 }
 
-export function getCurrentRecipientsReducer(types) {
+export function getRecipientsReducer(types) {
   return (state = [], { type, recipients }) => {
     switch (type) {
+      case types.load:
       case types.updateRecipients:
         return recipients;
-      case types.cleanUp:
+      case types.unload:
         return [];
       default:
         return state;
@@ -57,10 +70,10 @@ export function getCurrentRecipientsReducer(types) {
 }
 
 export function getMessageStoreUpdatedAtReducer(types) {
-  return (state = null, { type, updatedAt }) => {
+  return (state = null, { type, conversationsTimestamp }) => {
     switch (type) {
-      case types.updateMessageStoreUpdatedAt: {
-        return updatedAt;
+      case types.load: {
+        return conversationsTimestamp;
       }
       default:
         return state;
@@ -72,9 +85,10 @@ export default function getConversationReducer(types) {
   return combineReducers({
     status: getModuleStatusReducer(types),
     conversationStatus: getConversationStatusReducer(types),
-    conversation: getCurrentConversationReducer(types),
-    senderNumber: getCurrentSenderNumberReducer(types),
-    recipients: getCurrentRecipientsReducer(types),
+    id: getConversationIdReducer(types),
+    messages: getMessagesReducer(types),
+    senderNumber: getSenderNumberReducer(types),
+    recipients: getRecipientsReducer(types),
     messageStoreUpdatedAt: getMessageStoreUpdatedAtReducer(types),
   });
 }

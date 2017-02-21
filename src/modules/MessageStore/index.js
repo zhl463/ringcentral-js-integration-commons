@@ -4,7 +4,7 @@ import moduleStatus from '../../enums/moduleStatus';
 import { batchPutApi } from '../../lib/batchApiHelper';
 
 import * as messageStoreHelper from './messageStoreHelper';
-import messageStoreActionTypes from './messageStoreActionTypes';
+import actionTypes from './actionTypes';
 import getMessageStoreReducer from './getMessageStoreReducer';
 import getCacheReducer from './getCacheReducer';
 
@@ -20,7 +20,7 @@ export default class MessageStore extends RcModule {
   }) {
     super({
       ...options,
-      actionTypes: messageStoreActionTypes,
+      actionTypes,
     });
     this._alert = alert;
     this._client = client;
@@ -333,19 +333,12 @@ export default class MessageStore extends RcModule {
 
   _saveConversationAndMessages(conversation, messages) {
     this._saveConversation(conversation);
-
-    const unReadMessagesRusult =
-      messageStoreHelper.updateMessagesUnreadCounts(messages, this.conversations);
-    this._saveUnreadCounts(unReadMessagesRusult.unreadCounts);
-    this._saveMessages(unReadMessagesRusult.messages);
+    this._saveMessages(messages);
   }
 
   _saveConversationsAndMessages(conversations, messages, syncToken) {
     this._saveConversations(conversations);
-    const unReadMessagesRusult =
-      messageStoreHelper.updateMessagesUnreadCounts(messages, this.conversations);
-    this._saveMessages(unReadMessagesRusult.messages);
-    this._saveUnreadCounts(unReadMessagesRusult.unreadCounts);
+    this._saveMessages(messages);
     if (syncToken) {
       this._saveSyncToken(syncToken);
     }
@@ -365,10 +358,13 @@ export default class MessageStore extends RcModule {
     });
   }
 
-  _saveMessages(messages) {
+  _saveMessages(newMessages) {
+    const { messages, unreadCounts } =
+      messageStoreHelper.updateMessagesUnreadCounts(newMessages, this.conversations);
     this.store.dispatch({
       type: this.actionTypes.saveMessages,
-      data: messages,
+      messages,
+      unreadCounts
     });
   }
 
@@ -376,13 +372,6 @@ export default class MessageStore extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.saveSyncToken,
       syncToken,
-    });
-  }
-
-  _saveUnreadCounts(unreadCounts) {
-    this.store.dispatch({
-      type: this.actionTypes.updateUnreadCounts,
-      unreadCounts,
     });
   }
 

@@ -6,7 +6,7 @@ import getCacheReducer, {
   getUnreadCountsReducer,
 } from './getCacheReducer';
 
-import messageStoreActionTypes from './messageStoreActionTypes';
+import actionTypes from './actionTypes';
 
 describe('MessageStore :: Cache :: getConversationsReducer', () => {
   it('should be a function', () => {
@@ -16,7 +16,7 @@ describe('MessageStore :: Cache :: getConversationsReducer', () => {
     expect(getConversationsReducer()).to.be.a('function');
   });
   describe('conversationsReducer', () => {
-    const reducer = getConversationsReducer(messageStoreActionTypes);
+    const reducer = getConversationsReducer(actionTypes);
     it('should have empty object for initial state ', () => {
       expect(reducer(undefined, {})).to.deep.equal({});
     });
@@ -30,7 +30,7 @@ describe('MessageStore :: Cache :: getConversationsReducer', () => {
       const originalData = [{ id: 1 }, { id: 2 }];
       const originalState = {};
       expect(reducer(originalState, {
-        type: messageStoreActionTypes.saveConversations,
+        type: actionTypes.saveConversations,
         data: originalData
       })).to.include.keys('data', 'timestamp');
     });
@@ -39,7 +39,7 @@ describe('MessageStore :: Cache :: getConversationsReducer', () => {
       const originalState = {};
       const expectData = originalData;
       expect(reducer(originalState, {
-        type: messageStoreActionTypes.saveConversations,
+        type: actionTypes.saveConversations,
         data: originalData
       }).data).to.deep.equal(expectData);
     });
@@ -50,7 +50,7 @@ describe('MessageStore :: Cache :: getConversationsReducer', () => {
         timestamp: Date.now(),
       };
       expect(reducer(originalState, {
-        type: messageStoreActionTypes.cleanUp,
+        type: actionTypes.cleanUp,
       })).to.deep.equal({});
     });
   });
@@ -64,7 +64,7 @@ describe('MessageStore :: Cache :: getMessagesReducer', () => {
     expect(getMessagesReducer()).to.be.a('function');
   });
   describe('messagesReducer', () => {
-    const reducer = getMessagesReducer(messageStoreActionTypes);
+    const reducer = getMessagesReducer(actionTypes);
     it('should have empty object for initial state ', () => {
       expect(reducer(undefined, {})).to.deep.equal({});
     });
@@ -78,8 +78,8 @@ describe('MessageStore :: Cache :: getMessagesReducer', () => {
       const originalData = [{ id: 1 }, { id: 2 }];
       const originalState = {};
       expect(reducer(originalState, {
-        type: messageStoreActionTypes.saveMessages,
-        data: originalData
+        type: actionTypes.saveMessages,
+        messages: originalData
       })).to.include.keys('data', 'timestamp');
     });
     it('should return data on saveMessages', () => {
@@ -87,8 +87,8 @@ describe('MessageStore :: Cache :: getMessagesReducer', () => {
       const originalState = {};
       const expectData = originalData;
       expect(reducer(originalState, {
-        type: messageStoreActionTypes.saveMessages,
-        data: originalData
+        type: actionTypes.saveMessages,
+        messages: originalData
       }).data).to.deep.equal(expectData);
     });
 
@@ -98,7 +98,7 @@ describe('MessageStore :: Cache :: getMessagesReducer', () => {
         timestamp: Date.now(),
       };
       expect(reducer(originalState, {
-        type: messageStoreActionTypes.cleanUp,
+        type: actionTypes.cleanUp,
       })).to.deep.equal({});
     });
   });
@@ -112,7 +112,7 @@ describe('MessageStore :: Cache :: getSyncTokenReducer', () => {
     expect(getSyncTokenReducer()).to.be.a('function');
   });
   describe('syncTokenReducer', () => {
-    const reducer = getSyncTokenReducer(messageStoreActionTypes);
+    const reducer = getSyncTokenReducer(actionTypes);
     it('should have null for initial state ', () => {
       expect(reducer(undefined, {})).to.equal(null);
     });
@@ -125,7 +125,7 @@ describe('MessageStore :: Cache :: getSyncTokenReducer', () => {
     it('should return data on saveSyncToken', () => {
       const originalState = '12345678';
       expect(reducer(originalState, {
-        type: messageStoreActionTypes.saveSyncToken,
+        type: actionTypes.saveSyncToken,
         syncToken: '123',
       })).to.equal('123');
     });
@@ -133,7 +133,7 @@ describe('MessageStore :: Cache :: getSyncTokenReducer', () => {
     it('should return empty object on cleanUp', () => {
       const originalState = 'test';
       expect(reducer(originalState, {
-        type: messageStoreActionTypes.cleanUp,
+        type: actionTypes.cleanUp,
       })).to.equal(null);
     });
   });
@@ -147,7 +147,7 @@ describe('MessageStore :: Cache :: getUnreadCountsReducer', () => {
     expect(getUnreadCountsReducer()).to.be.a('function');
   });
   describe('unreadCountsReducer', () => {
-    const reducer = getUnreadCountsReducer(messageStoreActionTypes);
+    const reducer = getUnreadCountsReducer(actionTypes);
     it('should have zero for initial state ', () => {
       expect(reducer(undefined, {})).to.equal(0);
     });
@@ -157,10 +157,10 @@ describe('MessageStore :: Cache :: getUnreadCountsReducer', () => {
         .to.equal(originalState);
     });
 
-    it('should return data on updateUnreadCounts', () => {
+    it('should return data on saveMessages', () => {
       const originalState = 12;
       expect(reducer(originalState, {
-        type: messageStoreActionTypes.updateUnreadCounts,
+        type: actionTypes.saveMessages,
         unreadCounts: 123,
       })).to.equal(123);
     });
@@ -172,14 +172,14 @@ describe('getCacheReducer', () => {
     expect(getCacheReducer).to.be.a('function');
   });
   it('should return a reducer', () => {
-    expect(getCacheReducer(messageStoreActionTypes)).to.be.a('function');
+    expect(getCacheReducer(actionTypes)).to.be.a('function');
   });
   describe('conversationsReducer', () => {
-    const reducer = getCacheReducer(messageStoreActionTypes);
-    const conversationReducer = getConversationsReducer(messageStoreActionTypes);
-    const messagesReducer = getMessagesReducer(messageStoreActionTypes);
-    const syncTokenReducer = getSyncTokenReducer(messageStoreActionTypes);
-    const unreadCountsReducer = getUnreadCountsReducer(messageStoreActionTypes);
+    const reducer = getCacheReducer(actionTypes);
+    const conversationReducer = getConversationsReducer(actionTypes);
+    const messagesReducer = getMessagesReducer(actionTypes);
+    const syncTokenReducer = getSyncTokenReducer(actionTypes);
+    const unreadCountsReducer = getUnreadCountsReducer(actionTypes);
     it('should return combined state', () => {
       expect(reducer(undefined, {}))
         .to.deep.equal({

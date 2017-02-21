@@ -6,7 +6,7 @@ import {
   getRecipientNumbersFromMessage,
 } from '../../lib/messageHelper';
 
-import conversationActionTypes from './conversationActionTypes';
+import actionTypes from './actionTypes';
 import getConversationReducer from './getConversationReducer';
 
 import conversationStatus from './conversationStatus';
@@ -20,7 +20,7 @@ export default class Conversation extends RcModule {
   }) {
     super({
       ...options,
-      actionTypes: conversationActionTypes,
+      actionTypes,
     });
     this._reducer = getConversationReducer(this.actionTypes);
     this._messageSender = messageSender;
@@ -42,7 +42,7 @@ export default class Conversation extends RcModule {
       this._resetModuleStatus();
     } else if (this._shouldReloadConversation()) {
       const newConversation = this._messageStore
-                                  .findConversationById(this.conversation.id);
+                                  .findConversationById(this.id);
       if (newConversation) {
         this._loadConversation(newConversation);
         this._messageStore.readMessages(newConversation);
@@ -73,7 +73,7 @@ export default class Conversation extends RcModule {
   _shouldReloadConversation() {
     return (
       this.ready &&
-      (!!this.conversation) &&
+      (!!this.id) &&
       this.messageStoreUpdatedAt !== this._messageStore.conversationsTimestamp
     );
   }
@@ -101,7 +101,7 @@ export default class Conversation extends RcModule {
 
   unloadConversation() {
     this.store.dispatch({
-      type: this.actionTypes.cleanUp,
+      type: this.actionTypes.unload,
     });
   }
 
@@ -116,7 +116,7 @@ export default class Conversation extends RcModule {
     if (defaultNumberIndex < 0) {
       return;
     }
-    if (this.conversation) {
+    if (this.id) {
       const defaultNumber = recipients[defaultNumberIndex];
       recipients.splice(defaultNumberIndex, 1);
       const newRecipients = [defaultNumber].concat(recipients);
@@ -125,11 +125,10 @@ export default class Conversation extends RcModule {
   }
 
   _updateConversationRecipients(newRecipients) {
-    const currentConversationId = this.conversation && this.conversation.id;
-    if (!currentConversationId) {
+    if (!this.id) {
       return;
     }
-    this._messageStore.updateConversationRecipientList(currentConversationId, newRecipients);
+    this._messageStore.updateConversationRecipientList(this.id, newRecipients);
     this._updateRecipients(newRecipients);
   }
 
@@ -140,29 +139,20 @@ export default class Conversation extends RcModule {
     });
   }
 
-  _updateSenderNumber(senderNumber) {
-    this.store.dispatch({
-      type: this.actionTypes.updateSenderNumber,
-      senderNumber,
-    });
-  }
-
   _loadConversation(conversation) {
-    this.store.dispatch({
-      type: this.actionTypes.updateMessageStoreUpdatedAt,
-      updatedAt: this._messageStore.conversationsTimestamp,
-    });
-    this.store.dispatch({
-      type: this.actionTypes.load,
-      conversation: { ...conversation },
-    });
     const senderNumber = this._getCurrentSenderNumber(conversation);
-    this._updateSenderNumber(senderNumber);
     let recipients = conversation.recipients;
     if (!recipients || recipients.length === 0) {
       recipients = this._getRecipients(conversation, senderNumber);
     }
-    this._updateRecipients(recipients);
+    this.store.dispatch({
+      type: this.actionTypes.load,
+      conversationId: conversation.id,
+      messages: conversation.messages.slice(),
+      conversationsTimestamp: this._messageStore.conversationsTimestamp,
+      senderNumber,
+      recipients,
+    });
   }
 
   _getCurrentSenderNumber(conversation) {
@@ -197,10 +187,9 @@ export default class Conversation extends RcModule {
 
   _getReplyOnMessageId() {
     const lastMessage =
-        this.conversation &&
-        this.conversation.messages &&
-        (this.conversation.messages.length > 0) &&
-        this.conversation.messages[this.conversation.messages.length - 1];
+        this.messages &&
+        (this.messages.length > 0) &&
+        this.messages[this.messages.length - 1];
     if (lastMessage && lastMessage.id) {
       return lastMessage.id;
     }
@@ -269,8 +258,12 @@ export default class Conversation extends RcModule {
     return this.conversationStatus === conversationStatus.pushing;
   }
 
-  get conversation() {
-    return this.state.conversation;
+  get id() {
+    return this.state.id;
+  }
+
+  get messages() {
+    return this.state.messages;
   }
 
   get senderNumber() {

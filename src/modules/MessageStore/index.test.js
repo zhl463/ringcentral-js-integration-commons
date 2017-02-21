@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { createStore } from 'redux';
 import MessageStore from './index';
 import getMessageStoreReducer from './getMessageStoreReducer';
-import actionTypes from './messageStoreActionTypes';
+import actionTypes from './actionTypes';
 import moduleStatus from '../../enums/moduleStatus';
 
 describe('MessageStore Unit Test', () => {
@@ -46,7 +46,6 @@ describe('MessageStore Unit Test', () => {
       '_saveConversations',
       '_saveMessages',
       '_saveSyncToken',
-      '_saveUnreadCounts',
     ].forEach((key) => {
       messageStore[key].restore();
     });
@@ -882,7 +881,7 @@ describe('MessageStore Unit Test', () => {
   });
 
   describe('_saveConversationAndMessages', () => {
-    it('should call _saveConversation, _saveMessages and _saveUnreadCounts successfully', () => {
+    it('should call _saveConversation and _saveMessages successfully', () => {
       const message = {
         id: '1234567',
         conversation: {
@@ -914,11 +913,9 @@ describe('MessageStore Unit Test', () => {
         get: () => [message],
       });
       sinon.stub(messageStore, '_saveConversation');
-      sinon.stub(messageStore, '_saveUnreadCounts');
       sinon.stub(messageStore, '_saveMessages');
       messageStore._saveConversationAndMessages(conversation, [message]);
       sinon.assert.calledOnce(messageStore._saveConversation);
-      sinon.assert.calledOnce(messageStore._saveUnreadCounts);
       sinon.assert.calledOnce(messageStore._saveMessages);
     });
   });
@@ -950,7 +947,7 @@ describe('MessageStore Unit Test', () => {
       '1234567890': conversation,
     };
 
-    it('should call _saveConversations, _saveMessages and _saveUnreadCounts successfully without syncToken', () => {
+    it('should call _saveConversations and _saveMessages successfully without syncToken', () => {
       sinon.stub(messageStore, 'conversations', {
         get: () => conversations,
       });
@@ -958,15 +955,13 @@ describe('MessageStore Unit Test', () => {
         get: () => [message],
       });
       sinon.stub(messageStore, '_saveConversations');
-      sinon.stub(messageStore, '_saveUnreadCounts');
       sinon.stub(messageStore, '_saveMessages');
       messageStore._saveConversationsAndMessages(conversations, [message]);
       sinon.assert.calledOnce(messageStore._saveConversations);
-      sinon.assert.calledOnce(messageStore._saveUnreadCounts);
       sinon.assert.calledOnce(messageStore._saveMessages);
     });
 
-    it('should call _saveConversations, _saveMessages, _saveSyncToken and _saveUnreadCounts successfully with syncToken', () => {
+    it('should call _saveConversations, _saveMessages and _saveSyncToken successfully with syncToken', () => {
       sinon.stub(messageStore, 'conversations', {
         get: () => conversations,
       });
@@ -974,12 +969,10 @@ describe('MessageStore Unit Test', () => {
         get: () => [message],
       });
       sinon.stub(messageStore, '_saveConversations');
-      sinon.stub(messageStore, '_saveUnreadCounts');
       sinon.stub(messageStore, '_saveMessages');
       sinon.stub(messageStore, '_saveSyncToken');
       messageStore._saveConversationsAndMessages(conversations, [message], '121212');
       sinon.assert.calledOnce(messageStore._saveConversations);
-      sinon.assert.calledOnce(messageStore._saveUnreadCounts);
       sinon.assert.calledOnce(messageStore._saveMessages);
       sinon.assert.calledOnce(messageStore._saveSyncToken);
     });

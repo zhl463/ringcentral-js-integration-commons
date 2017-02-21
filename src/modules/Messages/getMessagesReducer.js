@@ -28,11 +28,11 @@ export function getCurrentPageReducer(types) {
 }
 
 export function getLastUpdatedAtReducer(types) {
-  return (state = null, { type, updatedAt }) => {
+  return (state = null, { type }) => {
     switch (type) {
-      case types.updateLastUpdatedAt: {
-        return updatedAt;
-      }
+      case types.pushMessages:
+      case types.updateMessages:
+        return Date.now();
       default:
         return state;
     }
@@ -40,11 +40,11 @@ export function getLastUpdatedAtReducer(types) {
 }
 
 export function getMessageStoreUpdatedAt(types) {
-  return (state = null, { type, updatedAt }) => {
+  return (state = null, { type, messagesTimestamp }) => {
     switch (type) {
-      case types.updateMessageStoreUpdateAt: {
-        return updatedAt;
-      }
+      case types.pushMessages:
+      case types.updateMessages:
+        return messagesTimestamp;
       default:
         return state;
     }
