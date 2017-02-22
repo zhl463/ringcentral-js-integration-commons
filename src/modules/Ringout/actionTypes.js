@@ -4,5 +4,6 @@ export default new Enum([
   'initSuccess',
   'resetSuccess',
   'startToConnect',
-  'completeConnect',
+  'connectSuccess',
+  'connectError',
 ], 'ringoutActionTypes');

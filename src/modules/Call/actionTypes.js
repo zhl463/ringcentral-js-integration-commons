@@ -5,6 +5,7 @@ export default new Enum([
   'resetSuccess',
   'toNumberChanged',
   'connect',
-  'completeConnect',
+  'connectSuccess',
+  'connectError',
 ], 'callActionTypes');
 

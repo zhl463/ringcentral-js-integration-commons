@@ -22,9 +22,21 @@ export default (Auth, Alert, Client, RegionSettings, Call, accountWithMultiDP) =
         if (!isAlertClear) {
           console.error('Alert is not cleared after dismissAll');
         }
-      });          
-      it('Should Alert Invalid Number - Call None Digital Number', async () => {
-        Call.onToNumberChange("iamn%@onedi!@$%^&()_=\\][';/.,~nu><.,,?/mber");
+      });
+      it('Should Alert Invalid Number - Invalid Char in ToNumber', async () => {
+        Call.onToNumberChange("iamn%@onedi!@$%^&()_=\\][';/.,~nu><.,,?/mber#*");
+        await Call.onCall();
+        expect(containsErrorMessage(Alert.state.messages, callErrors.noToNumber))
+          .to.not.equal(undefined);
+        expect(containsErrorMessage(Alert.state.messages, callErrors.noAreaCode))
+          .to.equal(undefined);
+        expect(containsErrorMessage(Alert.state.messages, callErrors.specialNumber))
+          .to.equal(undefined);
+        expect(containsErrorMessage(Alert.state.messages, callErrors.notAnExtension))
+          .to.equal(undefined);
+      });
+      it('Should Alert Invalid Number - Valid Special Char but No Digital Number', async () => {
+        Call.onToNumberChange('+#');
         await Call.onCall();
         expect(containsErrorMessage(Alert.state.messages, callErrors.noToNumber))
           .to.not.equal(undefined);
@@ -46,7 +58,7 @@ export default (Auth, Alert, Client, RegionSettings, Call, accountWithMultiDP) =
           .to.equal(undefined);
       });
     });
-    
+
     conditionalDescribe('Validation with Last Called Number', function() {
       beforeEach(async function () {
         const isAlertClear = await waitUntilEqual(() => {
@@ -57,7 +69,7 @@ export default (Auth, Alert, Client, RegionSettings, Call, accountWithMultiDP) =
           console.error('Alert is not cleared after dismissAll');
           this.skip();
         }
-      });      
+      });
       it('Should Remember Last Called Number', async () => {
         Call.onToNumberChange('123abc');
         await Call.onCall();
@@ -103,7 +115,7 @@ export default (Auth, Alert, Client, RegionSettings, Call, accountWithMultiDP) =
           .to.equal(undefined);
       });
     });
-    
+
     conditionalDescribe('Validation with Region Setting', function () {
       beforeEach(async function () {
         const isAlertClear = await waitUntilEqual(() => {
@@ -114,7 +126,7 @@ export default (Auth, Alert, Client, RegionSettings, Call, accountWithMultiDP) =
           console.error('Alert is not cleared after dismissAll');
           this.skip();
         }
-      });      
+      });
       it('Should Alert No AreaCode - Call 7 Digital Number with US Dialing Plan without Area Code', async () => {
         RegionSettings.setData({ countryCode: 'US', areaCode: '' });
         Call.onToNumberChange('6545672');
@@ -244,6 +256,6 @@ export default (Auth, Alert, Client, RegionSettings, Call, accountWithMultiDP) =
         expect(containsErrorMessage(Alert.state.messages, callErrors.notAnExtension)).to.not.equal(undefined);
       });
     });
-    
+
   });
 };

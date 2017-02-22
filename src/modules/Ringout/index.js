@@ -55,11 +55,11 @@ export default class Ringout extends RcModule {
         const startTime = Date.now();
         await this._monitorRingout(resp.id, startTime);
         this.store.dispatch({
-          type: this.actionTypes.completeConnect
+          type: this.actionTypes.connectSuccess
         });
       } catch (e) {
         this.store.dispatch({
-          type: this.actionTypes.completeConnect
+          type: this.actionTypes.connectError
         });
         if (e.message !== ringoutErrors.pollingCancelled) {
           throw e;

@@ -33,9 +33,15 @@ describe('Call ::', () => {
         data
       })).to.equal(data);
     });
-    it('should return empty string on completeConnect', () => {
+    it('should return data on connectError', () => {
+      const state = 'foo';
+      expect(reducer(state, {
+        type: actionTypes.connectError
+      })).to.equal(state);
+    });
+    it('should return empty string on connectSuccess', () => {
       expect(reducer('foo', {
-        type: actionTypes.completeConnect,
+        type: actionTypes.connectSuccess,
       })).to.equal('');
     });
   });
@@ -78,10 +84,14 @@ describe('Call ::', () => {
         type: actionTypes.connect,
       })).to.equal(callStatus.connecting);
     });
-    it('should return idle status if actionType is completeConnect', () => {
+    it('should return idle status if actionType is connectSuccess or connectError', () => {
       expect(reducer('foo', {
-        type: actionTypes.completeConnect,
+        type: actionTypes.connectSuccess,
       })).to.equal(callStatus.idle);
+      expect(reducer('foo', {
+        type: actionTypes.connectError,
+      })).to.equal(callStatus.idle);
+
     });
   });
   describe('getCallReducer', () => {
