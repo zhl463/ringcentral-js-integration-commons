@@ -24,39 +24,55 @@ export default class CallMonitor extends RcModule {
     this._activityMatcher = activityMatcher;
     this._regionSettings = regionSettings;
     this._reducer = getCallMonitorReducer(this.actionTypes);
-    this.addSelector('calls',
+    this.addSelector('normalizedCalls',
       () => this._detailedPresence.calls,
       () => this._activeCalls.calls,
+      () => this._regionSettings.countryCode,
+      () => this._regionSettings.areaCode,
+      (callsFromPresence, callsFromActiveCalls, countryCode, areaCode) => (
+        callsFromPresence.map((call) => {
+          const activeCall = callsFromActiveCalls.find(item => item.sessionId === call.sessionId);
+          const fromNumber = normalizeNumber({
+            phoneNumber: call.from && call.from.phoneNumber,
+            countryCode,
+            areaCode,
+          });
+          const toNumber = normalizeNumber({
+            phoneNumber: call.to && call.to.phoneNumber,
+            countryCode,
+            areaCode,
+          });
+          return {
+            ...call,
+            from: {
+              phoneNumber: fromNumber,
+              name: activeCall && activeCall.from && activeCall.from.name,
+            },
+            to: {
+              phoneNumber: toNumber,
+              name: activeCall && activeCall.to && activeCall.to.name,
+            },
+            startTime: (activeCall && activeCall.startTime) || call.startTime,
+          };
+        })
+      ),
+    );
+    this.addSelector('calls',
+      this._selectors.normalizedCalls,
       () => (this._contactMatcher && this._contactMatcher.ready ?
         this._contactMatcher.cache :
         null),
       () => (this._activityMatcher && this._activityMatcher.ready ?
         this._activityMatcher.cache :
         null),
-      (callsFromPresence, callsFromActiveCalls, contactCache, activityCache) => (
-        callsFromPresence.map((call) => {
-          const activeCall = callsFromActiveCalls.find(item => item.sessionId === call.sessionId);
-          const fromNumber = normalizeNumber({
-            phoneNumber: call.from,
-            countryCode: this._regionSettings.countryCode,
-            areaCode: this._regionSettings.areaCode,
-          });
-          const toNumber = normalizeNumber({
-            phoneNumber: call.to,
-            countryCode: this._regionSettings.countryCode,
-            areaCode: this._regionSettings.areaCode,
-          });
+      (normalizedCalls, contactCache, activityCache) => (
+        normalizedCalls.map((call) => {
+          const fromNumber = call.from && call.from.phoneNumber;
+          const toNumber = call.to && call.to.phoneNumber;
           return {
             ...call,
-            from: {
-              phoneNumber: fromNumber,
-            },
-            to: {
-              phoneNumber: toNumber,
-            },
-            startTime: (activeCall && activeCall.startTime) || call.startTime,
-            fromMatches: (contactCache && contactCache.dataMap[fromNumber]) || [],
-            toMatches: (contactCache && contactCache.dataMap[toNumber]) || [],
+            fromMatches: (fromNumber && contactCache && contactCache.dataMap[fromNumber]) || [],
+            toMatches: (toNumber && contactCache && contactCache.dataMap[toNumber]) || [],
             activityMatches: (activityCache && activityCache.dataMap[call.sessionId]) || [],
           };
         })
@@ -64,57 +80,22 @@ export default class CallMonitor extends RcModule {
     );
 
     this.addSelector('uniqueNumbers',
-      () => this._detailedPresence.calls,
-      () => this._activeCalls.calls,
-      (callsFromPresence, callsFromActiveCalls) => {
+      this._selectors.normalizedCalls,
+      (normalizedCalls) => {
         const output = [];
         const numberMap = {};
-        callsFromPresence.forEach((call) => {
-          if (call.from) {
-            const number = normalizeNumber({
-              phoneNumber: call.from,
-              countryCode: this._regionSettings.countryCode,
-              areaCode: this._regionSettings.areCode,
-            });
-            if (!numberMap[number]) {
-              output.push(number);
-              numberMap[number] = true;
-            }
+        function addIfNotExist(number) {
+          if (!numberMap[number]) {
+            output.push(number);
+            numberMap[number] = true;
           }
-          if (call.to) {
-            const number = normalizeNumber({
-              phoneNumber: call.to,
-              countryCode: this._regionSettings.countryCode,
-              areaCode: this._regionSettings.areCode,
-            });
-            if (!numberMap[number]) {
-              output.push(number);
-              numberMap[number] = true;
-            }
+        }
+        normalizedCalls.forEach((call) => {
+          if (call.from && call.from.phoneNumber) {
+            addIfNotExist(call.from.phoneNumber);
           }
-        });
-        callsFromActiveCalls.forEach((call) => {
-          if (call.from) {
-            const number = normalizeNumber({
-              phoneNumber: call.from.phoneNumber || call.from.extensionNumber,
-              countryCode: this._regionSettings.countryCode,
-              areaCode: this._regionSettings.areaCode,
-            });
-            if (number && !numberMap[number]) {
-              output.push(number);
-              numberMap[number] = true;
-            }
-          }
-          if (call.to) {
-            const number = normalizeNumber({
-              phoneNumber: call.to.phoneNumber || call.to.extensionNumber,
-              countryCode: this._regionSettings.countryCode,
-              areaCode: this._regionSettings.areaCode,
-            });
-            if (number && !numberMap[number]) {
-              output.push(number);
-              numberMap[number] = true;
-            }
+          if (call.to && call.to.phoneNumber) {
+            addIfNotExist(call.to.phoneNumber);
           }
         });
         return output;
@@ -131,13 +112,13 @@ export default class CallMonitor extends RcModule {
         ),
       });
     }
-    this.addSelector('sessionIdList',
+    this.addSelector('sessionIds',
       () => this._detailedPresence.calls,
       calls => calls.map(call => call.sessionId)
     );
     if (this._activityMatcher) {
       this._activityMatcher.addQuerySource({
-        getQueriesFn: this._selectors.sessionIdList,
+        getQueriesFn: this._selectors.sessionIds,
         readyCheckFn: () => this._detailedPresence.ready,
       });
     }
@@ -185,6 +166,10 @@ export default class CallMonitor extends RcModule {
         if (this._contactMatcher && this._contactMatcher.ready) {
           this._contactMatcher.triggerMatch();
         }
+      }
+      const sessionIds = this._selectors.sessionIds();
+      if (this._lastProcessedIds !== sessionIds) {
+        this._lastProcessedIds = sessionIds;
         if (this._activityMatcher && this._activityMatcher.ready) {
           this._activityMatcher.triggerMatch();
         }

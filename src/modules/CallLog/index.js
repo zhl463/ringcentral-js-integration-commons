@@ -10,9 +10,8 @@ import getCallLogReducer, {
 } from './getCallLogReducer';
 
 import sleep from '../../lib/sleep';
-import subscriptionFilters from '../Subscription/filters';
+import subscriptionFilters from '../../enums/subscriptionFilters';
 import syncTypes from '../../enums/syncTypes';
-import processCall from '../../lib/processCall';
 import {
   hasEndedCalls,
 } from '../../lib/callLogHelpers';
@@ -24,10 +23,9 @@ const RECORD_COUNT = 250;
 const DEFAULT_TIME_TO_RETRY = 62 * 1000;
 const SYNC_DELAY = 20 * 1000;
 
-
 export function processData(data) {
   return {
-    records: data.records.map(processCall),
+    records: data.records,
     timestamp: (new Date(data.syncInfo.syncTime)).getTime(),
     syncToken: data.syncInfo.syncToken,
   };
@@ -54,6 +52,7 @@ export default class CallLog extends Pollable {
     client,
     storage,
     subscription,
+    rolesAndPermissions,
     ttl = DEFAULT_TTL,
     tokenExpiresIn = DEFAULT_TOKEN_EXPIRES_IN,
     timeToRetry = DEFAULT_TIME_TO_RETRY,
@@ -69,6 +68,7 @@ export default class CallLog extends Pollable {
     this._client = client;
     this._storage = storage;
     this._subscription = subscription;
+    this._rolesAndPermissions = rolesAndPermissions;
     this._dataStorageKey = 'callLogData';
     this._tokenStorageKey = 'callLogToken';
     this._timestampStorageKey = 'callLogTimestamp';
@@ -114,6 +114,7 @@ export default class CallLog extends Pollable {
       this._auth.loggedIn &&
       this._storage.ready &&
       (!this._subscription || this._subscription.ready) &&
+      this._rolesAndPermissions.ready &&
       this.status === moduleStatus.pending
     ) {
       this.store.dispatch({
@@ -142,7 +143,8 @@ export default class CallLog extends Pollable {
       (
         !this._auth.loggedIn ||
         !this._storage.ready ||
-        (this._subscription && !this._subscription.ready)
+        (this._subscription && !this._subscription.ready) ||
+        !this._rolesAndPermissions.ready
       ) &&
       this.ready
     ) {
@@ -196,6 +198,14 @@ export default class CallLog extends Pollable {
 
   get timeToRetry() {
     return this._timeToRetry;
+  }
+
+  get canReadCallLog() {
+    return !!this._rolesAndPermissions.permissions.ReadCallLog;
+  }
+
+  get canReadPresence() {
+    return !!this._rolesAndPermissions.permissions.ReadPresenceStatus;
   }
 
   async _fetch({ dateFrom, dateTo }) {
@@ -254,12 +264,12 @@ export default class CallLog extends Pollable {
         timestamp,
         syncToken,
       } = processData(data);
-      if (records.length === RECORD_COUNT || records.length > 0) {
+      if (records.length >= RECORD_COUNT) {
         // reach the max record count
         supplementRecords = (await this._fetch({
           dateFrom,
           dateTo: getISODateTo(records),
-        })).map(processCall);
+        }));
       }
       if (ownerId !== this._auth.ownerId) throw Error('request aborted');
       this.store.dispatch({

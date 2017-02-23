@@ -49,6 +49,7 @@ describe('getDataReducer', () => {
       const entries = daySpanList.map(daySpan => ({
         id: `${daySpan}`,
         startTime: now - (daySpan * 24 * 60 * 60 * 1000),
+        direction: 'Outbound',
       }));
       expect(reducer(entries.slice(3, 5), {
         type: actionTypes.iSyncSuccess,
@@ -62,7 +63,6 @@ describe('getDataReducer', () => {
         supplementRecords: entries.slice(4, 8),
         daySpan: 7,
       })).to.deep.equal(entries);
-
       // check for cut off time on supplementRecords
       expect(reducer(entries.slice(3, 5), {
         type: actionTypes.iSyncSuccess,
@@ -76,7 +76,6 @@ describe('getDataReducer', () => {
         supplementRecords: entries.slice(4, 8),
         daySpan: 5,
       })).to.deep.equal(entries.slice(0, 6));
-
       // check for cut off time on original state
       expect(reducer(entries.slice(3), {
         type: actionTypes.iSyncSuccess,
@@ -90,7 +89,6 @@ describe('getDataReducer', () => {
         supplementRecords: entries.slice(4, 8),
         daySpan: 5,
       })).to.deep.equal(entries.slice(0, 6));
-
       // check for cut off time on records
       expect(reducer(entries.slice(0, 5), {
         type: actionTypes.iSyncSuccess,

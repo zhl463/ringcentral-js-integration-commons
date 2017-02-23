@@ -2,9 +2,8 @@ import Presence from '../Presence';
 import moduleStatus from '../../enums/moduleStatus';
 import actionTypes from './actionTypes';
 import getDetailedPresenceReducer from './getDetailedPresenceReducer';
-import {
-  isRinging,
-} from '../../lib/callLogHelpers';
+import telephonyStatuses from '../../enums/telephonyStatuses';
+import subscriptionFilters from '../../enums/subscriptionFilters';
 
 const presenceRegExp = /\/presence(\?.*)?/;
 
@@ -40,6 +39,7 @@ export default class DetailedPresence extends Presence {
       calls => calls.map(call => call.sessionId),
     );
     this._lastProcessedCalls = [];
+    this._lastTelephonyStatus = null;
   }
 
   _subscriptionHandler = (message) => {
@@ -47,11 +47,13 @@ export default class DetailedPresence extends Presence {
       const {
         activeCalls,
         dndStatus,
+        telephonyStatus,
       } = message.body;
       this.store.dispatch({
         type: this.actionTypes.notification,
         activeCalls,
         dndStatus,
+        telephonyStatus,
         timestamp: Date.now(),
       });
     }
@@ -70,7 +72,7 @@ export default class DetailedPresence extends Presence {
         this._connectivity = this._connectivityMonitor.connectivity;
       }
       await this.fetch();
-      this._subscription.subscribe('/account/~/extension/~/presence?detailedTelephonyState=true');
+      this._subscription.subscribe(subscriptionFilters.detailedPresence);
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
@@ -105,7 +107,8 @@ export default class DetailedPresence extends Presence {
       if (this._connectivity) {
         this._fetch();
       }
-    } else if (
+    }
+    if (
       this.ready &&
       this._lastProcessedCalls !== this.calls
     ) {
@@ -114,18 +117,9 @@ export default class DetailedPresence extends Presence {
 
       this.calls.forEach((call) => {
         const oldCallIndex = oldCalls.findIndex(item => item.sessionId === call.sessionId);
-        let onRingingCalled = false;
         if (oldCallIndex === -1) {
           if (typeof this._onNewCall === 'function') {
             this._onNewCall(call);
-          }
-          if (
-            typeof this._onRinging === 'function' &&
-            !onRingingCalled &&
-            isRinging(call)
-          ) {
-            this._onRinging();
-            onRingingCalled = true;
           }
         } else {
           const oldCall = oldCalls[oldCallIndex];
@@ -144,6 +138,18 @@ export default class DetailedPresence extends Presence {
         }
       });
     }
+    if (
+      this.ready &&
+      this._lastTelephonyStatus !== this.telephonyStatus
+    ) {
+      this._lastTelephonyStatus = this.telephonyStatus;
+      if (
+        this._lastTelephonyStatus === telephonyStatuses.ringing &&
+        typeof this._onRinging === 'function'
+      ) {
+        this._onRinging();
+      }
+    }
   }
 
   initialize() {
@@ -152,6 +158,10 @@ export default class DetailedPresence extends Presence {
 
   get calls() {
     return this.state.calls;
+  }
+
+  get telephonyStatus() {
+    return this.state.telephonyStatus;
   }
 
   get sessionIdList() {
@@ -167,13 +177,15 @@ export default class DetailedPresence extends Presence {
       const {
         activeCalls,
         dndStatus,
+        telephonyStatus,
       } = (await this._client.service.platform()
-        .get('/account/~/extension/~/presence?detailedTelephonyState=true')).json();
+        .get(subscriptionFilters.detailedPresence)).json();
       if (this._auth.ownerId === ownerId) {
         this.store.dispatch({
           type: this.actionTypes.fetchSuccess,
           activeCalls,
           dndStatus,
+          telephonyStatus,
           timestamp: Date.now(),
         });
         this._promise = null;

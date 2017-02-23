@@ -7,6 +7,7 @@ import {
   getDataReducer,
   getTimestampReducer,
 } from './getAccountExtensionReducer';
+import subscriptionFilters from '../../enums/subscriptionFilters';
 
 const extensionRegExp = /.*\/extension$/;
 const DEFAULT_TTL = 24 * 60 * 60 * 1000;
@@ -51,7 +52,7 @@ export default class AccountExtension extends DataFetcher {
       actionTypes,
       getDataReducer,
       getTimestampReducer,
-      subscriptionFilters: ['/account/~/extension'],
+      subscriptionFilters: [subscriptionFilters.accountExtension],
       subscriptionHandler: async (message) => {
         if (
           message &&

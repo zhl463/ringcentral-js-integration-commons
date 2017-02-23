@@ -1,8 +1,10 @@
 import DataFetcher from '../../lib/DataFetcher';
 import sleep from '../../lib/sleep';
 import fetchList from '../../lib/fetchList';
-import subscriptionFilters from '../Subscription/filters';
-import processCall from '../../lib/processCall';
+import subscriptionFilters from '../../enums/subscriptionFilters';
+import {
+  getDataReducer
+} from './getActiveCallsReducer';
 
 const presenceRegExp = /\/presence\?detailedTelephonyState=true$/;
 const FETCH_DELAY = 1000;
@@ -20,6 +22,7 @@ export default class ActiveCalls extends DataFetcher {
       name: 'activeCalls',
       client,
       ttl,
+      getDataReducer,
       subscriptionFilters: [subscriptionFilters.detailedPresence],
       subscriptionHandler: async (message) => {
         if (presenceRegExp.test(message.event)) {
@@ -30,9 +33,9 @@ export default class ActiveCalls extends DataFetcher {
           }
         }
       },
-      fetchFunction: async () => (await fetchList(params => (
+      fetchFunction: async () => fetchList(params => (
         this._client.account().extension().activeCalls().list(params)
-      ))).map(processCall),
+      ))
     });
     this.addSelector(
       'calls',

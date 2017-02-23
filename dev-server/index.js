@@ -217,6 +217,7 @@ class DemoPhone extends RcModule {
       client: this.client,
       storage: this.storage,
       subscription: this.subscription,
+      rolesAndPermissions: this.rolesAndPermissions,
       getState: () => this.state.callLog,
     }));
     this.addModule('accountExtension', new AccountExtension({
@@ -249,21 +250,21 @@ class DemoPhone extends RcModule {
       regionSettings: this.regionSettings,
       getState: () => this.state.numberValidate,
     }));
-    this.addModule('messageSender', new MessageSender({
-      alert: this.alert,
-      client: this.client,
-      getState: () => this.state.messageSender,
-      extensionPhoneNumber: this.extensionPhoneNumber,
-      extensionInfo: this.extensionInfo,
-      numberValidate: this.numberValidate,
-    }));
-    this.addModule('composeText', new ComposeText({
-      alert: this.alert,
-      storage: this.storage,
-      getState: () => this.state.composeText,
-      messageSender: this.messageSender,
-      numberValidate: this.numberValidate,
-    }));
+    // this.addModule('messageSender', new MessageSender({
+    //   alert: this.alert,
+    //   client: this.client,
+    //   getState: () => this.state.messageSender,
+    //   extensionPhoneNumber: this.extensionPhoneNumber,
+    //   extensionInfo: this.extensionInfo,
+    //   numberValidate: this.numberValidate,
+    // }));
+    // this.addModule('composeText', new ComposeText({
+    //   alert: this.alert,
+    //   storage: this.storage,
+    //   getState: () => this.state.composeText,
+    //   messageSender: this.messageSender,
+    //   numberValidate: this.numberValidate,
+    // }));
     this.addModule('callMonitor', new CallMonitor({
       detailedPresence: this.detailedPresence,
       activeCalls: this.activeCalls,
@@ -274,42 +275,8 @@ class DemoPhone extends RcModule {
       activeCalls: this.activeCalls,
       callLog: this.callLog,
       detailedPresence: this.detailedPresence,
+      regionSettings: this.regionSettings,
       getState: () => this.state.callHistory,
-    }));
-    this.addModule('contactSearch', new ContactSearch({
-      auth: this.auth,
-      storage: this.storage,
-      getState: () => this.state.contactSearch,
-    }));
-    this.contactSearch.addSearchSource({
-      sourceName: 'test',
-      searchFn: ({ searchString }) => [{
-        entityType: 'account',
-        name: ({ searchString }),
-        phoneNumber: '+1234567890',
-        phoneType: 'phone',
-      }],
-      formatFn: entities => entities,
-      readyCheckFn: () => true,
-    });
-    this.addModule('messageStore', new MessageStore({
-      alert: this.alert,
-      auth: this.auth,
-      client: this.client,
-      storage: this.storage,
-      subscription: this.subscription,
-      getState: () => this.state.messageStore,
-    }));
-    this.addModule('conversation', new Conversation({
-      auth: this.auth,
-      messageSender: this.messageSender,
-      extensionInfo: this.extensionInfo,
-      messageStore: this.messageStore,
-      getState: () => this.state.conversation,
-    }));
-    this.addModule('messages', new Messages({
-      messageStore: this.messageStore,
-      getState: () => this.state.messages,
     }));
     this.addModule('dateTimeIntl', new DateTimeIntl({
       auth: this.auth,
@@ -317,6 +284,41 @@ class DemoPhone extends RcModule {
       storage: this.storage,
       getState: () => this.state.dateTimeIntl,
     }));
+    // this.addModule('contactSearch', new ContactSearch({
+    //   auth: this.auth,
+    //   storage: this.storage,
+    //   getState: () => this.state.contactSearch,
+    // }));
+    // this.contactSearch.addSearchSource({
+    //   sourceName: 'test',
+    //   searchFn: ({ searchString }) => [{
+    //     entityType: 'account',
+    //     name: ({ searchString }),
+    //     phoneNumber: '+1234567890',
+    //     phoneType: 'phone',
+    //   }],
+    //   formatFn: entities => entities,
+    //   readyCheckFn: () => true,
+    // });
+    // this.addModule('messageStore', new MessageStore({
+    //   alert: this.alert,
+    //   auth: this.auth,
+    //   client: this.client,
+    //   storage: this.storage,
+    //   subscription: this.subscription,
+    //   getState: () => this.state.messageStore,
+    // }));
+    // this.addModule('conversation', new Conversation({
+    //   auth: this.auth,
+    //   messageSender: this.messageSender,
+    //   extensionInfo: this.extensionInfo,
+    //   messageStore: this.messageStore,
+    //   getState: () => this.state.conversation,
+    // }));
+    // this.addModule('messages', new Messages({
+    //   messageStore: this.messageStore,
+    //   getState: () => this.state.messages,
+    // }));
     this._reducer = combineReducers({
       accountInfo: this.accountInfo.reducer,
       accountExtension: this.accountExtension.reducer,
@@ -348,13 +350,13 @@ class DemoPhone extends RcModule {
       subscription: this.subscription.reducer,
       tabManager: this.tabManager.reducer,
       numberValidate: this.numberValidate.reducer,
-      messageSender: this.messageSender.reducer,
-      contactSearch: this.contactSearch.reducer,
-      composeText: this.composeText.reducer,
-      messageStore: this.messageStore.reducer,
-      conversation: this.conversation.reducer,
-      messages: this.messages.reducer,
       dateTimeIntl: this.dateTimeIntl.reducer,
+      // messageSender: this.messageSender.reducer,
+      // contactSearch: this.contactSearch.reducer,
+      // composeText: this.composeText.reducer,
+      // messageStore: this.messageStore.reducer,
+      // conversation: this.conversation.reducer,
+      // messages: this.messages.reducer,
       lastAction: (state = null, action) => {
         console.log(action);
         return action;

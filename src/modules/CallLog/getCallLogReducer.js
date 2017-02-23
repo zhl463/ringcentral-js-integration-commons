@@ -1,7 +1,31 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import getDateFrom from '../../lib/getDateFrom';
-import { sortCallsByStartTime } from '../../lib/callLogHelpers';
+import {
+  normalizeStartTime,
+  removeInboundRingOutLegs,
+  sortByStartTime,
+} from '../../lib/callLogHelpers';
+import removeUri from '../../lib/removeUri';
+import callActions from '../../enums/callActions';
+
+
+function processRecords(records = [], supplementRecords = []) {
+  const ids = {};
+  const output = [];
+  function processCall(call) {
+    if (
+      !ids[call.id] &&
+      call.action !== callActions.findMe
+    ) {
+      output.push(normalizeStartTime(removeUri(call)));
+      ids[call.id] = true;
+    }
+  }
+  records.forEach(processCall);
+  supplementRecords.forEach(processCall);
+  return output;
+}
 
 export function getDataReducer(types) {
   return (state = [], { type, records = [], supplementRecords = [], daySpan }) => {
@@ -12,41 +36,28 @@ export function getDataReducer(types) {
       }
       case types.fSyncSuccess:
       case types.iSyncSuccess: {
-        const indexMap = new Map();
+        const indexMap = {};
         const newState = [];
         const cutOffTime = getDateFrom(daySpan).getTime();
         // filter old calls
         state.forEach((call) => {
           if (call.startTime > cutOffTime) {
-            indexMap.set(call.id, newState.length);
+            indexMap[call.id] = newState.length;
             newState.push(call);
           }
         });
-        // push new records
-        records.forEach((call) => {
+        removeInboundRingOutLegs(processRecords(records, supplementRecords)).forEach((call) => {
           if (call.startTime > cutOffTime) {
-            if (indexMap.has(call.id)) {
+            if (indexMap[call.id] > -1) {
               // replace the current data with new data
-              newState[indexMap.get(call.id)] = call;
+              newState[indexMap[call.id]] = call;
             } else {
-              indexMap.set(call.id, newState.length);
+              indexMap[call.id] = newState.length;
               newState.push(call);
             }
           }
         });
-        // push supplement records
-        supplementRecords.forEach((call) => {
-          if (call.startTime > cutOffTime) {
-            if (indexMap.has(call.id)) {
-              // replace the current data with new data
-              newState[indexMap.get(call.id)] = call;
-            } else {
-              indexMap.set(call.id, newState.length);
-              newState.push(call);
-            }
-          }
-        });
-        newState.sort(sortCallsByStartTime);
+        newState.sort(sortByStartTime);
         return newState;
       }
       case types.resetSuccess:
