@@ -2,7 +2,7 @@ import RcModule from '../../lib/RcModule';
 import callingModes from '../CallingSettings/callingModes';
 import moduleStatus from '../../enums/moduleStatus';
 import normalizeNumber from '../../lib/normalizeNumber'; // TODO : move to ringcentral-integration
-import cleanNumber from '../../lib/cleanNumber';
+import cleanNumber, { hasInvalidChar, hasNumber } from '../../lib/cleanNumber';
 import parseNumber from '../../lib/parseNumber';
 
 import callActionTypes from './actionTypes';
@@ -102,6 +102,13 @@ export default class Call extends RcModule {
           const validatedNumbers = await this._getValidatedNumbers();
           if (validatedNumbers) {
             await this._makeCall(validatedNumbers);
+            this.store.dispatch({
+              type: this.actionTypes.connectSuccess
+            });
+          }else{
+            this.store.dispatch({
+              type: this.actionTypes.connectError
+            });
           }
         } catch (error) {
           if (error.message === ringoutErrors.firstLegConnectFailed) {
@@ -120,10 +127,10 @@ export default class Call extends RcModule {
               payroll: error,
             });
           }
+          this.store.dispatch({
+            type: this.actionTypes.connectError
+          });
         }
-        this.store.dispatch({
-          type: this.actionTypes.completeConnect
-        });
       }
     }
   }
@@ -139,8 +146,8 @@ export default class Call extends RcModule {
       isServiceNumber
     } = parseNumber(this.toNumber);
     const cleaned = cleanNumber(this.toNumber);
-    // non digital number
-    if (cleaned.length === 0) {
+    // include special char or cleaned has no digit (only #*+)
+    if ( hasInvalidChar(this.toNumber) || !hasNumber(cleaned)) {
       this._alert.warning({
         message: callErrors.noToNumber,
       });

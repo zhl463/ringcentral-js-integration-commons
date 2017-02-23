@@ -20,9 +20,10 @@ describe('Ringout', () => {
       expect(reducer(originalState, { type: 'foo' }))
       .to.equal(originalState);
     });
-    it('should return idle status if actionType is completeConnect', () => {
+    it('should return idle status if actionType is connectSuccess or connectError', () => {
       [
-        ringoutActionTypes.completeConnect,
+        ringoutActionTypes.connectSuccess,
+        ringoutActionTypes.connectError,
       ].forEach(type => {
         expect(reducer('foo', {
           type,

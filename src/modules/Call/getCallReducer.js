@@ -8,7 +8,8 @@ export function getCallStatusReducer(types) {
       case types.connect:
         return callStatus.connecting;
 
-      case types.completeConnect:
+      case types.connectSuccess:
+      case types.connectError:
         return callStatus.idle;
 
       default:
@@ -22,7 +23,9 @@ export function getToNumberReducer(types) {
     switch (type) {
       case types.toNumberChanged:
         return data;
-      case types.completeConnect:
+      case types.connectError:
+        return state;
+      case types.connectSuccess:
         return '';
       default:
         return state;

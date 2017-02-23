@@ -8,7 +8,8 @@ export function getRingoutStatusReducer(types) {
       case types.startToConnect:
         return ringoutStatus.connecting;
 
-      case types.completeConnect:
+      case types.connectSuccess:
+      case types.connectError:
         return ringoutStatus.idle;
 
       default:
