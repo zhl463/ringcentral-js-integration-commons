@@ -3,7 +3,7 @@ import getCacheReducer, {
   getContactSearchReducer,
 } from './getCacheReducer';
 
-import contactSearchActionTypes from './contactSearchActionTypes';
+import actionTypes from './actionTypes';
 
 describe('ContactSearch :: Cache :: getContactSearchReducer', () => {
   it('should be a function', () => {
@@ -13,7 +13,7 @@ describe('ContactSearch :: Cache :: getContactSearchReducer', () => {
     expect(getContactSearchReducer()).to.be.a('function');
   });
   describe('contactSearchReducer', () => {
-    const reducer = getContactSearchReducer(contactSearchActionTypes);
+    const reducer = getContactSearchReducer(actionTypes);
     it('should have empty object for initial state ', () => {
       expect(reducer(undefined, {})).to.deep.equal({});
     });
@@ -26,7 +26,7 @@ describe('ContactSearch :: Cache :: getContactSearchReducer', () => {
     it('should return data with searchString and searceSource as key on save', () => {
       const originalState = { '["dynamics","111"]': {} };
       expect(reducer(originalState, {
-        type: contactSearchActionTypes.save,
+        type: actionTypes.save,
         entities: [],
         sourceName: 'dynamics',
         searchString: 'searchString',
@@ -39,7 +39,7 @@ describe('ContactSearch :: Cache :: getContactSearchReducer', () => {
         '["dynamics","searchString"]': { entities: ['2'] }
       };
       expect(reducer(originalState, {
-        type: contactSearchActionTypes.save,
+        type: actionTypes.save,
         entities: ['2'],
         sourceName: 'dynamics',
         searchString: 'searchString',
@@ -49,7 +49,7 @@ describe('ContactSearch :: Cache :: getContactSearchReducer', () => {
     it('should return data with entities and timestamp as key on save', () => {
       const originalState = { '["dynamics","111"]': { entities: [] } };
       expect(reducer(originalState, {
-        type: contactSearchActionTypes.save,
+        type: actionTypes.save,
         entities: [],
         sourceName: 'dynamics',
         searchString: 'searchString',
@@ -58,9 +58,9 @@ describe('ContactSearch :: Cache :: getContactSearchReducer', () => {
 
     it('should return empty object on cleanUp and initSuccess', () => {
       [
-        contactSearchActionTypes.initSuccess,
-        contactSearchActionTypes.cleanUp,
-      ].forEach(type => {
+        actionTypes.initSuccess,
+        actionTypes.cleanUp,
+      ].forEach((type) => {
         const originalState = {
           data: { test: 1 }
         };
@@ -77,11 +77,11 @@ describe('ContactSearch :: Cache:: getCacheReducer', () => {
     expect(getCacheReducer).to.be.a('function');
   });
   it('should return a reducer', () => {
-    expect(getCacheReducer(contactSearchActionTypes)).to.be.a('function');
+    expect(getCacheReducer(actionTypes)).to.be.a('function');
   });
   describe('contactSearchReducer', () => {
-    const reducer = getCacheReducer(contactSearchActionTypes);
-    const contactSearchReducer = getContactSearchReducer(contactSearchActionTypes);
+    const reducer = getCacheReducer(actionTypes);
+    const contactSearchReducer = getContactSearchReducer(actionTypes);
     it('should return combined state', () => {
       expect(reducer(undefined, {}))
         .to.deep.equal({

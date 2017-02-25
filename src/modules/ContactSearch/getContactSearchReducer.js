@@ -45,8 +45,9 @@ export function getSearchingReducer(types) {
   };
 }
 
-export default function getContactSearchReducer(types) {
+export default function getContactSearchReducer(types, reducers = {}) {
   return combineReducers({
+    ...reducers,
     status: getModuleStatusReducer(types),
     searchStatus: getContactSearchStatusReducer(types),
     searching: getSearchingReducer(types),

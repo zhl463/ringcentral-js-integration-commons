@@ -3,7 +3,8 @@ import sinon from 'sinon';
 import { createStore } from 'redux';
 import ContactSearch from './index';
 import getContactSearchReducer from './getContactSearchReducer';
-import actionTypes from './contactSearchActionTypes';
+import getCacheReducer from './getCacheReducer';
+import actionTypes from './actionTypes';
 import loginStatus from '../../modules/Auth/loginStatus';
 
 describe('ContactSearch Unit Test', () => {
@@ -12,7 +13,9 @@ describe('ContactSearch Unit Test', () => {
 
   beforeEach(() => {
     contactSearch = sinon.createStubInstance(ContactSearch);
-    store = createStore(getContactSearchReducer(actionTypes));
+    store = createStore(getContactSearchReducer(actionTypes, {
+      cache: getCacheReducer(actionTypes),
+    }));
     contactSearch._store = store;
     contactSearch._actionTypes = actionTypes;
     [
@@ -67,286 +70,386 @@ describe('ContactSearch Unit Test', () => {
   });
 
   describe('_shouldInit', () => {
-    it('Should return true when _auth is loggedIn,  _storage is ready, _readyCheck is true and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => true);
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldInit()).to.equal(true);
+    describe('when contactSearch is not ready', () => {
+      beforeEach(() => {
+        sinon.stub(contactSearch, 'ready', { get: () => false });
+      });
+
+      describe('when _readyCheck is true', () => {
+        beforeEach(() => {
+          sinon.stub(contactSearch, '_readyCheck').callsFake(() => true);
+        });
+
+        it('Should return true when _auth is loggedIn,  _storage is ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldInit()).to.equal(true);
+        });
+
+        it('Should return false when _auth is notLoggedIn and _storage is ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+
+        it('Should return false when _auth is loggedIn and _storage is not ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+
+        it('Should return false when _auth is notLoggedIn and _storage is not ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+
+        it('Should return true when _auth is loggedIn and _storage is undefined', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldInit()).to.equal(true);
+        });
+
+        it('Should return false when _auth is not loggedIn and _storage is undefined', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+      });
+
+      describe('when _readyCheck is false', () => {
+        beforeEach(() => {
+          sinon.stub(contactSearch, '_readyCheck').callsFake(() => false);
+        });
+
+        it('Should return false when _auth is loggedIn,  _storage is ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+
+        it('Should return false when _auth is notLoggedIn,  _storage is ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+
+        it('Should return false when _auth is loggedIn,  _storage is not ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+
+        it('Should return false when _auth is notLoggedIn,  _storage is not ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+
+        it('Should return false when _auth is loggedIn and _storage is undefined', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+
+        it('Should return false when _auth is not loggedIn and _storage is undefined', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+      });
     });
 
-    it('Should return false when _auth is notLoggedIn,  _storage is ready, _readyCheck is true and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => true);
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+    describe('when contactSearch is ready', () => {
+      beforeEach(() => {
+        sinon.stub(contactSearch, 'ready', { get: () => true });
+      });
 
-    it('Should return false when _auth is loggedIn,  _storage is not ready, _readyCheck is true and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => true);
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+      describe('when _readyCheck is true', () => {
+        beforeEach(() => {
+          sinon.stub(contactSearch, '_readyCheck').callsFake(() => true);
+        });
 
-    it('Should return false when _auth is loggedIn,  _storage is ready, _readyCheck is false and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => false);
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _auth is loggedIn,  _storage is ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _auth is notLoggedIn,  _storage is not ready, _readyCheck is true and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => true);
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _auth is notLoggedIn,  _storage is ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _auth is notLoggedIn,  _storage is ready, _readyCheck is false and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => false);
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _auth is loggedIn,  _storage is not ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _auth is loggedIn,  _storage is not ready, _readyCheck is false and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => false);
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _auth is notLoggedIn,  _storage is not ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _auth is notLoggedIn,  _storage is not ready, _readyCheck is false and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => false);
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _auth is loggedIn and _storage is undefined', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _auth is loggedIn,  _storage is ready, _readyCheck is true and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => true);
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _auth is not loggedIn and _storage is undefined', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+      });
 
-    it('Should return false when _auth is notLoggedIn,  _storage is ready, _readyCheck is true and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => true);
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+      describe('when _readyCheck is false', () => {
+        beforeEach(() => {
+          sinon.stub(contactSearch, '_readyCheck').callsFake(() => false);
+        });
 
-    it('Should return false when _auth is loggedIn,  _storage is not ready, _readyCheck is true and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => true);
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _auth is loggedIn,  _storage is ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _auth is loggedIn,  _storage is ready, _readyCheck is false and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => false);
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _auth is notLoggedIn,  _storage is ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _auth is notLoggedIn,  _storage is not ready, _readyCheck is true and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => true);
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _auth is loggedIn,  _storage is not ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _auth is notLoggedIn,  _storage is ready, _readyCheck is false and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => false);
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _auth is notLoggedIn,  _storage is not ready', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _auth is loggedIn,  _storage is not ready, _readyCheck is false and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => false);
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _auth is loggedIn and _storage is undefined', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _auth is notLoggedIn,  _storage is not ready, _readyCheck is false and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, '_readyCheck').callsFake(() => false);
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldInit()).to.equal(false);
+        it('Should return false when _auth is not loggedIn and _storage is undefined', () => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldInit()).to.equal(false);
+        });
+      });
     });
   });
 
   describe('_shouldReset', () => {
-    it('Should return true when _auth is notLoggedIn,  _storage is not ready, and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldReset()).to.equal(true);
+    describe('when contactSearch is ready', () => {
+      beforeEach(() => {
+        sinon.stub(contactSearch, 'ready', { get: () => true });
+      });
+
+      describe('when _auth is notLoggedIn', () => {
+        beforeEach(() => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+        });
+
+        it('Should return true when _storage is not ready', () => {
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldReset()).to.equal(true);
+        });
+
+        it('Should return true when _storage is ready', () => {
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldReset()).to.equal(true);
+        });
+
+        it('Should return true when _storage is undefined', () => {
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldReset()).to.equal(true);
+        });
+      });
+
+      describe('when _auth is loggedIn', () => {
+        beforeEach(() => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+        });
+
+        it('Should return true when _storage is not ready', () => {
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldReset()).to.equal(true);
+        });
+
+        it('Should return false when _storage is ready', () => {
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldReset()).to.equal(false);
+        });
+
+        it('Should return false when _storage is undefined', () => {
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldReset()).to.not.be.ok;
+        });
+      });
     });
 
-    it('Should return true when _auth is notLoggedIn,  _storage is ready, and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldReset()).to.equal(true);
-    });
+    describe('when contactSearch is not ready', () => {
+      beforeEach(() => {
+        sinon.stub(contactSearch, 'ready', { get: () => false });
+      });
 
-    it('Should return true when _auth is loggedIn,  _storage is not ready, and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldReset()).to.equal(true);
-    });
+      describe('when _auth is notLoggedIn', () => {
+        beforeEach(() => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.notLoggedIn,
+          };
+        });
 
-    it('Should return false when _auth is loggedIn,  _storage is ready, and contactSearch is ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      expect(contactSearch._shouldReset()).to.equal(false);
-    });
+        it('Should return false when _storage is not ready', () => {
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldReset()).to.equal(false);
+        });
 
-    it('Should return false when _auth is notLoggedIn,  _storage is not ready, and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldReset()).to.equal(false);
-    });
+        it('Should return false when _storage is ready', () => {
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldReset()).to.equal(false);
+        });
 
-    it('Should return false when _auth is notLoggedIn,  _storage is ready, and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.notLoggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldReset()).to.equal(false);
-    });
+        it('Should return false when _storage is undefined', () => {
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldReset()).to.equal(false);
+        });
+      });
 
-    it('Should return false when _auth is loggedIn,  _storage is not ready, and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: false
-      };
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldReset()).to.equal(false);
-    });
+      describe('when _auth is loggedIn', () => {
+        beforeEach(() => {
+          contactSearch._auth = {
+            loginStatus: loginStatus.loggedIn,
+          };
+        });
 
-    it('Should return false when _auth is loggedIn,  _storage is ready, and contactSearch is not ready', () => {
-      contactSearch._auth = {
-        loginStatus: loginStatus.loggedIn,
-      };
-      contactSearch._storage = {
-        ready: true
-      };
-      sinon.stub(contactSearch, 'ready', { get: () => false });
-      expect(contactSearch._shouldReset()).to.equal(false);
+        it('Should return false when _storage is not ready', () => {
+          contactSearch._storage = {
+            ready: false
+          };
+          expect(contactSearch._shouldReset()).to.equal(false);
+        });
+
+        it('Should return false when _storage is ready', () => {
+          contactSearch._storage = {
+            ready: true
+          };
+          expect(contactSearch._shouldReset()).to.equal(false);
+        });
+
+        it('Should return false when _storage is undefined', () => {
+          contactSearch._storage = undefined;
+          expect(contactSearch._shouldReset()).to.not.be.ok;
+        });
+      });
     });
   });
 
