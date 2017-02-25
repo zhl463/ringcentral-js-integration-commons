@@ -13,14 +13,16 @@ export default (auth, client, alert, account, callingSettings, extensionPhoneNum
     if (!isLoginSuccess) {
       conditionalDescribe = describe.skip;
       console.error('Skip test case as failed to login with credential ', account);
-    } 
+    }
     conditionalDescribe('Should Be Make Call with Softphone by Default', function() {
+      this.timeout(20000);
       it('Should Be Make Call with Softphone by Default', async function () {
         expect(callingSettings.callWith).to.equals(callingOptions.softphone);
         expect(callingSettings.callingMode).to.equals(callingModes.softphone);
       });
     });
     conditionalDescribe('Should Save Calling Mode', function () {
+      this.timeout(20000);
       it('Should Save My RingCentral Phone', async function () {
         callingSettings.setData({
           callWith: callingOptions.myphone
@@ -44,6 +46,7 @@ export default (auth, client, alert, account, callingSettings, extensionPhoneNum
       });
     });
     conditionalDescribe('Should Save Options in RingOut Mode', function () {
+      this.timeout(20000);
       it('Should Save From Number', async function () {
          callingSettings.setData({
           myLocation: '123'
@@ -58,6 +61,7 @@ export default (auth, client, alert, account, callingSettings, extensionPhoneNum
       });
     });
     conditionalDescribe('Should Allow Alert', function() {
+      this.timeout(20000);
       beforeEach(async function () {
         const isAlertClear = await waitUntilEqual(() => {
           alert.dismissAll();
@@ -93,7 +97,7 @@ export default (auth, client, alert, account, callingSettings, extensionPhoneNum
           }, true);
           expect(containsErrorMessage(alert.state.messages, callingSettingsMessages.saveSuccess)).to.not.equal(undefined);
         });
-     
+
       });
       describe('Should Not Prompt Alerts when withPrompt Equals False', function() {
         it('Should Not Prompt Alert when Calling Option is Softphone', async function () {
@@ -127,6 +131,7 @@ export default (auth, client, alert, account, callingSettings, extensionPhoneNum
       });
     });
     conditionalDescribe('Should Remember after Logout', function() {
+      this.timeout(20000);
       it('Should Remember Calling Settings after Re-login', async function () {
         this.timeout(20000);
         callingSettings.setData({
@@ -147,6 +152,7 @@ export default (auth, client, alert, account, callingSettings, extensionPhoneNum
       });
     });
     conditionalDescribe('Should Have Required Phone Numbers', function() {
+      this.timeout(20000);
       it('Should Have My Phone Numbers', async function() {
         const myPhoneNumbers = extensionPhoneNumber.directNumbers.map(item => item.phoneNumber);
         const mainCompanyNumber = extensionPhoneNumber.mainCompanyNumber;

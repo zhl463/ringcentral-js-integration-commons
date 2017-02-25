@@ -44,6 +44,11 @@ describe('Call ::', () => {
         type: actionTypes.connectSuccess,
       })).to.equal('');
     });
+    it('should return \'\' on resetSuccess', () => {
+      expect(reducer('', {
+        type: actionTypes.resetSuccess,
+      })).to.deep.equal('');
+    });
   });
   describe('getLastCallNumberReducer', () => {
     it('should be a function', () => {

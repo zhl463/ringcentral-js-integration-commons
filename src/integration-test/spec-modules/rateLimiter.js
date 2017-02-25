@@ -12,6 +12,7 @@ export default (auth, alert, account, client, rateLimiter) => {
       console.error('Skip test case as failed to login with credential ', account);
     }
     conditionalDescribe('Should Allow Alert', function() {
+      this.timeout(20000);
       beforeEach(async function () {
         const isAlertClear = await waitUntilEqual(() => {
           alert.dismissAll();

@@ -19,12 +19,14 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
     });
 
     conditionalDescribe('Should Init Successfully with Deafult Setting', () => {
+      this.timeout(20000);
       it('Should Set Sender Number with First SmsSender Phone Number by Default', () => {
         expect(composeText.senderNumber).to.equals(messageSender.senderNumbersList[0]);
       });
     });
 
     conditionalDescribe('Should Save Sender Number', () => {
+      this.timeout(20000);
       it('Should Update Sender Number After User Change Sender Number', () => {
         composeText.updateSenderNumber(messageSender.senderNumbersList[1]);
         expect(composeText.senderNumber).to.equals(messageSender.senderNumbersList[1]);
@@ -44,6 +46,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
     });
 
     conditionalDescribe('Should Update Typing Number', () => {
+      this.timeout(20000);
       it('Should Update Typing Number When User Typing Number', () => {
         composeText.updateTypingToNumber('123');
         expect(composeText.typingToNumber).to.equals('123');
@@ -57,6 +60,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
     });
 
     conditionalDescribe('Should Update Message Text', () => {
+      this.timeout(20000);
       it('Should Update Message Text When User Type', () => {
         composeText.updateMessageText('1234');
         expect(composeText.messageText).to.equals('1234');
@@ -64,6 +68,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
     });
 
     conditionalDescribe('Should Update ToNumbers', () => {
+      this.timeout(20000);
       beforeEach(() => {
         composeText.clean();
       });
@@ -87,6 +92,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
     });
 
     conditionalDescribe('Should Clean All Inputs After User Submit', () => {
+      this.timeout(20000);
       it('Should Clean All Inputs', () => {
         composeText.updateTypingToNumber('123');
         composeText.addToNumber({ phoneNumber: '+18558990011' });
@@ -99,6 +105,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
     });
 
     conditionalDescribe('Should Send Message', () => {
+      this.timeout(20000);
       const clientHistoryRequest = new ClientHistoryRequest(new Map(), client);
       beforeEach(() => {
         composeText.clean();
@@ -160,6 +167,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
     });
 
     conditionalDescribe('Should Allow Alert', () => {
+      this.timeout(20000);
       beforeEach(async function () {
         composeText.clean();
         const isAlertClear = await waitUntilEqual(() => {

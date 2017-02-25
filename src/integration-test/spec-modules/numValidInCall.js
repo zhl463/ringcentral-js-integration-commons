@@ -14,6 +14,7 @@ export default (Auth, Alert, Client, RegionSettings, Call, accountWithMultiDP) =
       console.error('Skip test case as failed to login with credential ', accountWithMultiDP);
     }
     conditionalDescribe('Basic Validation', function () {
+      this.timeout(10000);
       beforeEach(async function () {
         const isAlertClear = await waitUntilEqual(() => {
           Alert.dismissAll();
@@ -60,6 +61,7 @@ export default (Auth, Alert, Client, RegionSettings, Call, accountWithMultiDP) =
     });
 
     conditionalDescribe('Validation with Last Called Number', function() {
+      this.timeout(10000);
       beforeEach(async function () {
         const isAlertClear = await waitUntilEqual(() => {
           Alert.dismissAll();
@@ -117,6 +119,7 @@ export default (Auth, Alert, Client, RegionSettings, Call, accountWithMultiDP) =
     });
 
     conditionalDescribe('Validation with Region Setting', function () {
+      this.timeout(10000);
       beforeEach(async function () {
         const isAlertClear = await waitUntilEqual(() => {
           Alert.dismissAll();
