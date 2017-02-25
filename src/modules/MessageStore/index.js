@@ -270,7 +270,10 @@ export default class MessageStore extends RcModule {
   }
 
   matchMessageText(message, searchText) {
-    if (message.subject.toLowerCase().indexOf(searchText) >= 0) {
+    if (
+      message.subject &&
+      message.subject.toLowerCase().indexOf(searchText) >= 0
+    ) {
       return message;
     }
     const conversation = this.conversations[message.conversation.id];
@@ -278,7 +281,10 @@ export default class MessageStore extends RcModule {
       return null;
     }
     for (const subMessage of conversation.messages) {
-      if (subMessage.subject.toLowerCase().indexOf(searchText) >= 0) {
+      if (
+        subMessage.subject &&
+        subMessage.subject.toLowerCase().indexOf(searchText) >= 0
+      ) {
         return message;
       }
     }

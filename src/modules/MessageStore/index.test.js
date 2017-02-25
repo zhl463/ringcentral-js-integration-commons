@@ -732,6 +732,23 @@ describe('MessageStore Unit Test', () => {
       const result = messageStore.matchMessageText(message, 'aaa');
       expect(result).to.equal(null);
     });
+
+    it('should return null when message subject is undefined', async () => {
+      const conversation = {
+        id: '1234567890',
+        messages: [
+          { ...message },
+        ]
+      };
+      conversation.messages[0].subject = undefined;
+      sinon.stub(messageStore, 'conversations', {
+        get: () => ({
+          '1234567890': conversation,
+        }),
+      });
+      const result = messageStore.matchMessageText(message, 'aaa');
+      expect(result).to.equal(null);
+    });
   });
 
   describe('updateConversationRecipientList', () => {
