@@ -41,3 +41,5 @@ release
 dev-server/config.js
 
 yarn.lock
+src/integration-test/commons/config/apiConfig.js
+src/integration-test/commons/config/testAccount.js
