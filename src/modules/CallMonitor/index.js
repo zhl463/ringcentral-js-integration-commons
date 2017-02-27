@@ -35,7 +35,7 @@ export default class CallMonitor extends RcModule {
       () => this._regionSettings.areaCode,
       (callsFromPresence, callsFromActiveCalls, countryCode, areaCode) => (
         callsFromPresence.map((call) => {
-          const activeCall = callsFromActiveCalls.find(item => item.sessionId === call.sessionId);
+          const activeCall = call.inboundLeg && callsFromActiveCalls.find(item => item.sessionId === call.inboundLeg.sessionId);
           const fromNumber = normalizeNumber({
             phoneNumber: call.from && call.from.phoneNumber,
             countryCode,
@@ -49,12 +49,12 @@ export default class CallMonitor extends RcModule {
           return {
             ...call,
             from: {
+              ...((activeCall && activeCall.to) || {}),
               phoneNumber: fromNumber,
-              name: activeCall && activeCall.from && activeCall.from.name,
             },
             to: {
+              ...((activeCall && activeCall.from) || {}),
               phoneNumber: toNumber,
-              name: activeCall && activeCall.to && activeCall.to.name,
             },
             startTime: (activeCall && activeCall.startTime) || call.startTime,
           };
