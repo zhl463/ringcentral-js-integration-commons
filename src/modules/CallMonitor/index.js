@@ -4,6 +4,10 @@ import moduleStatus from '../../enums/moduleStatus';
 import actionTypes from './actionTypes';
 import getCallMonitorReducer from './getCallMonitorReducer';
 import normalizeNumber from '../../lib/normalizeNumber';
+import {
+  sortByStartTime,
+} from '../../lib/callLogHelpers';
+
 
 export default class CallMonitor extends RcModule {
   constructor({
@@ -75,7 +79,7 @@ export default class CallMonitor extends RcModule {
             toMatches: (toNumber && contactCache && contactCache.dataMap[toNumber]) || [],
             activityMatches: (activityCache && activityCache.dataMap[call.sessionId]) || [],
           };
-        })
+        }).sort(sortByStartTime)
       )
     );
 

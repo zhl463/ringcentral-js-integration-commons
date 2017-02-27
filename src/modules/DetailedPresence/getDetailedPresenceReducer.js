@@ -3,68 +3,20 @@ import 'core-js/fn/array/find-index';
 import { combineReducers } from 'redux';
 import { getDndStatusReducer } from '../Presence/getPresenceReducer';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
-import telephonyStatuses from '../../enums/telephonyStatuses';
-import terminationTypes from '../../enums/terminationTypes';
 import {
-  isEnded,
-  sortByStartTime,
-  removeInboundRingOutLegs,
   normalizeFromTo,
 } from '../../lib/callLogHelpers';
 
-export function isIntermediateCall(call = {}) {
-  return call.telephonyStatus === telephonyStatuses.noCall
-    && call.terminationType === terminationTypes.intermediate;
-}
-export function samePresenceCallAs(targetCall) {
-  return call => (
-    call.id === targetCall.id ||
-    call.sessionId === targetCall.sessionId
-  );
-}
-export function removeDuplicateIntermediateCalls(calls) {
-  const resultCalls = [];
-  const indexMap = {};
-  calls.forEach((call) => {
-    const isIntermediate = isIntermediateCall(call);
-    if (!indexMap[call.sessionId]) {
-      indexMap[call.sessionid] = {
-        index: resultCalls.length,
-        isIntermediate,
-      };
-      resultCalls.push(call);
-    } else if (!isIntermediate) {
-      indexMap[call.sessionId].isIntermediate = false;
-      resultCalls[indexMap[call.sessionId].index] = call;
-    }
-  });
-  return resultCalls;
-}
-
-export function removeEndedCalls(activeCalls = []) {
-  return activeCalls.filter(call => !isEnded(call));
-}
-
-export function processActiveCalls(activeCalls) {
-  return removeEndedCalls(
-    removeInboundRingOutLegs(
-      removeDuplicateIntermediateCalls(activeCalls).map(normalizeFromTo)));
-}
-
-export function getCallsReducer(types) {
-  return (state = [], { type, activeCalls, timestamp }) => {
+export function getDataReducer(types) {
+  return (state = [], { type, activeCalls = [], timestamp }) => {
     switch (type) {
       case types.fetchSuccess:
       case types.notification: {
-        if (activeCalls) {
-          return processActiveCalls(activeCalls).map((activeCall) => {
-            const currentCall = state.find(samePresenceCallAs(activeCall));
-            if (!currentCall) return { ...activeCall, startTime: timestamp };
-            if (isIntermediateCall(activeCall)) return currentCall;
-            return { ...currentCall, ...activeCall };
-          }).sort(sortByStartTime);
-        }
-        return state;
+        return activeCalls.map((activeCall) => {
+          const existingCall = state.find(call => (call.id === activeCall.id));
+          if (!existingCall) return { ...normalizeFromTo(activeCall), startTime: timestamp };
+          return { ...existingCall, ...normalizeFromTo(activeCall) };
+        });
       }
       case types.resetSuccess:
         return [];
@@ -93,7 +45,7 @@ function getTelephonyStatusReducer(types) {
 export default function getDetailedPresenceReducer(types) {
   return combineReducers({
     status: getModuleStatusReducer(types),
-    calls: getCallsReducer(types),
+    data: getDataReducer(types),
     dndStatus: getDndStatusReducer(types),
     telephonyStatus: getTelephonyStatusReducer(types),
   });

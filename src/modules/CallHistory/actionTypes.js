@@ -5,4 +5,6 @@ export default new Enum([
   'initSuccess',
   'reset',
   'resetSuccess',
+  'addEndedCalls',
+  'removeEndedCalls',
 ], 'callHistoryAcionTypes');

@@ -272,9 +272,10 @@ class DemoPhone extends RcModule {
       getState: () => this.state.callMonitor,
     }));
     this.addModule('callHistory', new CallHistory({
-      activeCalls: this.activeCalls,
+      // activeCalls: this.activeCalls,
       callLog: this.callLog,
-      detailedPresence: this.detailedPresence,
+      callMonitor: this.callMonitor,
+      // detailedPresence: this.detailedPresence,
       regionSettings: this.regionSettings,
       getState: () => this.state.callHistory,
     }));

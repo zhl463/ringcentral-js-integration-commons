@@ -3,7 +3,6 @@ import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import getDateFrom from '../../lib/getDateFrom';
 import {
   normalizeStartTime,
-  removeInboundRingOutLegs,
   sortByStartTime,
 } from '../../lib/callLogHelpers';
 import removeUri from '../../lib/removeUri';
@@ -46,7 +45,7 @@ export function getDataReducer(types) {
             newState.push(call);
           }
         });
-        removeInboundRingOutLegs(processRecords(records, supplementRecords)).forEach((call) => {
+        processRecords(records, supplementRecords).forEach((call) => {
           if (call.startTime > cutOffTime) {
             if (indexMap[call.id] > -1) {
               // replace the current data with new data

@@ -4,6 +4,12 @@ import actionTypes from './actionTypes';
 import getDetailedPresenceReducer from './getDetailedPresenceReducer';
 import telephonyStatuses from '../../enums/telephonyStatuses';
 import subscriptionFilters from '../../enums/subscriptionFilters';
+import {
+  isEnded,
+  isRinging,
+  removeDuplicateIntermediateCalls,
+  removeInboundRingOutLegs,
+} from '../../lib/callLogHelpers';
 
 const presenceRegExp = /\/presence(\?.*)?/;
 
@@ -38,6 +44,15 @@ export default class DetailedPresence extends Presence {
       () => this.state.calls,
       calls => calls.map(call => call.sessionId),
     );
+
+    this.addSelector('calls',
+      () => this.state.data,
+      data => (
+        removeInboundRingOutLegs(removeDuplicateIntermediateCalls(data))
+          .filter(call => !isEnded(call))
+      ),
+    );
+
     this._lastProcessedCalls = [];
     this._lastTelephonyStatus = null;
   }
@@ -121,6 +136,9 @@ export default class DetailedPresence extends Presence {
           if (typeof this._onNewCall === 'function') {
             this._onNewCall(call);
           }
+          if (typeof this._onRinging === 'function' && isRinging(call)) {
+            this._onRinging(call);
+          }
         } else {
           const oldCall = oldCalls[oldCallIndex];
           oldCalls.splice(oldCallIndex, 1);
@@ -138,26 +156,17 @@ export default class DetailedPresence extends Presence {
         }
       });
     }
-    if (
-      this.ready &&
-      this._lastTelephonyStatus !== this.telephonyStatus
-    ) {
-      this._lastTelephonyStatus = this.telephonyStatus;
-      if (
-        this._lastTelephonyStatus === telephonyStatuses.ringing &&
-        typeof this._onRinging === 'function'
-      ) {
-        this._onRinging();
-      }
-    }
   }
 
   initialize() {
     this.store.subscribe(this._onStateChange);
   }
 
+  get data() {
+    return this.state.data;
+  }
   get calls() {
-    return this.state.calls;
+    return this._selectors.calls();
   }
 
   get telephonyStatus() {
