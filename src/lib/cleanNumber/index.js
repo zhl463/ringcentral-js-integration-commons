@@ -19,21 +19,3 @@ export default function cleanNumber(phoneNumber) {
     `+${output}` :
     output;
 }
-
-/**
- * @function
- * @param {String} phoneNumber
- * @description confirm has any invalid char
- */
-export function hasInvalidChar(phoneNumber) {
-  return cleanRegex.test(phoneNumber);
-}
-
-/**
- * @function
- * @param {String} phoneNumber
- * @description confirm cleanedNumber has any digit
- */
-export function hasNumber(phoneNumber) {
-  return /\d/.test(phoneNumber);
-}

@@ -37,21 +37,3 @@ describe('cleanNumber', () => {
     expect(cleanNumber('+abc#10d1')).to.equal('+*101');
   });
 });
-
-describe('hasInvalidChar', () => {
-  it(`should return true if value is @#!123 (only allow number and *#+)`, () => {
-    expect(hasInvalidChar('@#!123')).to.be.true;
-  });
-  it(`should return false if value is +#1*23`, () => {
-    expect(hasInvalidChar('+#1*23')).to.be.fasle;
-  });
-});
-
-describe('hasNumber', () => {
-  it(`should return true if number is #123`, () => {
-    expect(hasNumber('#123')).to.be.true;
-  });
-  it(`should return false if number is #&^%$`, () => {
-    expect(hasNumber('#&^%$')).to.be.false;
-  });
-});
