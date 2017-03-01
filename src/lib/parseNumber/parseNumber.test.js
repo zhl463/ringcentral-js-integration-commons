@@ -9,7 +9,8 @@ describe('parseNumber', () => {
         hasPlus: false,
         number: '',
         extension: '',
-        isServiceNumber: false
+        isServiceNumber: false,
+        hasInvalidChars: false,
       }
     );
   });
@@ -20,7 +21,20 @@ describe('parseNumber', () => {
         hasPlus: false,
         number: '6508370092',
         extension: '101',
-        isServiceNumber: false
+        isServiceNumber: false,
+        hasInvalidChars: false,
+      }
+    );
+  });
+  it(`should return hasPlus:false, number:'6508370092',extension:'101',isServiceNumber:false
+  when number is '(650) 837-0092 * 101'`, () => {
+    expect(parseNumber('6508370092*101')).to.deep.equal(
+      {
+        hasPlus: false,
+        number: '6508370092',
+        extension: '101',
+        isServiceNumber: false,
+        hasInvalidChars: false,
       }
     );
   });
@@ -31,7 +45,8 @@ describe('parseNumber', () => {
         hasPlus: true,
         number: '16508370092',
         extension: '101',
-        isServiceNumber: false
+        isServiceNumber: false,
+        hasInvalidChars: false,
       }
     );
   });
@@ -42,7 +57,8 @@ describe('parseNumber', () => {
         hasPlus: false,
         number: '',
         extension: '',
-        isServiceNumber: false
+        isServiceNumber: false,
+        hasInvalidChars: true,
       }
     );
   });
@@ -53,7 +69,8 @@ describe('parseNumber', () => {
         hasPlus: false,
         number: '6508370092',
         extension: '',
-        isServiceNumber: false
+        isServiceNumber: false,
+        hasInvalidChars: false,
       }
     );
   });
@@ -64,7 +81,8 @@ describe('parseNumber', () => {
         hasPlus: true,
         number: '16508370092',
         extension: '',
-        isServiceNumber: false
+        isServiceNumber: false,
+        hasInvalidChars: false,
       }
     );
   });
@@ -75,7 +93,8 @@ describe('parseNumber', () => {
         hasPlus: false,
         number: '101',
         extension: '',
-        isServiceNumber: true
+        isServiceNumber: true,
+        hasInvalidChars: false,
       }
     );
   });

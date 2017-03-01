@@ -1,8 +1,7 @@
 import RcModule from '../../lib/RcModule';
 import callingModes from '../CallingSettings/callingModes';
 import moduleStatus from '../../enums/moduleStatus';
-import normalizeNumber from '../../lib/normalizeNumber'; // TODO : move to ringcentral-integration
-import cleanNumber, { hasInvalidChar, hasNumber } from '../../lib/cleanNumber';
+import normalizeNumber from '../../lib/normalizeNumber';
 import parseNumber from '../../lib/parseNumber';
 
 import callActionTypes from './actionTypes';
@@ -105,7 +104,7 @@ export default class Call extends RcModule {
             this.store.dispatch({
               type: this.actionTypes.connectSuccess
             });
-          }else{
+          } else {
             this.store.dispatch({
               type: this.actionTypes.connectError
             });
@@ -143,11 +142,11 @@ export default class Call extends RcModule {
     const {
       hasPlus,
       number,
-      isServiceNumber
+      isServiceNumber,
+      hasInvalidChars,
     } = parseNumber(this.toNumber);
-    const cleaned = cleanNumber(this.toNumber);
     // include special char or cleaned has no digit (only #*+)
-    if ( hasInvalidChar(this.toNumber) || !hasNumber(cleaned)) {
+    if (hasInvalidChars || number === '') {
       this._alert.warning({
         message: callErrors.noToNumber,
       });
