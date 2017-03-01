@@ -1,8 +1,6 @@
 import RcModule from '../../lib/RcModule';
 import moduleStatus from '../../enums/moduleStatus';
 import {
-  removeInboundRingOutLegs,
-  removeDuplicateIntermediateCalls,
   sortByStartTime,
 } from '../../lib/callLogHelpers';
 import actionTypes from './actionTypes';
@@ -12,23 +10,19 @@ import normalizeNumber from '../../lib/normalizeNumber';
 
 export default class CallHistory extends RcModule {
   constructor({
-    // detailedPresence,
+    accountInfo,
     callLog,
-    // activeCalls,
     callMonitor,
     activityMatcher,
     contactMatcher,
-    regionSettings,
     ...options
   }) {
     super({
       ...options,
       actionTypes,
     });
+    this._accountInfo = this::ensureExist(accountInfo, 'accountInfo');
     this._callLog = this::ensureExist(callLog, 'callLog');
-    // this._activityMatcher = this::ensureExist(activityMatcher, 'activityMatcher');
-    // this._contactMatcher = this::ensureExist(contactMatcher, 'contactMatcher');
-    this._regionSettings = this::ensureExist(regionSettings, 'regionSettings');
     this._activityMatcher = activityMatcher;
     this._contactMatcher = contactMatcher;
     this._callMonitor = callMonitor;
@@ -36,9 +30,8 @@ export default class CallHistory extends RcModule {
 
     this.addSelector('normalizedCalls',
       () => this._callLog.calls,
-      () => this._regionSettings.countryCode,
-      () => this._regionSettings.areaCode,
-      (calls, countryCode, areaCode) => (
+      () => this._accountInfo.country.isoCode,
+      (calls, countryCode) => (
         calls.map((call) => {
           const callFrom = {
             ...call.from,
@@ -47,7 +40,6 @@ export default class CallHistory extends RcModule {
             callFrom.phoneNumber = normalizeNumber({
               phoneNumber: callFrom.phoneNumber,
               countryCode,
-              areaCode,
             });
           }
           const callTo = {
@@ -57,7 +49,6 @@ export default class CallHistory extends RcModule {
             callTo.phoneNumber = normalizeNumber({
               phoneNumber: callTo.phoneNumber,
               countryCode,
-              areaCode,
             });
           }
           return {
@@ -131,7 +122,7 @@ export default class CallHistory extends RcModule {
         readyCheckFn: () => (
           (!this._callMonitor || this._callMonitor.ready) &&
           this._callLog.ready &&
-          this._regionSettings.ready
+          this._accountInfo.ready
         ),
       });
     }
@@ -166,7 +157,7 @@ export default class CallHistory extends RcModule {
     if (
       this._callLog.ready &&
       (!this._callMonitor || this._callMonitor.ready) &&
-      this._regionSettings.ready &&
+      this._accountInfo.ready &&
       (!this._contactMatcher || this._contactMatcher.ready) &&
       (!this._activityMatcher || this._activityMatcher.ready) &&
       this.pending
@@ -181,7 +172,7 @@ export default class CallHistory extends RcModule {
       (
         !this._callLog.ready ||
         (this._callMonitor && !this._callMonitor.ready) ||
-        !this._regionSettings.ready ||
+        !this._accountInfo.ready ||
         (this._contactMatcher && !this._contactMatcher.ready) ||
         (this._activityMatcher && !this._activityMatcher.ready)
       ) &&

@@ -266,17 +266,15 @@ class DemoPhone extends RcModule {
     //   numberValidate: this.numberValidate,
     // }));
     this.addModule('callMonitor', new CallMonitor({
+      accountInfo: this.accountInfo,
       detailedPresence: this.detailedPresence,
       activeCalls: this.activeCalls,
-      regionSettings: this.regionSettings,
       getState: () => this.state.callMonitor,
     }));
     this.addModule('callHistory', new CallHistory({
-      // activeCalls: this.activeCalls,
+      accountInfo: this.accountInfo,
       callLog: this.callLog,
       callMonitor: this.callMonitor,
-      // detailedPresence: this.detailedPresence,
-      regionSettings: this.regionSettings,
       getState: () => this.state.callHistory,
     }));
     this.addModule('dateTimeIntl', new DateTimeIntl({
