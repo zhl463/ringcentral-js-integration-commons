@@ -181,6 +181,10 @@ export default class CallHistory extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.reset,
       });
+      this._lastProcessedCalls = null;
+      this._lastProcessedIds = null;
+      this._lastProcessedMonitorCalls = null;
+      this._lastProcessedNumbers = null;
       this.store.dispatch({
         type: this.actionTypes.resetSuccess,
       });
