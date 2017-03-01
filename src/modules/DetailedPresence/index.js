@@ -2,12 +2,10 @@ import Presence from '../Presence';
 import moduleStatus from '../../enums/moduleStatus';
 import actionTypes from './actionTypes';
 import getDetailedPresenceReducer from './getDetailedPresenceReducer';
-import telephonyStatuses from '../../enums/telephonyStatuses';
 import subscriptionFilters from '../../enums/subscriptionFilters';
 import {
   isEnded,
   isRinging,
-  removeDuplicateIntermediateCalls,
   removeInboundRingOutLegs,
 } from '../../lib/callLogHelpers';
 
@@ -48,7 +46,7 @@ export default class DetailedPresence extends Presence {
     this.addSelector('calls',
       () => this.state.data,
       data => (
-        removeInboundRingOutLegs(removeDuplicateIntermediateCalls(data))
+        removeInboundRingOutLegs(data)
           .filter(call => !isEnded(call))
       ),
     );

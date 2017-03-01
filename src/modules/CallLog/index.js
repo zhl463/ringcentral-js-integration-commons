@@ -17,6 +17,7 @@ import {
   removeDuplicateIntermediateCalls,
   removeInboundRingOutLegs,
 } from '../../lib/callLogHelpers';
+import callResults from '../../enums/callResults';
 
 const DEFAULT_TTL = 5 * 60 * 1000;
 const DEFAULT_TOKEN_EXPIRES_IN = 60 * 60 * 1000;
@@ -98,7 +99,11 @@ export default class CallLog extends Pollable {
     this.addSelector('calls',
       () => this.data,
       data => (
-        removeInboundRingOutLegs(removeDuplicateIntermediateCalls(data))
+        // TODO make sure removeDuplicateIntermediateCalls is necessary here
+        removeInboundRingOutLegs(removeDuplicateIntermediateCalls(data.filter(call => (
+          // [RCINT-3472] calls with result === 'stopped' seems to be useless
+          call.result !== callResults.stopped
+        ))))
       ),
     );
 
