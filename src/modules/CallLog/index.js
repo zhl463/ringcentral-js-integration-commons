@@ -98,6 +98,7 @@ export default class CallLog extends Pollable {
     this.addSelector('calls',
       () => this.data,
       data => (
+        // TODO make sure removeDuplicateIntermediateCalls is necessary here
         removeInboundRingOutLegs(removeDuplicateIntermediateCalls(data))
       ),
     );

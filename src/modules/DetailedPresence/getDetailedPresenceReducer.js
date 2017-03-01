@@ -5,6 +5,7 @@ import { getDndStatusReducer } from '../Presence/getPresenceReducer';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import {
   normalizeFromTo,
+  isIntermediateCall,
 } from '../../lib/callLogHelpers';
 
 export function getDataReducer(types) {
@@ -15,6 +16,8 @@ export function getDataReducer(types) {
         return activeCalls.map((activeCall) => {
           const existingCall = state.find(call => (call.id === activeCall.id));
           if (!existingCall) return { ...normalizeFromTo(activeCall), startTime: timestamp };
+          // [RCINT-3558] should ignore intermediate call states
+          if (isIntermediateCall(activeCall)) return existingCall;
           return { ...existingCall, ...normalizeFromTo(activeCall) };
         });
       }
