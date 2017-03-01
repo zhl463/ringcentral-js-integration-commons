@@ -47,6 +47,7 @@ import Conversation from '../src/modules/Conversation';
 import Messages from '../src/modules/Messages';
 
 import DateTimeIntl from '../src/modules/DateTimeIntl';
+import Conference from '../src/modules/Conference';
 
 import config from './config';
 
@@ -318,6 +319,11 @@ class DemoPhone extends RcModule {
     //   messageStore: this.messageStore,
     //   getState: () => this.state.messages,
     // }));
+    this.addModule('conference', new Conference({
+       auth: this.auth,
+       client: this.client,
+       getState: () => this.state.conference,
+    }));
     this._reducer = combineReducers({
       accountInfo: this.accountInfo.reducer,
       accountExtension: this.accountExtension.reducer,
@@ -350,6 +356,7 @@ class DemoPhone extends RcModule {
       tabManager: this.tabManager.reducer,
       numberValidate: this.numberValidate.reducer,
       dateTimeIntl: this.dateTimeIntl.reducer,
+      conference: this.conference.reducer,
       // messageSender: this.messageSender.reducer,
       // contactSearch: this.contactSearch.reducer,
       // composeText: this.composeText.reducer,
