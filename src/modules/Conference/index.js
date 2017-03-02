@@ -1,7 +1,5 @@
 import mask from 'json-mask';
 import DataFetcher from '../../lib/DataFetcher';
-import actionTypes from './actionTypes';
-import getConferenceReducer from './getConferenceReducer';
 
 const DEFAULT_MASK = 'phoneNumber,hostCode,participantCode,phoneNumbers(country,phoneNumber)';
 
@@ -9,12 +7,12 @@ export default class Conference extends DataFetcher {
   constructor({
        auth,
        client,
+       regionSettings,
        ...options,
     }) {
     super({
       name: 'conference',
       client,
-      actionTypes,
       fetchFunction: async () => mask(
                         await client.account().extension().conferencing().get(), DEFAULT_MASK
                      ),
@@ -23,28 +21,27 @@ export default class Conference extends DataFetcher {
     this._auth = auth;
     this._client = client;
     this.addSelector(
-       'conferenceNumber',
+       'conferenceNumbers',
+       () => regionSettings.countryCode,
        () => this.data,
-       (data) => {
-         const info = data;
-         if (!info) {
-           return info;
+       (isoCode, data) => {
+         if (!data) {
+           return data;
+         }
+         const countrys = data.phoneNumbers.find(value => value.country.isoCode === isoCode);
+         if (typeof countrys === 'undefined') {
+           return data;
          }
          return {
            ...data,
-           phoneNumbers: info.phoneNumbers.filter(value => value.phoneNumber !== info.phoneNumber),
+           phoneNumber: countrys.phoneNumber,
+           phoneNumbers: data.phoneNumbers.filter(value =>
+                         value.phoneNumber !== countrys.phoneNumber),
          };
        }
     );
-    this._reducer = getConferenceReducer(this.actionTypes);
   }
-  onRegionChange(isoCode) {
-    this.store.dispatch({
-      type: this.actionTypes.regionChange,
-      data: this.data,
-      isoCode
-    });
-  }
+
   // inviteWithText() {
   //   let text = 'Please join the RingCentral conference.';
   //   text += `Dial-In Numbers:${this.phoneNumber}`;
@@ -53,11 +50,8 @@ export default class Conference extends DataFetcher {
   //   text += 'This conference call is brought to you by RingCentral Conferencing.';
   //   return text;
   // }
-  get data() {
-    return this.state.data;
-  }
-  get conferenceNumber() {
-    return this._selectors.conferenceNumber();
+  get conferenceNumbers() {
+    return this._selectors.conferenceNumbers();
   }
 
 }

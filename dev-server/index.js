@@ -320,9 +320,10 @@ class DemoPhone extends RcModule {
     //   getState: () => this.state.messages,
     // }));
     this.addModule('conference', new Conference({
-       auth: this.auth,
-       client: this.client,
-       getState: () => this.state.conference,
+      auth: this.auth,
+      client: this.client,
+      regionSettings: this.regionSettings,
+      getState: () => this.state.conference,
     }));
     this._reducer = combineReducers({
       accountInfo: this.accountInfo.reducer,
