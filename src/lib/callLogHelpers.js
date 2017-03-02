@@ -40,8 +40,7 @@ export function isOnHold(call = {}) {
 }
 
 export function isIntermediateCall(call = {}) {
-  return call.telephonyStatus === telephonyStatuses.noCall
-    && call.terminationType === terminationTypes.intermediate;
+  return call.terminationType === terminationTypes.intermediate;
 }
 
 /* sort functions */
