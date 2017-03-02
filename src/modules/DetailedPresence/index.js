@@ -17,10 +17,6 @@ export default class DetailedPresence extends Presence {
     client,
     subscription,
     connectivityMonitor,
-    onRinging,
-    onNewCall,
-    onCallUpdated,
-    onCallEnded,
     ...options
   }) {
     super({
@@ -31,10 +27,6 @@ export default class DetailedPresence extends Presence {
     this._client = client;
     this._subscription = subscription;
     this._connectivityMonitor = connectivityMonitor;
-    this._onRinging = onRinging;
-    this._onNewCall = onNewCall;
-    this._onCallUpdated = onCallUpdated;
-    this._onCallEnded = onCallEnded;
 
     this._reducer = getDetailedPresenceReducer(this.actionTypes);
     this._lastMessage = null;
@@ -51,7 +43,6 @@ export default class DetailedPresence extends Presence {
       ),
     );
 
-    this._lastProcessedCalls = [];
     this._lastTelephonyStatus = null;
   }
 
@@ -97,7 +88,6 @@ export default class DetailedPresence extends Presence {
       ) &&
       this.ready
     ) {
-      this._lastProcessedCalls = [];
       this.store.dispatch({
         type: this.actionTypes.resetSuccess,
       });
@@ -120,39 +110,6 @@ export default class DetailedPresence extends Presence {
       if (this._connectivity) {
         this._fetch();
       }
-    }
-    if (
-      this.ready &&
-      this._lastProcessedCalls !== this.calls
-    ) {
-      const oldCalls = [...this._lastProcessedCalls];
-      this._lastProcessedCalls = this.calls;
-
-      this.calls.forEach((call) => {
-        const oldCallIndex = oldCalls.findIndex(item => item.sessionId === call.sessionId);
-        if (oldCallIndex === -1) {
-          if (typeof this._onNewCall === 'function') {
-            this._onNewCall(call);
-          }
-          if (typeof this._onRinging === 'function' && isRinging(call)) {
-            this._onRinging(call);
-          }
-        } else {
-          const oldCall = oldCalls[oldCallIndex];
-          oldCalls.splice(oldCallIndex, 1);
-          if (
-            call.telephonyStatus !== oldCall.telephonyStatus &&
-            typeof this._onCallUpdated === 'function'
-          ) {
-            this._onCallUpdated(call);
-          }
-        }
-      });
-      oldCalls.forEach((call) => {
-        if (typeof this._onCallEnded === 'function') {
-          this._onCallEnded(call);
-        }
-      });
     }
   }
 

@@ -100,6 +100,8 @@ export function areTwoLegs(inbound, outbound) {
         }
         // call-log
         if (
+          inbound.from && inbound.to &&
+          outbound.from && outbound.to &&
           inbound.action === callActions.phoneCall &&
           (
             outbound.action === callActions.ringOutWeb ||

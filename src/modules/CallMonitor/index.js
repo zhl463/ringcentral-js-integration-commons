@@ -5,6 +5,7 @@ import actionTypes from './actionTypes';
 import getCallMonitorReducer from './getCallMonitorReducer';
 import normalizeNumber from '../../lib/normalizeNumber';
 import {
+  isRinging,
   sortByStartTime,
 } from '../../lib/callLogHelpers';
 import ensureExist from '../../lib/ensureExist';
@@ -17,6 +18,10 @@ export default class CallMonitor extends RcModule {
     activeCalls,
     activityMatcher,
     contactMatcher,
+    onRinging,
+    onNewCall,
+    onCallUpdated,
+    onCallEnded,
     ...options
   }) {
     super({
@@ -28,6 +33,11 @@ export default class CallMonitor extends RcModule {
     this._activeCalls = this::ensureExist(activeCalls, 'activeCalls');
     this._contactMatcher = contactMatcher;
     this._activityMatcher = activityMatcher;
+    this._onRinging = onRinging;
+    this._onNewCall = onNewCall;
+    this._onCallUpdated = onCallUpdated;
+    this._onCallEnded = onCallEnded;
+
     this._reducer = getCallMonitorReducer(this.actionTypes);
     this.addSelector('normalizedCalls',
       () => this._detailedPresence.calls,
@@ -35,7 +45,8 @@ export default class CallMonitor extends RcModule {
       () => this._accountInfo.country.isoCode,
       (callsFromPresence, callsFromActiveCalls, countryCode) => (
         callsFromPresence.map((call) => {
-          const activeCall = call.inboundLeg && callsFromActiveCalls.find(item => item.sessionId === call.inboundLeg.sessionId);
+          const activeCall = call.inboundLeg &&
+            callsFromActiveCalls.find(item => item.sessionId === call.inboundLeg.sessionId);
 
           // use account countryCode to normalize number due to API issues [RCINT-3419]
           const fromNumber = normalizeNumber({
@@ -129,6 +140,8 @@ export default class CallMonitor extends RcModule {
     }
 
     this._lastProcessedNumbers = null;
+    this._lastProcessedCalls = null;
+    this._lastProcessedIds = null;
   }
 
   _onStateChange = async () => {
@@ -159,6 +172,9 @@ export default class CallMonitor extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.reset,
       });
+      this._lastProcessedCalls = null;
+      this._lastProcessedIds = null;
+      this._lastProcessedNumbers = null;
       this.store.dispatch({
         type: this.actionTypes.resetSuccess,
       });
@@ -178,6 +194,42 @@ export default class CallMonitor extends RcModule {
         if (this._activityMatcher && this._activityMatcher.ready) {
           this._activityMatcher.triggerMatch();
         }
+      }
+
+      if (
+        this._lastProcessedCalls !== this.calls
+      ) {
+        const oldCalls = (
+          this._lastProcessedCalls &&
+          this._lastProcessedCalls.slice()
+        ) || [];
+        this._lastProcessedCalls = this.calls;
+
+        this.calls.forEach((call) => {
+          const oldCallIndex = oldCalls.findIndex(item => item.sessionId === call.sessionId);
+          if (oldCallIndex === -1) {
+            if (typeof this._onNewCall === 'function') {
+              this._onNewCall(call);
+            }
+            if (typeof this._onRinging === 'function' && isRinging(call)) {
+              this._onRinging(call);
+            }
+          } else {
+            const oldCall = oldCalls[oldCallIndex];
+            oldCalls.splice(oldCallIndex, 1);
+            if (
+              call.telephonyStatus !== oldCall.telephonyStatus &&
+              typeof this._onCallUpdated === 'function'
+            ) {
+              this._onCallUpdated(call);
+            }
+          }
+        });
+        oldCalls.forEach((call) => {
+          if (typeof this._onCallEnded === 'function') {
+            this._onCallEnded(call);
+          }
+        });
       }
     }
   }
