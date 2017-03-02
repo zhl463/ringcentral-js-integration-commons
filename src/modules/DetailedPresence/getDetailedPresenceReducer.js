@@ -14,13 +14,14 @@ export function getDataReducer(types) {
       case types.fetchSuccess:
       case types.notification: {
         return activeCalls
-          // [RCINT-3558] should ignore intermediate call states
-          .filter(activeCall => !isIntermediateCall(activeCall))
           .map((activeCall) => {
             const existingCall = state.find(call => (call.id === activeCall.id));
             if (!existingCall) return { ...normalizeFromTo(activeCall), startTime: timestamp };
+            if (isIntermediateCall(activeCall)) return existingCall;
             return { ...existingCall, ...normalizeFromTo(activeCall) };
-          });
+          })
+          // [RCINT-3558] should ignore intermediate call states
+          .filter(activeCall => !isIntermediateCall(activeCall));
       }
       case types.resetSuccess:
         return [];
