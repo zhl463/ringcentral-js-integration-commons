@@ -30,7 +30,7 @@ export default class CallHistory extends RcModule {
 
     this.addSelector('normalizedCalls',
       () => this._callLog.calls,
-      () => this._accountInfo.country.isoCode,
+      () => this._accountInfo.countryCode,
       (calls, countryCode) => (
         calls.map((call) => {
           const callFrom = {

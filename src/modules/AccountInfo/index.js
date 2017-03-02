@@ -44,6 +44,10 @@ export default class AccountInfo extends DataFetcher {
     return this.info.serviceInfo && this.info.serviceInfo.brand.homeCountry;
   }
 
+  get countryCode() {
+    return (this.country && this.country.isoCode) || 'US';
+  }
+
   get mainCompanyNumber() {
     return this.info.mainNumber;
   }
