@@ -81,7 +81,6 @@ export function normalizeFromTo(call) {
 
 /* ringout leg helpers */
 export function areTwoLegs(inbound, outbound) {
-
   if (isInbound(inbound) && isOutbound(outbound)) {
     switch (Math.abs(inbound.sessionId - outbound.sessionId)) {
       case 1000:

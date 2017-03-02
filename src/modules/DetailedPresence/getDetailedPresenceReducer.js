@@ -15,7 +15,9 @@ export function getDataReducer(types) {
       case types.notification: {
         return activeCalls
           .map((activeCall) => {
-            const existingCall = state.find(call => (call.id === activeCall.id));
+            const existingCall = state.find(call => (
+              call.sessionId === activeCall.sessionId
+            ));
             if (!existingCall) return { ...normalizeFromTo(activeCall), startTime: timestamp };
             if (isIntermediateCall(activeCall)) return existingCall;
             return { ...existingCall, ...normalizeFromTo(activeCall) };
