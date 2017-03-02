@@ -134,7 +134,7 @@ export default class CallHistory extends RcModule {
         const sessionIds = {};
         return calls.map((call) => {
           sessionIds[call.sessionId] = true;
-          return call.sessionIds;
+          return call.sessionId;
         }).concat(
           endedCalls
             .filter(call => !sessionIds[call.sessionId])
