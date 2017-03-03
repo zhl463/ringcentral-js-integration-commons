@@ -59,7 +59,7 @@ export default class Messages extends RcModule {
   _shouldReload() {
     return (
       this.ready &&
-      this.messageStoreUpdatedAt !== this._messageStore.messagesTimestamp
+      this.messageStoreUpdatedAt !== this._messageStore.updatedTimestamp
     );
   }
 
@@ -79,7 +79,7 @@ export default class Messages extends RcModule {
 
   _reloadMessages() {
     const page = this.currentPage;
-    const allMessages = this._messageStore.messages;
+    const allMessages = this._messageStore.conversations;
     let bottomIndex = allMessages.length - (this._perPage * page);
     if (bottomIndex < 0) {
       bottomIndex = 0;
@@ -91,13 +91,13 @@ export default class Messages extends RcModule {
   _updateMessages(messages) {
     this.store.dispatch({
       type: this.actionTypes.updateMessages,
-      messagesTimestamp: this._messageStore.messagesTimestamp,
+      messagesTimestamp: this._messageStore.updatedTimestamp,
       messages,
     });
   }
 
   _getCurrnetPageMessages(page) {
-    const allMessages = this._messageStore.messages;
+    const allMessages = this._messageStore.conversations;
     const maxIndex = allMessages.length - 1;
     if (maxIndex < 0) {
       return [];
@@ -124,7 +124,7 @@ export default class Messages extends RcModule {
     }
     this.store.dispatch({
       type: this.actionTypes.pushMessages,
-      messagesTimestamp: this._messageStore.messagesTimestamp,
+      messagesTimestamp: this._messageStore.updatedTimestamp,
       messages,
     });
     this.store.dispatch({
@@ -167,7 +167,7 @@ export default class Messages extends RcModule {
   }
 
   get loading() {
-    const allMessages = this._messageStore.messages;
+    const allMessages = this._messageStore.conversations;
     return this.messages.length < allMessages.length;
   }
 

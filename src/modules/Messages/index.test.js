@@ -144,7 +144,7 @@ describe('Messages Unit Test', () => {
   describe('_shouldReload', () => {
     it('should return true when messages is ready and messages\'s messageStoreUpdatedAt is not same as messageStore', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544921
+        updatedTimestamp: 1486954544921
       };
       sinon.stub(messages, 'ready', { get: () => true });
       sinon.stub(messages, 'messageStoreUpdatedAt', { get: () => 1234 });
@@ -153,7 +153,7 @@ describe('Messages Unit Test', () => {
 
     it('should return false when messages is not ready and messages\'s messageStoreUpdatedAt is not same as messageStore', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544921
+        updatedTimestamp: 1486954544921
       };
       sinon.stub(messages, 'ready', { get: () => false });
       sinon.stub(messages, 'messageStoreUpdatedAt', { get: () => 1234 });
@@ -162,7 +162,7 @@ describe('Messages Unit Test', () => {
 
     it('should return false when messages is ready and messages\'s messageStoreUpdatedAt is same as messageStore', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544921
+        updatedTimestamp: 1486954544921
       };
       sinon.stub(messages, 'ready', { get: () => true });
       sinon.stub(messages, 'messageStoreUpdatedAt', { get: () => 1486954544921 });
@@ -171,7 +171,7 @@ describe('Messages Unit Test', () => {
 
     it('should return false when messages is not ready and messages\'s messageStoreUpdatedAt is same as messageStore', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544921
+        updatedTimestamp: 1486954544921
       };
       sinon.stub(messages, 'ready', { get: () => false });
       sinon.stub(messages, 'messageStoreUpdatedAt', { get: () => 1486954544921 });
@@ -192,7 +192,7 @@ describe('Messages Unit Test', () => {
   describe('_reloadMessages', () => {
     it('should call _updateMessages and update state when current page is one', () => {
       messages._messageStore = {
-        messages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+        conversations: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
       };
       messages._perPage = 10;
       sinon.stub(messages, 'currentPage', { get: () => 1 });
@@ -203,7 +203,7 @@ describe('Messages Unit Test', () => {
 
     it('should call _updateMessages and update state when current page is two', () => {
       messages._messageStore = {
-        messages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+        conversations: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
       };
       messages._perPage = 10;
       sinon.stub(messages, 'currentPage', { get: () => 2 });
@@ -214,7 +214,7 @@ describe('Messages Unit Test', () => {
 
     it('should call _updateMessages and update state when messageStore.message is empty', () => {
       messages._messageStore = {
-        messages: [],
+        conversations: [],
       };
       messages._perPage = 10;
       sinon.stub(messages, 'currentPage', { get: () => 1 });
@@ -227,7 +227,7 @@ describe('Messages Unit Test', () => {
   describe('_getCurrnetPageMessages', () => {
     it('should get empty when messageStore.messages is empty and page is one', () => {
       messages._messageStore = {
-        messages: [],
+        conversations: [],
       };
       messages._perPage = 10;
       const result = messages._getCurrnetPageMessages(1);
@@ -236,7 +236,7 @@ describe('Messages Unit Test', () => {
 
     it('should get empty when messageStore.messages is empty and page is two', () => {
       messages._messageStore = {
-        messages: [],
+        conversations: [],
       };
       messages._perPage = 10;
       const result = messages._getCurrnetPageMessages(2);
@@ -245,7 +245,7 @@ describe('Messages Unit Test', () => {
 
     it('should get all messages when page is one and messageStore.message length is less then perPage', () => {
       messages._messageStore = {
-        messages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        conversations: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       };
       messages._perPage = 10;
       const result = messages._getCurrnetPageMessages(1);
@@ -254,7 +254,7 @@ describe('Messages Unit Test', () => {
 
     it('should get messages with perPage length when page is one and messageStore.message length is more then perPage', () => {
       messages._messageStore = {
-        messages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+        conversations: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
       };
       messages._perPage = 10;
       const result = messages._getCurrnetPageMessages(1);
@@ -263,7 +263,7 @@ describe('Messages Unit Test', () => {
 
     it('should get messages in currentPage when page is two and messageStore.message length is less then twice perPage', () => {
       messages._messageStore = {
-        messages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+        conversations: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
       };
       messages._perPage = 10;
       const result = messages._getCurrnetPageMessages(2);
@@ -272,8 +272,8 @@ describe('Messages Unit Test', () => {
 
     it('should get messages in currentPage when page is two and messageStore.message length is less then twice perPage', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544923,
-        messages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        updatedTimestamp: 1486954544923,
+        conversations: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
       };
       messages._perPage = 10;
       const result = messages._getCurrnetPageMessages(2);
@@ -284,7 +284,7 @@ describe('Messages Unit Test', () => {
   describe('loadNextPageMessages', () => {
     it('should not change currentPage when _getCurrnetPageMessages return empty array', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544923,
+        updatedTimestamp: 1486954544923,
       };
       sinon.stub(messages, 'currentPage', { get: () => 1 });
       sinon.stub(messages, '_getCurrnetPageMessages').callsFake(() => []);
@@ -294,7 +294,7 @@ describe('Messages Unit Test', () => {
 
     it('should add currentPage when _getCurrnetPageMessages return array with number', () => {
       messages._messageStore = {
-        messagesTimestamp: 1486954544923,
+        updatedTimestamp: 1486954544923,
       };
       sinon.stub(messages, 'currentPage', { get: () => 1 });
       sinon.stub(messages, '_getCurrnetPageMessages').callsFake(() => [1]);

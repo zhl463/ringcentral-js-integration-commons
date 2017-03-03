@@ -11,4 +11,5 @@ export default new Enum([
   'load',
   'unload',
   'updateRecipients',
+  'loadId',
 ], 'conversation');

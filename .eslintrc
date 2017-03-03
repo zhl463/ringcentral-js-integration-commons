@@ -24,7 +24,7 @@
     "no-empty-function": 1,
     "comma-dangle": 0,
     "linebreak-style": "off",
-    "import/no-extraneous-dependencies": 1,
+    "import/no-extraneous-dependencies": [1, {"devDependencies": ['**/*.test.js', '**/*.spec.js']}],
     "import/prefer-default-export": 0,
     "import/no-unresolved": 1,
     "react/jsx-closing-bracket-location": 0,

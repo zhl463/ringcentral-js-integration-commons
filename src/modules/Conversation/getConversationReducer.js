@@ -19,6 +19,7 @@ export function getConversationStatusReducer(types) {
 export function getConversationIdReducer(types) {
   return (state = null, { type, conversationId }) => {
     switch (type) {
+      case types.loadId:
       case types.load:
         return conversationId;
       case types.unload:

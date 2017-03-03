@@ -4,9 +4,19 @@ import moduleStatus from '../../enums/moduleStatus';
 import { batchPutApi } from '../../lib/batchApiHelper';
 
 import * as messageStoreHelper from './messageStoreHelper';
+
 import actionTypes from './actionTypes';
 import getMessageStoreReducer from './getMessageStoreReducer';
-import getCacheReducer from './getCacheReducer';
+import getDataReducer from './getDataReducer';
+
+export function processResponseData(data) {
+  const records = data.records.slice();
+  return {
+    records: records.reverse(),
+    syncTimestamp: (new Date(data.syncInfo.syncTime)).getTime(),
+    syncToken: data.syncInfo.syncToken,
+  };
+}
 
 export default class MessageStore extends RcModule {
   constructor({
@@ -25,16 +35,27 @@ export default class MessageStore extends RcModule {
     this._alert = alert;
     this._client = client;
     this._storage = storage;
-    this._storageKey = 'messageStore';
     this._subscription = subscription;
     this._reducer = getMessageStoreReducer(this.actionTypes);
-    this._cacheReducer = getCacheReducer(this.actionTypes);
     this._ttl = ttl;
     this._auth = auth;
     this._promise = null;
     this._lastSubscriptionMessage = null;
+    this._storageKey = 'messageStore';
+
+    this._storage.registerReducer({
+      key: this._storageKey,
+      reducer: getDataReducer(this.actionTypes),
+    });
+
+    this.addSelector(
+      'unreadCounts',
+      () => this.conversations,
+      conversations =>
+        conversations.reduce((pre, cur) => (pre + cur.unreadCounts), 0),
+    );
+
     this.syncConversation = this.syncConversation.bind(this);
-    storage.registerReducer({ key: this._storageKey, reducer: this._cacheReducer });
   }
 
   initialize() {
@@ -80,8 +101,7 @@ export default class MessageStore extends RcModule {
   _shouleCleanCache() {
     return (
       this._auth.isFreshLogin ||
-      (Date.now() - this.conversationsTimestamp) > this._ttl ||
-      (Date.now() - this.messagesTimestamp) > this._ttl
+      (Date.now() - this.updatedTimestamp) > this._ttl
     );
   }
 
@@ -95,6 +115,10 @@ export default class MessageStore extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.cleanUp,
     });
+  }
+
+  findConversationById(id) {
+    return this.conversationMap[id.toString()];
   }
 
   async _initMessageStore() {
@@ -120,10 +144,6 @@ export default class MessageStore extends RcModule {
     }
   }
 
-  findConversationById(id) {
-    return this.conversations[id.toString()];
-  }
-
   async _messageSyncApi(params) {
     const response = await this._client.account()
                              .extension()
@@ -132,65 +152,52 @@ export default class MessageStore extends RcModule {
     return response;
   }
 
-  async _updateConversationFromSync(id) {
-    const oldConversation = this.findConversationById(id);
-    const syncToken = oldConversation && oldConversation.syncToken;
-    const params = messageStoreHelper.getMessageSyncParams({
-      syncToken,
-      conversationId: id,
-    });
-    const newConversationRequest = await this._messageSyncApi(params);
-    const { conversations, messages }
-      = this._getConversationsAndMessagesFromSyncResponse(newConversationRequest);
-    this._saveConversationsAndMessages(conversations, messages, null);
-  }
-
   async _updateMessagesFromSync() {
-    const syncToken = this.syncToken;
-    const params = messageStoreHelper.getMessageSyncParams({ syncToken });
-    const newConversationRequest = await this._messageSyncApi(params);
-    const { conversations, messages } =
-      this._getConversationsAndMessagesFromSyncResponse(newConversationRequest);
-    this._saveConversationsAndMessages(
-      conversations,
-      messages,
-      newConversationRequest.syncInfo.syncToken
-    );
-  }
-
-  _getConversationsAndMessagesFromSyncResponse(conversationResponse) {
-    const records = conversationResponse.records.reverse();
-    const syncToken = conversationResponse.syncInfo.syncToken;
-    return messageStoreHelper.getNewConversationsAndMessagesFromRecords({
+    this.store.dispatch({
+      type: this.actionTypes.sync,
+    });
+    const oldSyncToken = this.syncToken;
+    const params = messageStoreHelper.getMessageSyncParams({ syncToken: oldSyncToken });
+    const response = await this._messageSyncApi(params);
+    const {
       records,
+      syncTimestamp,
       syncToken,
-      conversations: this.conversations,
-      messages: this.messages,
+    } = processResponseData(response);
+    this.store.dispatch({
+      type: this.actionTypes.syncSuccess,
+      records,
+      syncTimestamp,
+      syncToken,
     });
   }
 
-  async _sync(syncFunction) {
-    if (!this._promise) {
-      this._promise = (async () => {
-        try {
-          this.store.dispatch({
-            type: this.actionTypes.sync,
-          });
-          await syncFunction();
-          this.store.dispatch({
-            type: this.actionTypes.syncOver,
-          });
-          this._promise = null;
-        } catch (error) {
-          this.store.dispatch({
-            type: this.actionTypes.syncError,
-          });
-          this._promise = null;
-          throw error;
-        }
-      })();
+  async _updateConversationFromSync(conversationId) {
+    const conversation = this.conversationMap[conversationId.toString()];
+    if (!conversation) {
+      return;
     }
-    await this._promise;
+    this.store.dispatch({
+      type: this.actionTypes.sync,
+    });
+    const oldSyncToken = conversation.syncToken;
+    const params = messageStoreHelper.getMessageSyncParams({
+      syncToken: oldSyncToken,
+      conversationId: conversation.id,
+    });
+    const response = await this._messageSyncApi(params);
+    const {
+      records,
+      syncTimestamp,
+      syncToken,
+    } = processResponseData(response);
+    this.store.dispatch({
+      type: this.actionTypes.syncConversationSuccess,
+      records,
+      syncTimestamp,
+      syncToken,
+      syncConversationId: conversation.id,
+    });
   }
 
   async _syncMessages() {
@@ -202,6 +209,28 @@ export default class MessageStore extends RcModule {
   async syncConversation(id) {
     await this._sync(async () => {
       await this._updateConversationFromSync(id);
+    });
+  }
+
+  async _sync(syncFunction) {
+    if (!this._promise) {
+      this._promise = (async () => {
+        try {
+          await syncFunction();
+          this._promise = null;
+        } catch (error) {
+          this._onSyncError();
+          this._promise = null;
+          throw error;
+        }
+      })();
+    }
+    await this._promise;
+  }
+
+  _onSyncError() {
+    this.store.dispatch({
+      type: this.actionTypes.syncError,
     });
   }
 
@@ -254,130 +283,51 @@ export default class MessageStore extends RcModule {
     return results;
   }
 
-  async readMessages(conversation) {
-    const unReadMessages = messageStoreHelper.filterConversationUnreadMessages(conversation);
-    if (unReadMessages.length === 0) {
+  async readMessages(conversationId) {
+    const conversation = this.conversationMap[conversationId];
+    if (!conversation) {
       return null;
     }
-    const unreadMessageIds = unReadMessages.map(message => message.id);
+    const unreadMessageIds = Object.keys(conversation.unreadMessages);
+    if (unreadMessageIds.length === 0) {
+      return null;
+    }
     try {
       const updatedMessages = await this._updateMessagesApi(unreadMessageIds, 'Read');
-      this._updateConversationsMessagesFromRecords(updatedMessages);
+      this.store.dispatch({
+        type: this.actionTypes.updateMessages,
+        records: updatedMessages,
+      });
     } catch (error) {
       console.error(error);
     }
     return null;
   }
 
-  matchMessageText(message, searchText) {
-    if (
-      message.subject &&
-      message.subject.toLowerCase().indexOf(searchText) >= 0
-    ) {
-      return message;
-    }
-    const conversation = this.conversations[message.conversation.id];
-    if (!conversation) {
-      return null;
-    }
-    for (const subMessage of conversation.messages) {
+  searchMessagesText(searchText) {
+    return this.messages.filter((message) => {
       if (
-        subMessage.subject &&
-        subMessage.subject.toLowerCase().indexOf(searchText) >= 0
+        message.subject &&
+        message.subject.toLowerCase().indexOf(searchText) >= 0
       ) {
-        return message;
+        return true;
       }
-    }
-    return null;
+      return false;
+    });
   }
 
   updateConversationRecipientList(conversationId, recipients) {
-    const conversation = this.findConversationById(conversationId);
-    if (!conversation) {
-      return;
-    }
-    conversation.recipients = recipients;
-    this._saveConversation(conversation);
-    const messages = this.messages;
-    const messageIndex = messages.findIndex(message =>
-      message.conversation && message.conversation.id === conversationId
-    );
-    if (messageIndex > -1) {
-      const message = messages[messageIndex];
-      message.recipients = recipients;
-      this._saveMessages(messages);
-    }
-  }
-
-  pushMessage(conversationId, message) {
-    const oldConversation = this.findConversationById(conversationId);
-    let newConversation = { messages: [] };
-    if (oldConversation) {
-      newConversation = oldConversation;
-    }
-    newConversation.id = conversationId;
-    newConversation.messages = messageStoreHelper.pushMessageToConversationMessages({
-      messages: newConversation.messages,
-      message,
-    });
-    const messages = messageStoreHelper.pushMessageToMesages({
-      messages: this.messages,
-      message
-    });
-    this._saveConversationAndMessages(newConversation, messages);
-  }
-
-  _updateConversationsMessagesFromRecords(records) {
-    const { conversations, messages } =
-      messageStoreHelper.getNewConversationsAndMessagesFromRecords({
-        records,
-        conversations: this.conversations,
-        messages: this.messages,
-      });
-    this._saveConversationsAndMessages(conversations, messages, null);
-  }
-
-  _saveConversationAndMessages(conversation, messages) {
-    this._saveConversation(conversation);
-    this._saveMessages(messages);
-  }
-
-  _saveConversationsAndMessages(conversations, messages, syncToken) {
-    this._saveConversations(conversations);
-    this._saveMessages(messages);
-    if (syncToken) {
-      this._saveSyncToken(syncToken);
-    }
-  }
-
-  _saveConversation(conversation) {
-    const conversations = this.conversations;
-    const id = conversation.id;
-    conversations[id] = conversation;
-    this._saveConversations(conversations);
-  }
-
-  _saveConversations(conversations) {
     this.store.dispatch({
-      type: this.actionTypes.saveConversations,
-      data: conversations,
+      type: this.actionTypes.updateConversationRecipients,
+      conversationId,
+      recipients,
     });
   }
 
-  _saveMessages(newMessages) {
-    const { messages, unreadCounts } =
-      messageStoreHelper.updateMessagesUnreadCounts(newMessages, this.conversations);
+  pushMessage(record) {
     this.store.dispatch({
-      type: this.actionTypes.saveMessages,
-      messages,
-      unreadCounts
-    });
-  }
-
-  _saveSyncToken(syncToken) {
-    this.store.dispatch({
-      type: this.actionTypes.saveSyncToken,
-      syncToken,
+      type: this.actionTypes.updateMessages,
+      records: [record],
     });
   }
 
@@ -385,40 +335,36 @@ export default class MessageStore extends RcModule {
     return this._storage.getItem(this._storageKey);
   }
 
-  get conversations() {
-    const conversations = this.cache.conversations.data;
-    if (!conversations) {
-      return {};
-    }
-    return conversations;
-  }
-
-  get conversationsTimestamp() {
-    return this.cache.conversations.timestamp;
-  }
-
   get messages() {
-    const messages = this.cache.messages.data;
-    if (!messages) {
-      return [];
-    }
-    return messages;
+    return this.cache.data.messages;
   }
 
-  get messagesTimestamp() {
-    return this.cache.messages.timestamp;
+  get conversations() {
+    return this.cache.data.conversations;
+  }
+
+  get conversationMap() {
+    return this.cache.data.conversationMap;
+  }
+
+  get updatedTimestamp() {
+    return this.cache.updatedTimestamp;
+  }
+
+  get syncTimestamp() {
+    return this.cache.data.syncTimestamp;
   }
 
   get syncToken() {
     return this.cache.syncToken;
   }
 
-  get unreadCounts() {
-    return this.cache.unreadCounts;
-  }
-
   get status() {
     return this.state.status;
+  }
+
+  get unreadCounts() {
+    return this._selectors.unreadCounts();
   }
 
   get messageStoreStatus() {

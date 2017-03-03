@@ -41,12 +41,8 @@ export default class Conversation extends RcModule {
     } else if (this._shouldReset()) {
       this._resetModuleStatus();
     } else if (this._shouldReloadConversation()) {
-      const newConversation = this._messageStore
-                                  .findConversationById(this.id);
-      if (newConversation) {
-        this._loadConversation(newConversation);
-        this._messageStore.readMessages(newConversation);
-      }
+      this._loadConversation(this.id);
+      this._messageStore.readMessages(this.id);
     }
   }
 
@@ -74,7 +70,7 @@ export default class Conversation extends RcModule {
     return (
       this.ready &&
       (!!this.id) &&
-      this.messageStoreUpdatedAt !== this._messageStore.conversationsTimestamp
+      this.messageStoreUpdatedAt !== this._messageStore.updatedTimestamp
     );
   }
 
@@ -91,12 +87,8 @@ export default class Conversation extends RcModule {
   }
 
   loadConversationById(id) {
-    const conversation = this._messageStore.findConversationById(id);
-    if (!conversation) {
-      return;
-    }
-    this._loadConversation(conversation);
-    this._messageStore.readMessages(conversation);
+    this._loadConversation(id);
+    this._messageStore.readMessages(id);
   }
 
   unloadConversation() {
@@ -139,46 +131,44 @@ export default class Conversation extends RcModule {
     });
   }
 
-  _loadConversation(conversation) {
-    const senderNumber = this._getCurrentSenderNumber(conversation);
-    let recipients = conversation.recipients;
+  _loadConversation(conversationId) {
+    const conversation = this._messageStore.findConversationById(conversationId);
+    if (!conversation) {
+      return;
+    }
+    const messages = this._messageStore.messages.filter(message => (
+      message.conversationId === conversationId
+    ));
+    const lastMessage = this._messageStore.conversations[conversation.index];
+    const senderNumber = this._getCurrentSenderNumber(lastMessage);
+    let recipients = lastMessage && lastMessage.recipients;
     if (!recipients || recipients.length === 0) {
-      recipients = this._getRecipients(conversation, senderNumber);
+      recipients = this._getRecipients(lastMessage, senderNumber);
     }
     this.store.dispatch({
       type: this.actionTypes.load,
-      conversationId: conversation.id,
-      messages: conversation.messages.slice(),
-      conversationsTimestamp: this._messageStore.conversationsTimestamp,
+      conversationId,
+      messages,
+      conversationsTimestamp: this._messageStore.updatedTimestamp,
       senderNumber,
       recipients,
     });
   }
 
-  _getCurrentSenderNumber(conversation) {
-    if (!conversation || !conversation.messages) {
+  _getCurrentSenderNumber(lastMessage) {
+    if (!lastMessage) {
       return null;
     }
-    const messageLength = conversation.messages.length;
-    if (messageLength < 1) {
-      return null;
-    }
-    const lastMessage = conversation.messages[messageLength - 1];
     return getMyNumberFromMessage({
       message: lastMessage,
       myExtensionNumber: this._extensionInfo.extensionNumber,
     });
   }
 
-  _getRecipients(conversation, senderNumber) {
-    if (!conversation || !senderNumber || !conversation.messages) {
+  _getRecipients(lastMessage, senderNumber) {
+    if (!lastMessage || !senderNumber) {
       return [];
     }
-    const messageLength = conversation.messages.length;
-    if (messageLength < 1) {
-      return [];
-    }
-    const lastMessage = conversation.messages[messageLength - 1];
     return getRecipientNumbersFromMessage({
       message: lastMessage,
       myNumber: senderNumber,
@@ -222,7 +212,7 @@ export default class Conversation extends RcModule {
                                    replyOnMessageId: this._getReplyOnMessageId(),
                                  });
       if (response) {
-        this._messageStore.pushMessage(response.conversation.id, response);
+        this._messageStore.pushMessage(response);
         this.store.dispatch({
           type: this.actionTypes.replySuccess,
         });
