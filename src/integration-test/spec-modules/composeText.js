@@ -8,7 +8,9 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
   describe('ComposeText', async function () {
     this.timeout(20000);
     let conditionalDescribe = describe;
-    before(async function () {
+    const clientHistoryRequest = new ClientHistoryRequest(new Map(), client);
+
+    before(async () => {
       const isLoginSuccess = await ensureLogin(auth, account);
       if (!isLoginSuccess) {
         conditionalDescribe = describe.skip;
@@ -18,7 +20,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
       await waitUntilObjectSizeGreaterThan(() => composeText.senderNumber, 'Sender Number', 0, 3);
     });
 
-    conditionalDescribe('Should Init Successfully with Deafult Setting', () => {
+    conditionalDescribe('Should Init Successfully with Default Setting', () => {
       this.timeout(20000);
       it('Should Set Sender Number with First SmsSender Phone Number by Default', () => {
         expect(composeText.senderNumber).to.equals(messageSender.senderNumbersList[0]);
@@ -106,7 +108,6 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
 
     conditionalDescribe('Should Send Message', () => {
       this.timeout(20000);
-      const clientHistoryRequest = new ClientHistoryRequest(new Map(), client);
       beforeEach(() => {
         composeText.clean();
       });
@@ -118,12 +119,12 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
         expect(response).to.include.keys('id', 'conversation');
         expect(response.type).to.equals('SMS');
         expect(response.subject).to.equals('test');
-        const rawRequest = clientHistoryRequest.getRawResponse(ClientHistoryRequest.endPoints.sms);
+        const rawRequest
+          = clientHistoryRequest.getRawResponse(ClientHistoryRequest.endPoints.sms);
         expect(JSON.stringify(response)).to.equal(JSON.stringify(rawRequest));
       });
 
       it('Should Send Pager Message Successfully', async () => {
-        composeText.clean();
         composeText.addToNumber({ phoneNumber: '101' });
         composeText.updateMessageText('test 2');
         const response = await composeText.send();
@@ -136,14 +137,14 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
       });
 
       it('Should Send SMS and Pager Message Together Successfully', async () => {
-        composeText.clean();
         composeText.addToNumber({ phoneNumber: '+18558990011' });
         composeText.addToNumber({ phoneNumber: '101' });
         composeText.updateMessageText('test 3');
         const response = await composeText.send();
         expect(response).to.include.keys('id', 'conversation');
         expect(response.subject).to.equals('test 3');
-        const smsRequest = clientHistoryRequest.getRawResponse(ClientHistoryRequest.endPoints.sms);
+        const smsRequest
+          = clientHistoryRequest.getRawResponse(ClientHistoryRequest.endPoints.sms);
         const pagerRequest =
           clientHistoryRequest.getRawResponse(ClientHistoryRequest.endPoints.companyPager);
         expect(smsRequest.type).to.equals('SMS');
@@ -153,7 +154,6 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
       });
 
       it('Should Send Pager Message Successfully with Typing Number', async () => {
-        composeText.clean();
         composeText.updateTypingToNumber('101');
         composeText.updateMessageText('test 4');
         const response = await composeText.send();
@@ -166,7 +166,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
       });
     });
 
-    conditionalDescribe('Should Allow Alert', () => {
+    conditionalDescribe('Validation', () => {
       this.timeout(20000);
       beforeEach(async function () {
         composeText.clean();
@@ -176,387 +176,522 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
         }, 'Alert', 0, 5);
         if (!isAlertClear) {
           console.error('Alert is not cleared after dismissAll');
-          this.skip();
+          conditionalDescribe = describe.skip;
         }
       });
 
-      it('Should Alert of recipientNumberInvalids When Typing Number Length more than 30', () => {
-        const str = Array(32).join('x');
-        composeText.updateTypingToNumber(str);
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.recipientNumberInvalids
-        )).to.not.equal(undefined);
-        expect(composeText.typingToNumber).to.equals('');
-      });
-
-      it('Should Alert of textTooLong When Message Text length more than 1000', () => {
-        const str = Array(1002).join('x');
-        composeText.updateMessageText(str);
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.textTooLong
-        )).to.not.equal(undefined);
-        expect(composeText.messageText).to.equals('');
-      });
-
-      it('Should Alert of noToNumber When Send With wrong Typing Number', async () => {
-        composeText.updateTypingToNumber('test');
-        composeText.updateMessageText('test 5');
-        const response = await composeText.send();
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.noToNumber
-        )).to.not.equal(undefined);
-        expect(response).to.equals(null);
-      });
-
-      it('Should Alert of noAreaCode When Send With wrong Typing Number', async () => {
-        regionSettings.setData({ countryCode: 'CA', areaCode: '' });
-        composeText.updateTypingToNumber('6545672');
-        composeText.updateMessageText('test 6');
-        const response = await composeText.send();
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.noAreaCode
-        )).to.not.equal(undefined);
-        expect(response).to.equals(null);
-      });
-
-      it('Should Alert of textEmpty When Text Is Empty', async () => {
-        composeText.updateTypingToNumber('+18558990011');
-        composeText.updateMessageText('');
-        const response = await composeText.send();
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.textEmpty
-        )).to.not.equal(undefined);
-      });
-
-      it('Should Alert of textEmpty When Text Is Empty with Space', async () => {
-        composeText.updateTypingToNumber('+18558990011');
-        composeText.updateMessageText('   ');
-        const response = await composeText.send();
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.textEmpty
-        )).to.not.equal(undefined);
-        expect(messageSender.idle).to.equals(true);
-        expect(response).to.equals(null);
-      });
-
-      it('Should Alert of recipientsEmpty When User Does Not Input Recepiant Number', async () => {
-        composeText.updateMessageText('test sender');
-        const response = await composeText.send();
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.recipientsEmpty
-        )).to.not.equal(undefined);
-      });
-
-      it('Should Alert of notAnExtension - Typing Number with a Wrong ExtensionNumber', async () => {
-        composeText.updateTypingToNumber('11111');
-        composeText.updateMessageText('test sender');
-        const response = await composeText.send();
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.notAnExtension
-        )).to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Alert of notAnExtension - ToNumber List with a Wrong ExtensionNumber', async () => {
-        composeText.addToNumber({ phoneNumber: '1111' });
-        composeText.updateMessageText('test sender');
-        const response = await composeText.send();
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.notAnExtension
-        )).to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Alert of recipientNumberInvalids - toNumber is invalid', async () => {
-        composeText.addToNumber({ phoneNumber: '199999' });
-        composeText.updateMessageText('test sender');
-        try {
+      conditionalDescribe('Text Validation', () => {
+        it('Should Alert of textEmpty When Text Is Empty', async () => {
+          composeText.updateTypingToNumber('+18558990011');
+          composeText.updateMessageText('');
           await composeText.send();
-        } catch (error) {
-          console.debug('message sender e:', error);
-        }
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.recipientNumberInvalids
-        )).to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
+          expect(containsErrorMessage(
+            alert.state.messages,
+            messageSenderMessages.textEmpty
+          )).to.not.equal(undefined);
+        });
+
+        it('Should Alert of textTooLong When Message Text length more than 1000', () => {
+          const str = Array(1002).join('x');
+          composeText.updateMessageText(str);
+          expect(containsErrorMessage(
+            alert.state.messages,
+            messageSenderMessages.textTooLong
+          )).to.not.equal(undefined);
+          expect(composeText.messageText).to.equals('');
+        });
+
+        it('Should Alert of textEmpty When Text Is Empty with Space', async () => {
+          composeText.updateTypingToNumber('+18558990011');
+          composeText.updateMessageText('   ');
+          const response = await composeText.send();
+          expect(containsErrorMessage(
+            alert.state.messages,
+            messageSenderMessages.textEmpty
+          )).to.not.equal(undefined);
+          expect(messageSender.idle).to.equals(true);
+          expect(response).to.equals(null);
+        });
       });
 
-      it('Should Alert of notSmsToExtension - toNumber is phoneNumber with extensionNumber', async () => {
-        composeText.addToNumber({ phoneNumber: '18558990011*101' });
-        composeText.updateMessageText('test sender');
-        try {
-          await composeText.send();
-        } catch (error) {
-          console.debug('message sender e:', error);
-        }
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.notSmsToExtension
-        )).to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
+      conditionalDescribe('Numbers Validation', () => {
+        conditionalDescribe('Basic Validation', () => {
+          it('Should Alert of recipientsEmpty - Not Input Recepiant Number', async () => {
+            composeText.updateMessageText('test sender');
+            await composeText.send();
+            expect(containsErrorMessage(
+              alert.state.messages,
+              messageSenderMessages.recipientsEmpty
+            )).to.not.equal(undefined);
+          });
+
+          it('Should Alert of noToNumber - Typing Number is not number', async () => {
+            composeText.addToNumber({ phoneNumber: "iamn%@onedi!@$%^&()_=\\][';/.,~nu><.,,?/mber#*" });
+            composeText.updateMessageText('test sender');
+            await composeText.send();
+            expect(containsErrorMessage(
+              alert.state.messages,
+              messageSenderMessages.noToNumber
+            )).to.not.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+          });
+
+          it('Should Alert of noToNumber - Valid Special Char but No Digital Number', async () => {
+            composeText.addToNumber({ phoneNumber: '+#' });
+            composeText.updateMessageText('test sender');
+            await composeText.send();
+            expect(containsErrorMessage(
+              alert.state.messages,
+              messageSenderMessages.noToNumber
+            )).to.not.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+          });
+
+          it('Should Alert of recipientNumberInvalids - Typing Number Length more than 30', () => {
+            const str = Array(32).join('x');
+            composeText.updateTypingToNumber(str);
+            expect(containsErrorMessage(
+              alert.state.messages,
+              messageSenderMessages.recipientNumberInvalids
+            )).to.not.equal(undefined);
+            expect(composeText.typingToNumber).to.equals('');
+          });
+
+          it('Should Alert of noToNumber - Send With wrong Typing Number', async () => {
+            composeText.updateTypingToNumber('test');
+            composeText.updateMessageText('test 5');
+            const response = await composeText.send();
+            expect(containsErrorMessage(
+              alert.state.messages,
+              messageSenderMessages.noToNumber
+            )).to.not.equal(undefined);
+            expect(response).to.equals(null);
+          });
+
+          it('Should Alert of noToNumber - one of toNumber is not number', async () => {
+            composeText.addToNumber({ phoneNumber: '101' });
+            composeText.addToNumber({ phoneNumber: 'test' });
+            composeText.updateMessageText('test sender');
+            await composeText.send();
+            expect(containsErrorMessage(
+              alert.state.messages,
+              messageSenderMessages.noToNumber
+            )).to.not.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+          });
+
+          it('Should Not Alert Anything - to Number in E.164 Format', async () => {
+            composeText.addToNumber({ phoneNumber: '+18558990011' });
+            composeText.updateMessageText('test');
+            const response = await composeText.send();
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+          });
+        });
+
+        conditionalDescribe('Validation with US/CA Local Number Format', () => {
+          beforeEach(() => {
+            regionSettings.setData({ countryCode: 'US', areaCode: '' });
+          });
+
+          it('Should Not Alert Anything - To Number in (xxx)xxx-xxxx Format', async () => {
+            composeText.updateTypingToNumber('(855)899-0011');
+            composeText.updateMessageText('test');
+            const response = await composeText.send();
+            expect(response).to.include.keys('id', 'conversation');
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notSmsToExtension))
+              .to.equal(undefined);
+          });
+
+          it('Should Not Alert Anything - to Number in (xxx) xxx-xxxx Format', async () => {
+            composeText.updateTypingToNumber('(855) 899-0011');
+            composeText.updateMessageText('test');
+            const response = await composeText.send();
+            expect(response).to.include.keys('id', 'conversation');
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notSmsToExtension))
+              .to.equal(undefined);
+          });
+
+          it('Should Not Alert Anything - to Number in (xxx)xxx-xxxx*xxx Format', async () => {
+            composeText.updateTypingToNumber('(855)899-0011*101');
+            composeText.updateMessageText('test');
+            const response = await composeText.send();
+            expect(response).to.include.keys('id', 'conversation');
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notSmsToExtension))
+              .to.equal(undefined);
+          });
+
+          it('Should Not Alert Anything - to Number in (xxx) xxx-xxxx*xxx Format', async () => {
+            composeText.updateTypingToNumber('(855) 899-0011*101');
+            composeText.updateMessageText('test');
+            const response = await composeText.send();
+            expect(response).to.include.keys('id', 'conversation');
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notSmsToExtension))
+              .to.equal(undefined);
+          });
+
+          it('Should Not Alert Anything - to Number in xxx-xxx-xxxx Format', async () => {
+            composeText.updateTypingToNumber('855-899-0011');
+            composeText.updateMessageText('test');
+            const response = await composeText.send();
+            expect(response).to.include.keys('id', 'conversation');
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notSmsToExtension))
+              .to.equal(undefined);
+          });
+
+          it('Should Not Alert Anything - to Number in xxx-xxx-xxxx*xxx Format', async () => {
+            composeText.updateTypingToNumber('855-899-0011*101');
+            composeText.updateMessageText('test');
+            const response = await composeText.send();
+            expect(response).to.include.keys('id', 'conversation');
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notSmsToExtension))
+              .to.equal(undefined);
+          });
+        });
+
+        conditionalDescribe('Validation with Region Setting', () => {
+          it('Should Alert of noAreaCode - Typing Number length is 7 and no areaCode', async () => {
+            regionSettings.setData({ countryCode: 'CA', areaCode: '' });
+            composeText.updateTypingToNumber('6545672');
+            composeText.updateMessageText('test 6');
+            const response = await composeText.send();
+            expect(containsErrorMessage(
+              alert.state.messages,
+              messageSenderMessages.noAreaCode
+            )).to.not.equal(undefined);
+            expect(response).to.equals(null);
+          });
+
+          it('Should Alert of No AreaCode - toNumber is 7 Digital Number with US Dialing Plan without Area Code', async () => {
+            regionSettings.setData({ countryCode: 'US', areaCode: '' });
+            composeText.addToNumber({ phoneNumber: '8990011' });
+            composeText.updateMessageText('test sender');
+            await composeText.send();
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.not.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+              .to.equal(undefined);
+          });
+
+          it('Should Alert of No AreaCode - toNumber is 7 Digital Number with CA Dialing Plan without Area Code', async () => {
+            regionSettings.setData({ countryCode: 'CA', areaCode: '' });
+            composeText.addToNumber({ phoneNumber: '8990011' });
+            composeText.updateMessageText('test sender');
+            await composeText.send();
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.not.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+              .to.equal(undefined);
+          });
+
+          it('Should Not Alert of Anything - toNumber is 7 Digital Number with CA Dialing Plan with Area Code', async () => {
+            regionSettings.setData({ countryCode: 'CA', areaCode: '855' });
+            composeText.addToNumber({ phoneNumber: '8990011' });
+            composeText.updateMessageText('test sender');
+            try {
+              await composeText.send();
+            } catch (error) {
+              console.debug('message sender e:', error);
+            }
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+              .to.equal(undefined);
+            expect(messageSender.idle).to.equals(true);
+          });
+
+          it('Should Not Alert of Anything - toNumber is 7 Digital Number with US Dialing Plan with Area Code', async () => {
+            regionSettings.setData({ countryCode: 'US', areaCode: '855' });
+            composeText.addToNumber({ phoneNumber: '8990011' });
+            composeText.updateMessageText('test sender');
+            try {
+              await composeText.send();
+            } catch (error) {
+              console.debug('message sender e:', error);
+            }
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+              .to.equal(undefined);
+            expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+              .to.equal(undefined);
+          });
+        });
+
+        conditionalDescribe('Extension/Special Validation', () => {
+          conditionalDescribe('Not Included In Extension List', () => {
+            it('Should Alert of notAnExtension - Typing Number', async () => {
+              composeText.updateTypingToNumber('11111');
+              composeText.updateMessageText('test sender');
+              await composeText.send();
+              expect(containsErrorMessage(
+                alert.state.messages,
+                messageSenderMessages.notAnExtension
+              )).to.not.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+                .to.equal(undefined);
+            });
+
+            it('Should Alert of notAnExtension - To Number', async () => {
+              composeText.addToNumber({ phoneNumber: '11111' });
+              composeText.updateMessageText('test sender');
+              await composeText.send();
+              expect(containsErrorMessage(
+                alert.state.messages,
+                messageSenderMessages.notAnExtension
+              )).to.not.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+                .to.equal(undefined);
+            });
+          });
+
+          conditionalDescribe('GB Dialing Plan', () => {
+            beforeEach(() => {
+              regionSettings.setData({ countryCode: 'GB', areaCode: '' });
+            });
+
+            it('Should Alert Special Number - toNumber 101 (Existed Extension/Special Number)', async () => {
+              composeText.addToNumber({ phoneNumber: '101' });
+              composeText.updateMessageText('test sender');
+              await composeText.send();
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.not.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+                .to.equal(undefined);
+            });
+
+            it('Should Alert notAnExtension - toNumber 998 (No Extension)', async () => {
+              composeText.addToNumber({ phoneNumber: '998' });
+              composeText.updateMessageText('test sender');
+              await composeText.send();
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+                .to.not.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+                .to.equal(undefined);
+            });
+
+            it('Should Alert Special Number - toNumber 999', async () => {
+              composeText.addToNumber({ phoneNumber: '999' });
+              composeText.updateMessageText('test sender');
+              await composeText.send();
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.not.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+                .to.equal(undefined);
+            });
+
+            it('Should Not Alert Special Number - toNumber 911', async () => {
+              regionSettings.setData({ countryCode: 'GB', areaCode: '' });
+              composeText.addToNumber({ phoneNumber: '911' });
+              composeText.updateMessageText('test sender');
+              await composeText.send();
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.equal(undefined);
+            });
+          });
+
+          conditionalDescribe('US Dialing Plan', () => {
+            beforeEach(() => {
+              regionSettings.setData({ countryCode: 'US', areaCode: '' });
+            });
+
+            it('Should Alert notAnExtension - toNumber 102 (No Extension/Not Special Number) with US Dialing Plan', async () => {
+              composeText.addToNumber({ phoneNumber: '102' });
+              composeText.updateMessageText('test sender');
+              await composeText.send();
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+                .to.not.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+                .to.equal(undefined);
+            });
+
+            it('Should Alert notAnExtension - toNumber 998 (No Extension)', async () => {
+              composeText.addToNumber({ phoneNumber: '998' });
+              composeText.updateMessageText('test sender');
+              await composeText.send();
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+                .to.not.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+                .to.equal(undefined);
+            });
+
+            it('Should Alert Special Number - toNumber is 911', async () => {
+              composeText.addToNumber({ phoneNumber: '911' });
+              composeText.updateMessageText('test sender');
+              await composeText.send();
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.not.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+                .to.equal(undefined);
+            });
+
+            it('Should Not Alert Special Number - toNumber 999', async () => {
+              composeText.addToNumber({ phoneNumber: '999' });
+              composeText.updateMessageText('test sender');
+              await composeText.send();
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.equal(undefined);
+            });
+
+            it('Should Not Alert Anything - toNumber 101 (Existed Extension/Not Special Number)', async () => {
+              regionSettings.setData({ countryCode: 'US', areaCode: '' });
+              composeText.addToNumber({ phoneNumber: '101' });
+              composeText.updateMessageText('test sender');
+              try {
+                await composeText.send();
+              } catch (error) {
+                console.debug('message sender e:', error);
+              }
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+                .to.equal(undefined);
+            });
+          });
+        });
       });
 
-      it('Should Alert of noToNumber - Typing Number is not number', async () => {
-        composeText.addToNumber({ phoneNumber: "iamn%@onedi!@$%^&()_=\\][';/.,~nu><.,,?/mber" });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.noToNumber
-        )).to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-      });
-
-      it('Should Alert of noToNumber - toNumber include one that is not number', async () => {
-        composeText.addToNumber({ phoneNumber: '101' });
-        composeText.addToNumber({ phoneNumber: 'test' });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(
-          alert.state.messages,
-          messageSenderMessages.noToNumber
-        )).to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-      });
-
-      it('Should Alert of No AreaCode - toNumber is 7 Digital Number with US Dialing Plan without Area Code', async () => {
-        regionSettings.setData({ countryCode: 'US', areaCode: '' });
-        composeText.addToNumber({ phoneNumber: '8990011' });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Alert of No AreaCode - toNumber is 7 Digital Number with CA Dialing Plan without Area Code', async () => {
-        regionSettings.setData({ countryCode: 'CA', areaCode: '' });
-        composeText.addToNumber({ phoneNumber: '8990011' });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Not Alert of Anything - toNumber is 7 Digital Number with CA Dialing Plan with Area Code', async () => {
-        regionSettings.setData({ countryCode: 'CA', areaCode: '855' });
-        composeText.addToNumber({ phoneNumber: '8990011' });
-        composeText.updateMessageText('test sender');
-        try {
-          await composeText.send();
-        } catch (error) {
-          console.debug('message sender e:', error);
-        }
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-        expect(messageSender.idle).to.equals(true);
-      });
-
-      it('Should Not Alert of Anything - toNumber is 7 Digital Number with US Dialing Plan with Area Code', async () => {
-        regionSettings.setData({ countryCode: 'US', areaCode: '855' });
-        composeText.addToNumber({ phoneNumber: '8990011' });
-        composeText.updateMessageText('test sender');
-        try {
-          await composeText.send();
-        } catch (error) {
-          console.debug('message sender e:', error);
-        }
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Alert Special Number - toNumber is 911 with US Dialing Plan', async () => {
-        regionSettings.setData({ countryCode: 'US', areaCode: '' });
-        composeText.addToNumber({ phoneNumber: '911' });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Alert Special Number - toNumber 999 with GB Dialing Plan', async () => {
-        regionSettings.setData({ countryCode: 'GB', areaCode: '' });
-        composeText.addToNumber({ phoneNumber: '999' });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Not Alert Special Number - toNumber 999 with US Dialing Plan', async () => {
-        regionSettings.setData({ countryCode: 'US', areaCode: '' });
-        composeText.addToNumber({ phoneNumber: '999' });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Not Alert Special Number - toNumber 911 with GB Dialing Plan', async () => {
-        regionSettings.setData({ countryCode: 'GB', areaCode: '' });
-        composeText.addToNumber({ phoneNumber: '911' });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Not Alert Anything - toNumber 101 (Existed Extension/Not Special Number) with US Dialing Plan', async () => {
-        regionSettings.setData({ countryCode: 'US', areaCode: '' });
-        composeText.addToNumber({ phoneNumber: '101' });
-        composeText.updateMessageText('test sender');
-        try {
-          await composeText.send();
-        } catch (error) {
-          console.debug('message sender e:', error);
-        }
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Alert Special Number - toNumber 101 (Existed Extension/Special Number) with GB Dialing Plan', async () => {
-        regionSettings.setData({ countryCode: 'GB', areaCode: '' });
-        composeText.addToNumber({ phoneNumber: '101' });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Alert notAnExtension - toNumber 102 (No Extension/Not Special Number) with US Dialing Plan', async () => {
-        regionSettings.setData({ countryCode: 'US', areaCode: '' });
-        composeText.addToNumber({ phoneNumber: '102' });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Alert notAnExtension - toNumber 998 (No Extension) with US Dialing Plan', async () => {
-        regionSettings.setData({ countryCode: 'US', areaCode: '' });
-        composeText.addToNumber({ phoneNumber: '998' });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
-      });
-
-      it('Should Alert notAnExtension - toNumber 998 (No Extension) with GB Dialing Plan', async () => {
-        regionSettings.setData({ countryCode: 'GB', areaCode: '' });
-        composeText.addToNumber({ phoneNumber: '998' });
-        composeText.updateMessageText('test sender');
-        await composeText.send();
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
-          .to.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
-          .to.not.equal(undefined);
-        expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
-          .to.equal(undefined);
+      conditionalDescribe('Validate after Send Api', () => {
+        it('Should Alert of recipientNumberInvalids - toNumber is invalid', async () => {
+          composeText.addToNumber({ phoneNumber: '199999' });
+          composeText.updateMessageText('test sender');
+          try {
+            await composeText.send();
+          } catch (error) {
+            console.debug('message sender e:', error);
+          }
+          expect(containsErrorMessage(
+            alert.state.messages,
+            messageSenderMessages.recipientNumberInvalids
+          )).to.not.equal(undefined);
+          expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+            .to.equal(undefined);
+          expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+            .to.equal(undefined);
+          expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+            .to.equal(undefined);
+          expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+            .to.equal(undefined);
+        });
       });
     });
   });
