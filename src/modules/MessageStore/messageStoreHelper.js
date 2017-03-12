@@ -189,7 +189,8 @@ export function pushRecordsToMessageData({
     const message = newConversations[index];
     if (message.id === record.id) {
       const conversationMessages = newMessages.filter(oldMessage => (
-        oldMessage.id !== message.id && oldMessage.conversationId === message.conversationId
+        oldMessage && oldMessage.id !== message.id &&
+          oldMessage.conversationId === message.conversationId
       ));
       if (conversationMessages.length === 0) {
         newConversations[index] = null;
