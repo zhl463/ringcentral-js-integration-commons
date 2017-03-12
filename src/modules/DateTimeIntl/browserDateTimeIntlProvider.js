@@ -1,3 +1,7 @@
+import {
+  DEFAULT_LOCALE,
+  PSEUDO_LOCALE,
+} from '../../lib/I18n';
 
 const intlOptions = {
   time: {
@@ -43,7 +47,11 @@ export default class BrowserDateTimeIntlProvider {
 
   formatDateTime({ settings, utcString, type }) {
     const date = new Date(utcString);
-    const locale = (settings && settings.currentLocale) || 'en-US';
+    const locale = (
+      settings &&
+      settings.currentLocale !== PSEUDO_LOCALE &&
+      settings.currentLocale
+    ) || DEFAULT_LOCALE;
 
     switch (type) {
       case 'long': {

@@ -1,4 +1,7 @@
+import toPseudoString from './toPseudoString';
+
 export const DEFAULT_LOCALE = 'en-US';
+export const PSEUDO_LOCALE = 'en-ZZ';
 export const RUNTIME = {
   locale: DEFAULT_LOCALE,
   instances: new Set(),
@@ -39,7 +42,7 @@ export default class I18n {
     this._load(RUNTIME.locale);
   }
   async _load(locale) {
-    if (!this._cache[locale]) {
+    if (locale !== PSEUDO_LOCALE && !this._cache[locale]) {
       let data;
       try {
         data = await (async () => this._loadLocale(locale))();
@@ -50,7 +53,7 @@ export default class I18n {
       this._cache[locale] = data;
     }
   }
-  getString(key, locale = RUNTIME.locale) {
+  _getString(key, locale) {
     if (
       this._cache[locale] &&
       this._cache[locale]::Object.prototype.hasOwnProperty(key)
@@ -65,6 +68,13 @@ export default class I18n {
     }
     return key;
   }
+  getString(key, locale = RUNTIME.locale) {
+    if (locale === PSEUDO_LOCALE) {
+      return toPseudoString(this._getString(key, DEFAULT_LOCALE));
+    }
+    return this._getString(key, locale);
+  }
+
   // eslint-disable-next-line class-methods-use-this
   get currentLocale() {
     return RUNTIME.locale;
@@ -82,3 +92,5 @@ export default class I18n {
     return setLocale;
   }
 }
+
+
