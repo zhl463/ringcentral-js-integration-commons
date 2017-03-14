@@ -115,34 +115,35 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
       it('Should SMS Message Successfully', async () => {
         composeText.addToNumber({ phoneNumber: '+18558990011' });
         composeText.updateMessageText('test');
-        const response = await composeText.send();
-        expect(response).to.include.keys('id', 'conversation');
-        expect(response.type).to.equals('SMS');
-        expect(response.subject).to.equals('test');
+        const responses = await composeText.send();
+        expect(responses[0]).to.include.keys('id', 'conversation');
+        expect(responses[0].type).to.equals('SMS');
+        expect(responses[0].subject).to.equals('test');
         const rawRequest
           = clientHistoryRequest.getRawResponse(ClientHistoryRequest.endPoints.sms);
-        expect(JSON.stringify(response)).to.equal(JSON.stringify(rawRequest));
+        expect(JSON.stringify(responses[0])).to.equal(JSON.stringify(rawRequest));
       });
 
       it('Should Send Pager Message Successfully', async () => {
         composeText.addToNumber({ phoneNumber: '101' });
         composeText.updateMessageText('test 2');
-        const response = await composeText.send();
-        expect(response).to.include.keys('id', 'conversation');
-        expect(response.type).to.equals('Pager');
-        expect(response.subject).to.equals('test 2');
+        const responses = await composeText.send();
+        expect(responses[0]).to.include.keys('id', 'conversation');
+        expect(responses[0].type).to.equals('Pager');
+        expect(responses[0].subject).to.equals('test 2');
         const rawRequest =
           clientHistoryRequest.getRawResponse(ClientHistoryRequest.endPoints.companyPager);
-        expect(JSON.stringify(response)).to.equal(JSON.stringify(rawRequest));
+        expect(JSON.stringify(responses[0])).to.equal(JSON.stringify(rawRequest));
       });
 
       it('Should Send SMS and Pager Message Together Successfully', async () => {
         composeText.addToNumber({ phoneNumber: '+18558990011' });
         composeText.addToNumber({ phoneNumber: '101' });
         composeText.updateMessageText('test 3');
-        const response = await composeText.send();
-        expect(response).to.include.keys('id', 'conversation');
-        expect(response.subject).to.equals('test 3');
+        const responses = await composeText.send();
+        expect(responses[0]).to.include.keys('id', 'conversation');
+        expect(responses[0].subject).to.equals('test 3');
+        expect(responses[1].subject).to.equals('test 3');
         const smsRequest
           = clientHistoryRequest.getRawResponse(ClientHistoryRequest.endPoints.sms);
         const pagerRequest =
@@ -156,13 +157,13 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
       it('Should Send Pager Message Successfully with Typing Number', async () => {
         composeText.updateTypingToNumber('101');
         composeText.updateMessageText('test 4');
-        const response = await composeText.send();
-        expect(response).to.include.keys('id', 'conversation');
-        expect(response.type).to.equals('Pager');
-        expect(response.subject).to.equals('test 4');
+        const responses = await composeText.send();
+        expect(responses[0]).to.include.keys('id', 'conversation');
+        expect(responses[0].type).to.equals('Pager');
+        expect(responses[0].subject).to.equals('test 4');
         const rawRequest =
           clientHistoryRequest.getRawResponse(ClientHistoryRequest.endPoints.companyPager);
-        expect(JSON.stringify(response)).to.equal(JSON.stringify(rawRequest));
+        expect(JSON.stringify(responses[0])).to.equal(JSON.stringify(rawRequest));
       });
     });
 

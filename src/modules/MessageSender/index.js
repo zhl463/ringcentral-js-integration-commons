@@ -171,6 +171,7 @@ export default class MessageSender extends RcModule {
       const extensionNumbers = recipientNumbers.filter(number => (number.length <= 5));
       const phoneNumbers = recipientNumbers.filter(number => (number.length > 5));
 
+      // not validate sender number if recipient is only extension number
       if (phoneNumbers.length > 0) {
         if (!this._validateSenderNumber(fromNumber)) {
           return null;
@@ -180,26 +181,26 @@ export default class MessageSender extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.send,
       });
-
-      let pagerResponse = null;
-      let smsResponse = null;
+      const responses = [];
       if (extensionNumbers.length > 0) {
-        pagerResponse = await this._sendPager({
+        const pagerResponse = await this._sendPager({
           toNumbers: extensionNumbers,
           text,
           replyOnMessageId,
         });
+        responses.push(pagerResponse);
       }
 
       if (phoneNumbers.length > 0) {
         for (const phoneNumber of phoneNumbers) {
-          smsResponse = await this._sendSms({ fromNumber, toNumber: phoneNumber, text });
+          const smsResponse = await this._sendSms({ fromNumber, toNumber: phoneNumber, text });
+          responses.push(smsResponse);
         }
       }
       this.store.dispatch({
         type: this.actionTypes.sendOver,
       });
-      return (pagerResponse || smsResponse);
+      return responses;
     } catch (error) {
       this.store.dispatch({
         type: this.actionTypes.sendError,

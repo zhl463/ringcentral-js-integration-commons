@@ -324,11 +324,15 @@ export default class MessageStore extends RcModule {
     });
   }
 
-  pushMessage(record) {
+  pushMessages(records) {
     this.store.dispatch({
       type: this.actionTypes.updateMessages,
-      records: [record],
+      records,
     });
+  }
+
+  pushMessage(record) {
+    this.pushMessages([record]);
   }
 
   get cache() {
