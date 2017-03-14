@@ -40,8 +40,7 @@ export function isOnHold(call = {}) {
 }
 
 export function isIntermediateCall(call = {}) {
-  return call.telephonyStatus === telephonyStatuses.noCall
-    && call.terminationType === terminationTypes.intermediate;
+  return call.terminationType === terminationTypes.intermediate;
 }
 
 /* sort functions */
@@ -82,7 +81,6 @@ export function normalizeFromTo(call) {
 
 /* ringout leg helpers */
 export function areTwoLegs(inbound, outbound) {
-
   if (isInbound(inbound) && isOutbound(outbound)) {
     switch (Math.abs(inbound.sessionId - outbound.sessionId)) {
       case 1000:

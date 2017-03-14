@@ -150,12 +150,7 @@ export default class MessageSender extends RcModule {
       return result;
     }
 
-    recipientNumbers = numberValidateResult.numbers.map((number) => {
-      if (!number.subAddress) {
-        return number.e164;
-      }
-      return `${number.e164}*${number.subAddress}`;
-    });
+    recipientNumbers = numberValidateResult.numbers.map(number => number.e164);
     result.result = true;
     result.numbers = recipientNumbers;
     return result;

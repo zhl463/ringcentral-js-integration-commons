@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import I18n, { DEFAULT_LOCALE, RUNTIME } from './';
+import toPseudoString from './toPseudoString';
 import sleep from '../sleep';
 
 describe('I18n', () => {
@@ -89,6 +90,10 @@ describe('I18n', () => {
       });
       it('should fallback to DEFAULT_LOCALE', () => {
         expect(instance.getString('foo', 'fr')).to.equal(data[DEFAULT_LOCALE].foo);
+      });
+      it('should return accented string when locale is set to en-ZZ', () => {
+        expect(instance.getString('foo', 'en-ZZ'))
+          .to.equal(toPseudoString(data['en-US'].foo));
       });
     });
   });

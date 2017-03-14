@@ -38,6 +38,14 @@ export function getMyNumberFromMessage({ message, myExtensionNumber }) {
   return message.to[0];
 }
 
+export function uniqueRecipients(recipients) {
+  const recipientMap = {};
+  recipients.forEach((recipient) => {
+    recipientMap[JSON.stringify(recipient)] = recipient;
+  });
+  return Object.values(recipientMap);
+}
+
 export function getRecipientNumbersFromMessage({ message, myNumber }) {
   if (!message) {
     return [];
@@ -53,7 +61,7 @@ export function getRecipientNumbersFromMessage({ message, myNumber }) {
   if (recipients.length === 0) {
     recipients.push(myNumber);
   }
-  return recipients;
+  return uniqueRecipients(recipients);
 }
 
 export function getRecipients({ message, myExtensionNumber }) {

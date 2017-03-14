@@ -12,7 +12,7 @@
     "gulp": "node ./node_modules/babel-cli/bin/babel-node.js ./node_modules/gulp/bin/gulp.js",
     "release": "node ./node_modules/babel-cli/bin/babel-node.js ./node_modules/gulp/bin/gulp.js release",
     "dev-server": "node ./node_modules/babel-cli/bin/babel-node.js ./node_modules/gulp/bin/gulp.js dev-server",
-    "karma": "node ./node_modules/babel-cli/bin/babel-node.js node_modules/.bin/karma start"
+    "karma": "karma start"
   },
   "repository": {
     "type": "git",
@@ -45,6 +45,7 @@
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^3.0.2",
     "eslint-plugin-react": "^6.9.0",
+    "faker": "^4.1.0",
     "format-message": "^5.0.0",
     "fs-promise": "^1.0.0",
     "gulp": "^3.9.1",

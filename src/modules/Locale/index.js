@@ -1,12 +1,16 @@
 import formatMessage from 'format-message';
 import RcModule from '../../lib/RcModule';
 
-import I18n from '../../lib/I18n';
+import I18n, {
+  DEFAULT_LOCALE,
+  PSEUDO_LOCALE,
+} from '../../lib/I18n';
 import moduleStatus from '../../enums/moduleStatus';
 import actionTypes from './actionTypes';
 import getLocaleReducer from './getLocaleReducer';
 
 /* eslint-disable global-require */
+
 
 /**
  *  @function
@@ -42,7 +46,7 @@ function checkIntl() {
 
 export default class Locale extends RcModule {
   constructor({
-    defaultLocale,
+    defaultLocale = DEFAULT_LOCALE,
     ...options
   } = {}) {
     super({
@@ -54,10 +58,7 @@ export default class Locale extends RcModule {
   initialize() {
     (async () => {
       await checkIntl();
-      await I18n.setLocale(this.currentLocale);
-      formatMessage.setup({
-        locale: this.currentLocale,
-      });
+      await this.setLocale(this.currentLocale);
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
@@ -90,7 +91,7 @@ export default class Locale extends RcModule {
   async setLocale(locale) {
     await I18n.setLocale(locale);
     formatMessage.setup({
-      locale: this.currentLocale,
+      locale: this.currentLocale === PSEUDO_LOCALE ? DEFAULT_LOCALE : this.currentLocale,
     });
     this.store.dispatch({
       type: this.actionTypes.setLocale,

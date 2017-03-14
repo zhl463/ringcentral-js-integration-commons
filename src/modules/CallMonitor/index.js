@@ -42,7 +42,7 @@ export default class CallMonitor extends RcModule {
     this.addSelector('normalizedCalls',
       () => this._detailedPresence.calls,
       () => this._activeCalls.calls,
-      () => this._accountInfo.country.isoCode,
+      () => this._accountInfo.countryCode,
       (callsFromPresence, callsFromActiveCalls, countryCode) => (
         callsFromPresence.map((call) => {
           const activeCall = call.inboundLeg &&

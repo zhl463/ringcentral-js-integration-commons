@@ -39,6 +39,8 @@ import Messages from '../../../modules/Messages';
 import MessageStore from '../../../modules/MessageStore';
 import Conversation from '../../../modules/Conversation';
 
+import ContactMatcher from '../../../modules/ContactMatcher';
+import ActivityMatcher from '../../../modules/ActivityMatcher';
 import DateTimeIntl from '../../../modules/DateTimeIntl';
 
 // import DynamicsAdapter from '../../../modules/DynamicsInteraction';
@@ -243,20 +245,18 @@ export default class Phone extends RcModule {
       getState: () => this.state.rateLimiter,
     }));
 
-    // this.addModule('contactMatcher', new DataMatcher({
-    //   ...options,
-    //   prefix: 'contact',
-    //   auth: this.auth,
-    //   storage: this.storage,
-    //   getState: () => this.state.contactMatcher,
-    // }));
-    // this.addModule('activityMatcher', new DataMatcher({
-    //   ...options,
-    //   prefix: 'activity',
-    //   auth: this.auth,
-    //   storage: this.storage,
-    //   getState: () => this.state.activityMatcher,
-    // }));
+    this.addModule('contactMatcher', new ContactMatcher({
+      ...options,
+      auth: this.auth,
+      storage: this.storage,
+      getState: () => this.state.contactMatcher,
+    }));
+    this.addModule('activityMatcher', new ActivityMatcher({
+      ...options,
+      auth: this.auth,
+      storage: this.storage,
+      getState: () => this.state.activityMatcher,
+    }));
     // this.addModule('callLog', new CallLog({
     //   ...options,
     //   auth: this.auth,
@@ -462,8 +462,8 @@ export default class Phone extends RcModule {
       // callMonitor: callMonitorReducer,
       environment: this.environment.reducer,
       presence: this.presence.reducer,
-      // contactMatcher: this.contactMatcher.reducer,
-      // activityMatcher: this.activityMatcher.reducer,
+      contactMatcher: this.contactMatcher.reducer,
+      activityMatcher: this.activityMatcher.reducer,
       storage: this.storage.reducer,
       // autoLogger: this.autoLogger.reducer,
       globalStorage: this.globalStorage.reducer,

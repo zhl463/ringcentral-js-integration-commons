@@ -3,6 +3,8 @@ import getMessageStoreReducer, {
   getMessageStoreStatusReducer,
 } from './getMessageStoreReducer';
 
+import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
+
 import actionTypes from './actionTypes';
 import messageStoreStatus from './messageStoreStatus';
 
@@ -27,7 +29,7 @@ describe('MessageStore :: getMessageStoreStatusReducer', () => {
     it('should return syncing status on sync', () => {
       [
         actionTypes.sync
-      ].forEach(type => {
+      ].forEach((type) => {
         expect(reducer('foo', {
           type,
         })).to.equal(messageStoreStatus.syncing);
@@ -36,12 +38,30 @@ describe('MessageStore :: getMessageStoreStatusReducer', () => {
     it('should return idle status on sync error and sync success', () => {
       [
         actionTypes.syncError,
-        actionTypes.syncOver,
-      ].forEach(type => {
+        actionTypes.syncSuccess,
+      ].forEach((type) => {
         expect(reducer('foo', {
           type,
         })).to.equal(messageStoreStatus.idle);
       });
+    });
+  });
+});
+
+describe('getMessageStoreReducer', () => {
+  it('should be a function', () => {
+    expect(getMessageStoreReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getMessageStoreReducer(actionTypes)).to.be.a('function');
+  });
+  it('should return a combined reducer', () => {
+    const reducer = getMessageStoreReducer(actionTypes);
+    const statusReducer = getModuleStatusReducer(actionTypes);
+    const messageStoreStatusReducer = getMessageStoreStatusReducer(actionTypes);
+    expect(reducer(undefined, {})).to.deep.equal({
+      status: statusReducer(undefined, {}),
+      messageStoreStatus: messageStoreStatusReducer(undefined, {}),
     });
   });
 });
