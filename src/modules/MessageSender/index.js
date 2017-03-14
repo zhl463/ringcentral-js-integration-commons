@@ -254,11 +254,6 @@ export default class MessageSender extends RcModule {
           // MSG-246 : "Sending SMS from/to extension numbers is not available"
           this._alertWarning(messageSenderMessages.notSmsToExtension);
         }
-        console.log(err.errorCode);
-        if (err.errorCode === 'MSG-240') {
-          // MSG-240 : "International SMS is not supported"
-          this._alertWarning(messageSenderMessages.internationalSMSNotSupported);
-        }
         return null;
       });
       return;
