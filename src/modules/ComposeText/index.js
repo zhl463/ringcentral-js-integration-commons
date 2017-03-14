@@ -83,10 +83,15 @@ export default class ComposeText extends RcModule {
   _initSenderNumber() {
     let defaultPhoneNumber = null;
     const cachedPhoneNumber = this.cache && this.cache.senderNumber;
-    if (cachedPhoneNumber) {
-      defaultPhoneNumber = cachedPhoneNumber;
+    if (this._messageSender.senderNumbersList.length > 0) {
+      if (cachedPhoneNumber) {
+        defaultPhoneNumber = cachedPhoneNumber;
+      } else {
+        defaultPhoneNumber = this._messageSender.senderNumbersList[0];
+      }
     } else {
-      defaultPhoneNumber = this._messageSender.senderNumbersList[0];
+      this._alertWarning(messageSenderMessages.noSMSSenderNumber);
+      defaultPhoneNumber = '';
     }
     this.updateSenderNumber(defaultPhoneNumber);
   }
