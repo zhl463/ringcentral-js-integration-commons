@@ -286,41 +286,6 @@ class DemoPhone extends RcModule {
       storage: this.storage,
       getState: () => this.state.dateTimeIntl,
     }));
-    // this.addModule('contactSearch', new ContactSearch({
-    //   auth: this.auth,
-    //   storage: this.storage,
-    //   getState: () => this.state.contactSearch,
-    // }));
-    // this.contactSearch.addSearchSource({
-    //   sourceName: 'test',
-    //   searchFn: ({ searchString }) => [{
-    //     entityType: 'account',
-    //     name: ({ searchString }),
-    //     phoneNumber: '+1234567890',
-    //     phoneType: 'phone',
-    //   }],
-    //   formatFn: entities => entities,
-    //   readyCheckFn: () => true,
-    // });
-    // this.addModule('messageStore', new MessageStore({
-    //   alert: this.alert,
-    //   auth: this.auth,
-    //   client: this.client,
-    //   storage: this.storage,
-    //   subscription: this.subscription,
-    //   getState: () => this.state.messageStore,
-    // }));
-    // this.addModule('conversation', new Conversation({
-    //   auth: this.auth,
-    //   messageSender: this.messageSender,
-    //   extensionInfo: this.extensionInfo,
-    //   messageStore: this.messageStore,
-    //   getState: () => this.state.conversation,
-    // }));
-    // this.addModule('messages', new Messages({
-    //   messageStore: this.messageStore,
-    //   getState: () => this.state.messages,
-    // }));
     this.addModule('contactMatcher', new ContactMatcher({
       auth: this.auth,
       storage: this.storage,
@@ -404,12 +369,6 @@ class DemoPhone extends RcModule {
       tabManager: this.tabManager.reducer,
       numberValidate: this.numberValidate.reducer,
       dateTimeIntl: this.dateTimeIntl.reducer,
-      // messageSender: this.messageSender.reducer,
-      // contactSearch: this.contactSearch.reducer,
-      // composeText: this.composeText.reducer,
-      // messageStore: this.messageStore.reducer,
-      // conversation: this.conversation.reducer,
-      // messages: this.messages.reducer,
       contactMatcher: this.contactMatcher.reducer,
       activityMatcher: this.activityMatcher.reducer,
       messageSender: this.messageSender.reducer,

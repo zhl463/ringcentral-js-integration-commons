@@ -237,7 +237,8 @@ export default class MessageSender extends RcModule {
     if (
       errResp && errResp.response &&
       !errResp.response.ok
-      && errResp._json.errorCode === 'InvalidParameter'
+      && (errResp._json.errorCode === 'InvalidParameter'
+      || errResp._json.errorCode === 'InternationalProhibited')
     ) {
       errResp._json.errors.map((err) => {
         if (
@@ -254,16 +255,6 @@ export default class MessageSender extends RcModule {
           // MSG-246 : "Sending SMS from/to extension numbers is not available"
           this._alertWarning(messageSenderMessages.notSmsToExtension);
         }
-        return null;
-      });
-      return;
-    }
-    if (
-      errResp && errResp.response &&
-      !errResp.response.ok
-      && errResp._json.errorCode === 'InternationalProhibited'
-    ) {
-      errResp._json.errors.map((err) => {
         if (err.errorCode === 'MSG-240') {
           // MSG-240 : "International SMS is not supported"
           this._alertWarning(messageSenderMessages.internationalSMSNotSupported);
