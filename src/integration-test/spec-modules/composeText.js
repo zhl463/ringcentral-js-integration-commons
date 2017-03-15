@@ -319,8 +319,8 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
           it('Should Not Alert Anything - To Number in (xxx)xxx-xxxx Format', async () => {
             composeText.updateTypingToNumber('(855)899-0011');
             composeText.updateMessageText('test');
-            const response = await composeText.send();
-            expect(response).to.include.keys('id', 'conversation');
+            const responses = await composeText.send();
+            expect(responses[0]).to.include.keys('id', 'conversation');
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
               .to.equal(undefined);
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
@@ -336,8 +336,8 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
           it('Should Not Alert Anything - to Number in (xxx) xxx-xxxx Format', async () => {
             composeText.updateTypingToNumber('(855) 899-0011');
             composeText.updateMessageText('test');
-            const response = await composeText.send();
-            expect(response).to.include.keys('id', 'conversation');
+            const responses = await composeText.send();
+            expect(responses[0]).to.include.keys('id', 'conversation');
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
               .to.equal(undefined);
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
@@ -353,8 +353,8 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
           it('Should Not Alert Anything - to Number in (xxx)xxx-xxxx*xxx Format', async () => {
             composeText.updateTypingToNumber('(855)899-0011*101');
             composeText.updateMessageText('test');
-            const response = await composeText.send();
-            expect(response).to.include.keys('id', 'conversation');
+            const responses = await composeText.send();
+            expect(responses[0]).to.include.keys('id', 'conversation');
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
               .to.equal(undefined);
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
@@ -370,8 +370,8 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
           it('Should Not Alert Anything - to Number in (xxx) xxx-xxxx*xxx Format', async () => {
             composeText.updateTypingToNumber('(855) 899-0011*101');
             composeText.updateMessageText('test');
-            const response = await composeText.send();
-            expect(response).to.include.keys('id', 'conversation');
+            const responses = await composeText.send();
+            expect(responses[0]).to.include.keys('id', 'conversation');
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
               .to.equal(undefined);
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
@@ -387,8 +387,8 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
           it('Should Not Alert Anything - to Number in xxx-xxx-xxxx Format', async () => {
             composeText.updateTypingToNumber('855-899-0011');
             composeText.updateMessageText('test');
-            const response = await composeText.send();
-            expect(response).to.include.keys('id', 'conversation');
+            const responses = await composeText.send();
+            expect(responses[0]).to.include.keys('id', 'conversation');
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
               .to.equal(undefined);
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
@@ -404,8 +404,8 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
           it('Should Not Alert Anything - to Number in xxx-xxx-xxxx*xxx Format', async () => {
             composeText.updateTypingToNumber('855-899-0011*101');
             composeText.updateMessageText('test');
-            const response = await composeText.send();
-            expect(response).to.include.keys('id', 'conversation');
+            const responses = await composeText.send();
+            expect(responses[0]).to.include.keys('id', 'conversation');
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
               .to.equal(undefined);
             expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
