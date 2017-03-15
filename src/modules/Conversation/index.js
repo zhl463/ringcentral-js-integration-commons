@@ -204,19 +204,19 @@ export default class Conversation extends RcModule {
       type: this.actionTypes.reply,
     });
     try {
-      const response = await this._messageSender
+      const responses = await this._messageSender
                                  .send({
                                    fromNumber: this._getFromNumber(),
                                    toNumbers: this._getToNumbers(),
                                    text,
                                    replyOnMessageId: this._getReplyOnMessageId(),
                                  });
-      if (response) {
-        this._messageStore.pushMessage(response);
+      if (responses && responses[0]) {
+        this._messageStore.pushMessage(responses[0]);
         this.store.dispatch({
           type: this.actionTypes.replySuccess,
         });
-        return response;
+        return responses[0];
       }
       this._onReplyError();
       return null;

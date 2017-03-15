@@ -69,193 +69,190 @@ describe('MessageSender Unit Test', () => {
   });
 
   describe('_shouldInit', () => {
-    it(`Should return true when messageSender is not ready with _extensionPhoneNumber and _extensionInfo all ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: true
-      };
-      messageSender._extensionInfo = {
-        ready: true
-      };
-      sinon.stub(messageSender, 'ready', { get: () => false });
-      expect(messageSender._shouldInit()).to.equal(true);
+    describe('when messageSender is not ready', () => {
+      beforeEach(() => {
+        sinon.stub(messageSender, 'ready', { get: () => false });
+      });
+
+      it('Should return true when _extensionPhoneNumber and _extensionInfo is all ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: true
+        };
+        messageSender._extensionInfo = {
+          ready: true
+        };
+        expect(messageSender._shouldInit()).to.equal(true);
+      });
+
+      it('Should return false when _extensionPhoneNumber and _extensionInfo is all not ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: false
+        };
+        messageSender._extensionInfo = {
+          ready: false
+        };
+        expect(messageSender._shouldInit()).to.equal(false);
+      });
+
+      it('Should return false when _extensionPhoneNumber is not ready and _extensionInfo is ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: false
+        };
+        messageSender._extensionInfo = {
+          ready: true
+        };
+        expect(messageSender._shouldInit()).to.equal(false);
+      });
+
+      it('Should return false when _extensionInfo is not ready and _extensionPhoneNumber is ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: true
+        };
+        messageSender._extensionInfo = {
+          ready: false
+        };
+        expect(messageSender._shouldInit()).to.equal(false);
+      });
     });
 
-    it(`Should return false when messageSender is not ready with _extensionPhoneNumber and _extensionInfo all not ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: false
-      };
-      messageSender._extensionInfo = {
-        ready: false
-      };
-      sinon.stub(messageSender, 'ready', { get: () => false });
-      expect(messageSender._shouldInit()).to.equal(false);
-    });
+    describe('when messageSender is ready', () => {
+      beforeEach(() => {
+        sinon.stub(messageSender, 'ready', { get: () => true });
+      });
 
-    it(`Should return false when messageSender and _extensionPhoneNumber is not ready with _extensionInfo ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: false
-      };
-      messageSender._extensionInfo = {
-        ready: true
-      };
-      sinon.stub(messageSender, 'ready', { get: () => false });
-      expect(messageSender._shouldInit()).to.equal(false);
-    });
+      it('Should return false when _extensionInfo and _extensionPhoneNumber is all ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: true
+        };
+        messageSender._extensionInfo = {
+          ready: true
+        };
+        expect(messageSender._shouldInit()).to.equal(false);
+      });
 
-    it(`Should return false when messageSender and _extensionInfo is not ready with _extensionPhoneNumber ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: true
-      };
-      messageSender._extensionInfo = {
-        ready: false
-      };
-      sinon.stub(messageSender, 'ready', { get: () => false });
-      expect(messageSender._shouldInit()).to.equal(false);
-    });
+      it('Should return false when  _extensionInfo is ready and _extensionPhoneNumber is not ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: false
+        };
+        messageSender._extensionInfo = {
+          ready: true
+        };
+        expect(messageSender._shouldInit()).to.equal(false);
+      });
 
-    it(`Should return false when messageSender, _extensionInfo and _extensionPhoneNumber is all ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: true
-      };
-      messageSender._extensionInfo = {
-        ready: true
-      };
-      sinon.stub(messageSender, 'ready', { get: () => true });
-      expect(messageSender._shouldInit()).to.equal(false);
-    });
+      it('Should return false when _extensionPhoneNumber is ready and _extensionInfo is not ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: true
+        };
+        messageSender._extensionInfo = {
+          ready: false
+        };
+        expect(messageSender._shouldInit()).to.equal(false);
+      });
 
-    it(`Should return false when messageSender and _extensionInfo is ready and _extensionPhoneNumber is not ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: false
-      };
-      messageSender._extensionInfo = {
-        ready: true
-      };
-      sinon.stub(messageSender, 'ready', { get: () => true });
-      expect(messageSender._shouldInit()).to.equal(false);
-    });
-
-    it(`Should return false when messageSender and _extensionInfo is ready and _extensionPhoneNumber is not ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: false
-      };
-      messageSender._extensionInfo = {
-        ready: true
-      };
-      sinon.stub(messageSender, 'ready', { get: () => true });
-      expect(messageSender._shouldInit()).to.equal(false);
-    });
-
-    it(`Should return false when messageSender and  _extensionPhoneNumber is ready and _extensionInfo is not ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: true
-      };
-      messageSender._extensionInfo = {
-        ready: false
-      };
-      sinon.stub(messageSender, 'ready', { get: () => true });
-      expect(messageSender._shouldInit()).to.equal(false);
-    });
-
-    it(`Should return false when messageSender is ready with _extensionPhoneNumber and _extensionInfo all not ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: false
-      };
-      messageSender._extensionInfo = {
-        ready: false
-      };
-      sinon.stub(messageSender, 'ready', { get: () => true });
-      expect(messageSender._shouldInit()).to.equal(false);
+      it('Should return false when _extensionPhoneNumber and _extensionInfo is all not ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: false
+        };
+        messageSender._extensionInfo = {
+          ready: false
+        };
+        expect(messageSender._shouldInit()).to.equal(false);
+      });
     });
   });
 
   describe('_shouldReset', () => {
-    it(`Should return true when messageSender is ready with _extensionPhoneNumber and _extensionInfo all not ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: false
-      };
-      messageSender._extensionInfo = {
-        ready: false
-      };
-      sinon.stub(messageSender, 'ready', { get: () => true });
-      expect(messageSender._shouldReset()).to.equal(true);
+    describe('when messageSender is ready', () => {
+      beforeEach(() => {
+        sinon.stub(messageSender, 'ready', { get: () => true });
+      });
+
+      it('Should return true when _extensionPhoneNumber and _extensionInfo all not ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: false
+        };
+        messageSender._extensionInfo = {
+          ready: false
+        };
+        expect(messageSender._shouldReset()).to.equal(true);
+      });
+
+      it('Should return true when _extensionInfo is ready and _extensionPhoneNumber is not ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: false
+        };
+        messageSender._extensionInfo = {
+          ready: true
+        };
+        expect(messageSender._shouldReset()).to.equal(true);
+      });
+
+      it('Should return true when _extensionPhoneNumber is ready with _extensionInfo not ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: true
+        };
+        messageSender._extensionInfo = {
+          ready: false
+        };
+        expect(messageSender._shouldReset()).to.equal(true);
+      });
+
+      it('Should return false when _extensionPhoneNumber and _extensionInfo all ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: true
+        };
+        messageSender._extensionInfo = {
+          ready: true
+        };
+        expect(messageSender._shouldReset()).to.equal(false);
+      });
     });
 
-    it(`Should return true when messageSender and _extensionInfo is ready with _extensionPhoneNumber not ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: false
-      };
-      messageSender._extensionInfo = {
-        ready: true
-      };
-      sinon.stub(messageSender, 'ready', { get: () => true });
-      expect(messageSender._shouldReset()).to.equal(true);
-    });
+    describe('when messageSender is not ready', () => {
+      beforeEach(() => {
+        sinon.stub(messageSender, 'ready', { get: () => false });
+      });
 
-    it(`Should return true when messageSender and _extensionPhoneNumber is ready with _extensionInfo not ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: true
-      };
-      messageSender._extensionInfo = {
-        ready: false
-      };
-      sinon.stub(messageSender, 'ready', { get: () => true });
-      expect(messageSender._shouldReset()).to.equal(true);
-    });
+      it('Should return false when _extensionPhoneNumber and _extensionInfo is all ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: true
+        };
+        messageSender._extensionInfo = {
+          ready: true
+        };
+        expect(messageSender._shouldReset()).to.equal(false);
+      });
 
-    it(`Should return false when messageSender _extensionPhoneNumber and _extensionInfo all ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: true
-      };
-      messageSender._extensionInfo = {
-        ready: true
-      };
-      sinon.stub(messageSender, 'ready', { get: () => true });
-      expect(messageSender._shouldReset()).to.equal(false);
-    });
+      it('Should return false when _extensionInfo is not ready and _extensionPhoneNumber is ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: true
+        };
+        messageSender._extensionInfo = {
+          ready: false
+        };
+        expect(messageSender._shouldReset()).to.equal(false);
+      });
 
-    it(`Should return false when messageSender not ready with _extensionPhoneNumber and _extensionInfo all ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: true
-      };
-      messageSender._extensionInfo = {
-        ready: true
-      };
-      sinon.stub(messageSender, 'ready', { get: () => false });
-      expect(messageSender._shouldReset()).to.equal(false);
-    });
+      it('Should return false when _extensionPhoneNumber is not ready and _extensionInfo is ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: false
+        };
+        messageSender._extensionInfo = {
+          ready: true
+        };
+        expect(messageSender._shouldReset()).to.equal(false);
+      });
 
-    it(`Should return false when messageSender, _extensionInfo is not ready and _extensionPhoneNumber is ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: true
-      };
-      messageSender._extensionInfo = {
-        ready: false
-      };
-      sinon.stub(messageSender, 'ready', { get: () => false });
-      expect(messageSender._shouldReset()).to.equal(false);
-    });
-
-    it(`Should return false when messageSender and _extensionPhoneNumber is not ready and _extensionInfo is ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: false
-      };
-      messageSender._extensionInfo = {
-        ready: true
-      };
-      sinon.stub(messageSender, 'ready', { get: () => false });
-      expect(messageSender._shouldReset()).to.equal(false);
-    });
-
-    it(`Should return false when messageSender, _extensionInfo and _extensionPhoneNumber is all not ready`, () => {
-      messageSender._extensionPhoneNumber = {
-        ready: false
-      };
-      messageSender._extensionInfo = {
-        ready: false
-      };
-      sinon.stub(messageSender, 'ready', { get: () => false });
-      expect(messageSender._shouldReset()).to.equal(false);
+      it('Should return false when _extensionInfo and _extensionPhoneNumber is all not ready', () => {
+        messageSender._extensionPhoneNumber = {
+          ready: false
+        };
+        messageSender._extensionInfo = {
+          ready: false
+        };
+        expect(messageSender._shouldReset()).to.equal(false);
+      });
     });
   });
 
@@ -629,7 +626,7 @@ describe('MessageSender Unit Test', () => {
       });
       sinon.assert.calledOnce(messageSender._sendSms);
       sinon.assert.notCalled(messageSender._sendPager);
-      expect(result).to.deep.equal({ id: '123456' });
+      expect(result).to.deep.equal([{ id: '123456' }]);
     });
 
     it('should not call _sendSms and call _sendPager', async () => {
@@ -655,7 +652,7 @@ describe('MessageSender Unit Test', () => {
       });
       sinon.assert.notCalled(messageSender._sendSms);
       sinon.assert.calledOnce(messageSender._sendPager);
-      expect(result).to.deep.equal({ id: '1234567' });
+      expect(result).to.deep.equal([{ id: '1234567' }]);
     });
 
     it('should call _sendSms and _sendPager together', async () => {
@@ -681,7 +678,7 @@ describe('MessageSender Unit Test', () => {
       });
       sinon.assert.calledOnce(messageSender._sendSms);
       sinon.assert.calledOnce(messageSender._sendPager);
-      expect(result).to.deep.equal({ id: '1234567' });
+      expect(result).to.deep.equal([{ id: '1234567' }, { id: '123456' }]);
     });
 
     it('should call _sendSms twice', async () => {
@@ -706,7 +703,7 @@ describe('MessageSender Unit Test', () => {
         text,
       });
       sinon.assert.callCount(messageSender._sendSms, 2);
-      expect(result).to.deep.equal({ id: '123456' });
+      expect(result).to.deep.equal([{ id: '123456' }, { id: '123456' }]);
     });
 
     it('should call _sendPager only once for multiply extensionNumbers', async () => {
@@ -730,7 +727,7 @@ describe('MessageSender Unit Test', () => {
         text,
       });
       sinon.assert.callCount(messageSender._sendPager, 1);
-      expect(result).to.deep.equal({ id: '123456' });
+      expect(result).to.deep.equal([{ id: '123456' }]);
     });
   });
 });

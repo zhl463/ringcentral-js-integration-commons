@@ -914,7 +914,7 @@ describe('Conversation Unit Test', () => {
   describe('replyToReceivers', () => {
     it('should return response successfully and not call _onReplyError', async () => {
       conversation._messageSender = {
-        send: () => ({ id: '1234567890', conversation: { id: '1234' } }),
+        send: () => ([{ id: '1234567890', conversation: { id: '1234' } }]),
       };
       conversation._messageStore = {
         pushMessage: () => null,
