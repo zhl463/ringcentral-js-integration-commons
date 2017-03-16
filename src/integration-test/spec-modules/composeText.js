@@ -695,6 +695,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
         });
         it('Should Alert of internationalSMSNotSupported - select international phone number', async () => {
           regionSettings.setData({countryCode: 'GB', areaCode: ''});
+          composeText.addToNumber({ phoneNumber: '8990011' });
           composeText.updateMessageText("test sender");
           try{
             await composeText.send();
