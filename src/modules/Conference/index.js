@@ -41,15 +41,6 @@ export default class Conference extends DataFetcher {
        }
     );
   }
-
-  // inviteWithText() {
-  //   let text = 'Please join the RingCentral conference.';
-  //   text += `Dial-In Numbers:${this.phoneNumber}`;
-  //   text += `Participant Access: ${this.participantCode}`;
-  //   text += 'Need an international dial-in phone number? Please visit http://www.ringcentral.com/conferencing';
-  //   text += 'This conference call is brought to you by RingCentral Conferencing.';
-  //   return text;
-  // }
   get conferenceNumbers() {
     return this._selectors.conferenceNumbers();
   }

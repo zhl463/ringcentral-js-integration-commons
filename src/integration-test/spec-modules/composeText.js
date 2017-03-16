@@ -693,6 +693,28 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
           expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
             .to.equal(undefined);
         });
+        it('Should Alert of internationalSMSNotSupported - select international phone number', async () => {
+          regionSettings.setData({countryCode: 'GB', areaCode: ''});
+          composeText.addToNumber({ phoneNumber: '8558990011' });
+          composeText.updateMessageText("test sender");
+          try{
+            await composeText.send();
+          }catch (error) {
+            console.debug('message sender e:', error);
+          }
+          expect(containsErrorMessage(
+            alert.state.messages,
+            messageSenderMessages.internationalSMSNotSupported
+          )).to.not.equal(undefined);
+          expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+            .to.equal(undefined);
+          expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+            .to.equal(undefined);
+          expect(containsErrorMessage(alert.state.messages, messageSenderMessages.notAnExtension))
+            .to.equal(undefined);
+          expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+            .to.equal(undefined);
+        });
       });
     });
   });
