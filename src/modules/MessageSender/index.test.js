@@ -486,6 +486,51 @@ describe('MessageSender Unit Test', () => {
       expect(result.result).to.equal(false);
     });
 
+
+    it(`should return result false and _alertWarning notAnExtension
+        if subAddress is not a extension number`, async () => {
+      sinon.stub(messageSender, '_alertWarning');
+      sinon.stub(messageSender, '_alertInvalidRecipientErrors');
+      const toNumbers = ['1234567890*999'];
+      messageSender._numberValidate = {
+        validateNumbers: () => ({
+          result: true,
+          numbers: [{
+            e164: '+1234567890',
+            subAddress: '999'
+          }]
+        }),
+        isCompanyExtension: () => false,
+      };
+      const result = await messageSender._validateToNumbers(toNumbers);
+      sinon.assert.calledWith(
+        messageSender._alertWarning,
+        messageSenderMessages.notAnExtension
+      );
+      expect(result.result).to.equal(false);
+    });
+
+    it('should return result true if subAddress is a included extension number', async () => {
+      sinon.stub(messageSender, '_alertWarning');
+      sinon.stub(messageSender, '_alertInvalidRecipientErrors');
+      const toNumbers = ['1234567890*101'];
+      messageSender._numberValidate = {
+        validateNumbers: () => ({
+          result: true,
+          numbers: [{
+            e164: '+1234567890',
+            subAddress: '101'
+          }]
+        }),
+        isCompanyExtension: () => true,
+      };
+      const result = await messageSender._validateToNumbers(toNumbers);
+      sinon.assert.notCalled(messageSender._alertInvalidRecipientErrors);
+      sinon.assert.notCalled(messageSender._alertWarning);
+      expect(result.result).to.equal(true);
+      expect(result.numbers).to.deep.equal(['101']);
+    });
+
     it('should return result true and numbers', async () => {
       sinon.stub(messageSender, '_alertWarning');
       sinon.stub(messageSender, '_alertInvalidRecipientErrors');

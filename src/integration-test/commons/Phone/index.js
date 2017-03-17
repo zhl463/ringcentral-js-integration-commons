@@ -315,16 +315,23 @@ export default class Phone extends RcModule {
       client: this.client,
       getState: () => this.state.ringout,
     }));
+    this.addModule('numberValidate', new NumberValidate({
+      ...options,
+      client: this.client,
+      accountExtension: this.accountExtension,
+      regionSettings: this.regionSettings,
+      accountInfo: this.accountInfo,
+      getState: () => this.state.numberValidate,
+    }));
     this.addModule('call', new Call({
       ...options,
-      accountExtension: this.accountExtension,
       alert: this.alert,
       client: this.client,
       callingSettings: this.callingSettings,
       softphone: this.softphone,
       storage: this.storage,
-      regionSettings: this.regionSettings,
       ringout: this.ringout,
+      numberValidate: this.numberValidate,
       getState: () => this.state.call,
     }));
     // this.addModule('autoLogger', new AutoLogger({
@@ -363,14 +370,6 @@ export default class Phone extends RcModule {
       formatFn: entities => entities,
       readyCheckFn: () => true,
     });
-
-    this.addModule('numberValidate', new NumberValidate({
-      ...options,
-      client: this.client,
-      accountExtension: this.accountExtension,
-      regionSettings: this.regionSettings,
-      getState: () => this.state.numberValidate,
-    }));
 
     this.addModule('messageSender', new MessageSender({
       ...options,

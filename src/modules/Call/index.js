@@ -1,8 +1,6 @@
 import RcModule from '../../lib/RcModule';
 import callingModes from '../CallingSettings/callingModes';
 import moduleStatus from '../../enums/moduleStatus';
-import normalizeNumber from '../../lib/normalizeNumber';
-import parseNumber from '../../lib/parseNumber';
 
 import callActionTypes from './actionTypes';
 import getCallReducer, {
@@ -19,11 +17,10 @@ export default class Call extends RcModule {
     alert,
     client,
     storage,
-    regionSettings,
     callingSettings,
     softphone,
     ringout,
-    accountExtension,
+    numberValidate,
     ...options
   }) {
     super({
@@ -36,11 +33,10 @@ export default class Call extends RcModule {
     this._storage = storage;
     this._storageKey = 'lastCallNumber';
     this._reducer = getCallReducer(this.actionTypes);
-    this._regionSettings = regionSettings;
     this._callingSettings = callingSettings;
     this._ringout = ringout;
     this._softphone = softphone;
-    this._accountExtension = accountExtension;
+    this._numberValidate = numberValidate;
 
     this._storage.registerReducer({
       key: this._storageKey,
@@ -51,7 +47,7 @@ export default class Call extends RcModule {
   initialize() {
     this.store.subscribe(() => {
       if (
-        this._regionSettings.ready &&
+        this._numberValidate.ready &&
         this._callingSettings.ready &&
         this._storage.ready &&
         this.status === moduleStatus.pending
@@ -61,7 +57,7 @@ export default class Call extends RcModule {
         });
       } else if (
         (
-          !this._regionSettings.ready ||
+          !this._numberValidate.ready ||
           !this._callingSettings.ready ||
           !this._storage.ready
         ) &&
@@ -116,6 +112,7 @@ export default class Call extends RcModule {
               payroll: error
             });
           } else if (error.message === 'Failed to fetch') {
+            console.log(error);
             this._alert.danger({
               message: callErrors.networkError,
               payroll: error,
@@ -136,73 +133,34 @@ export default class Call extends RcModule {
 
   async _getValidatedNumbers() {
     const fromNumber = this._callingSettings.myLocation;
-    const countryCode = this._regionSettings.countryCode;
-    const areaCode = this._regionSettings.areaCode;
-
-    const {
-      hasPlus,
-      number,
-      isServiceNumber,
-      hasInvalidChars,
-    } = parseNumber(this.toNumber);
-    // include special char or cleaned has no digit (only #*+)
-    if (hasInvalidChars || number === '') {
-      this._alert.warning({
-        message: callErrors.noToNumber,
-      });
-    } else if (
-      !isServiceNumber &&
-      !hasPlus &&
-      number.length === 7 &&
-      (countryCode === 'CA' || countryCode === 'US') &&
-      areaCode === ''
-    ) {
-      this._alert.warning({
-        message: callErrors.noAreaCode
-      });
-    } else {
-      // to e164 normalize
-      const normalized = normalizeNumber({
-        phoneNumber: this.toNumber,
-        countryCode,
-        areaCode,
-      });
-      // phoneParser
-      const homeCountry = countryCode ? { homeCountry: countryCode } : {};
-      const resp = await this._client.numberParser().parse().post(
-        {
-          originalStrings: [normalized, fromNumber]
-        },
-        homeCountry,
-      );
-      if (resp.phoneNumbers[0] && resp.phoneNumbers[0].special) {
-        this._alert.warning({
-          message: callErrors.specialNumber
-        });
-      } else if (resp.phoneNumbers[0] &&
-        resp.phoneNumbers[0].originalString.length <= 5 &&
-        !this._accountExtension.isAvailableExtension(resp.phoneNumbers[0].originalString)
-      ) { // not a service code but short number, confirm if it is an extension
-        this._alert.warning({
-          message: callErrors.notAnExtension
-        });
-      } else {
-        // using e164 in response to call
-        let parsedFromNumber =
-          resp.phoneNumbers[1] ? resp.phoneNumbers[1].e164 : '';
-        // add ext back if any
-        if (parsedFromNumber !== '') {
-          parsedFromNumber = (resp.phoneNumbers[1].subAddress) ?
-            [resp.phoneNumbers[1].e164, resp.phoneNumbers[1].subAddress].join('*') :
-            resp.phoneNumbers[1].e164;
-        }
-        return {
-          toNumber: resp.phoneNumbers[0].e164,
-          fromNumber: parsedFromNumber,
-        };
-      }
+    const waitingValidateNumbers = [this.toNumber];
+    if (fromNumber && fromNumber.length > 0) {
+      waitingValidateNumbers.push(fromNumber);
     }
-    return null;
+    const validatedResult
+      = await this._numberValidate.validateNumbers(waitingValidateNumbers);
+    if (!validatedResult.result) {
+      validatedResult.errors.forEach((error) => {
+        this._alert.warning({
+          message: callErrors[error.type]
+        });
+      });
+      return null;
+    }
+    const parsedNumbers = validatedResult.numbers;
+    // using e164 in response to call
+    let parsedFromNumber =
+      parsedNumbers[1] ? parsedNumbers[1].e164 : '';
+    // add ext back if any
+    if (parsedFromNumber !== '') {
+      parsedFromNumber = (parsedNumbers[1].subAddress) ?
+        [parsedNumbers[1].e164, parsedNumbers[1].subAddress].join('*') :
+        parsedNumbers[1].e164;
+    }
+    return {
+      toNumber: parsedNumbers[0].e164,
+      fromNumber: parsedFromNumber,
+    };
   }
 
   async _makeCall({ toNumber, fromNumber }) {

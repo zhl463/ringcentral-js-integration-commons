@@ -23,7 +23,8 @@ describe('NumberValidate Unit Test', () => {
       'isNoToNumber',
       'isNoAreaCode',
       '_isSpecial',
-      '_isNotAnExtension',
+      'isNotAnExtension',
+      'isCompanyExtension',
       'validateNumbers',
       'validateFormat',
       'validateWithNumberParser',
@@ -67,182 +68,435 @@ describe('NumberValidate Unit Test', () => {
   });
 
   describe('_shouldInit', () => {
-    it('Should return true when _regionSettings is ready, _accountExtension is ready and numberValidate is not ready', () => {
-      numberValidate._regionSettings = {
-        ready: true
-      };
-      numberValidate._accountExtension = {
-        ready: true
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => false });
-      expect(numberValidate._shouldInit()).to.equal(true);
+    describe('when numberValidate is not ready', () => {
+      beforeEach(() => {
+        sinon.stub(numberValidate, 'ready', { get: () => false });
+      });
+
+      describe('when accountInfo is ready', () => {
+        beforeEach(() => {
+          numberValidate._accountInfo = {
+            ready: true
+          };
+        });
+
+        it('Should return true when _regionSettings is ready, _accountExtension is ready', () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldInit()).to.equal(true);
+        });
+
+        it(`Should return false when _regionSettings is not ready and
+            _accountExtension is ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings is ready and
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings is not ready and
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+      });
+
+      describe('when accountInfo is not ready', () => {
+        beforeEach(() => {
+          numberValidate._accountInfo = {
+            ready: false
+          };
+        });
+
+        it('Should return false when _regionSettings is ready, _accountExtension is ready', () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings is not ready and
+            _accountExtension is ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings is ready and
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings is not ready and
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+      });
     });
 
-    it('Should return false when _regionSettings is not ready, _accountExtension is ready and numberValidate is not ready', () => {
-      numberValidate._regionSettings = {
-        ready: false
-      };
-      numberValidate._accountExtension = {
-        ready: true
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => false });
-      expect(numberValidate._shouldInit()).to.equal(false);
-    });
+    describe('when numberValidate is ready', () => {
+      beforeEach(() => {
+        sinon.stub(numberValidate, 'ready', { get: () => true });
+      });
 
-    it('Should return false when _regionSettings is ready, _accountExtension is not ready and numberValidate is not ready', () => {
-      numberValidate._regionSettings = {
-        ready: true
-      };
-      numberValidate._accountExtension = {
-        ready: false
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => false });
-      expect(numberValidate._shouldInit()).to.equal(false);
-    });
+      describe('when accountInfo is ready', () => {
+        beforeEach(() => {
+          numberValidate._accountInfo = {
+            ready: true
+          };
+        });
 
-    it('Should return false when _regionSettings is not ready, _accountExtension is not ready and numberValidate is not ready', () => {
-      numberValidate._regionSettings = {
-        ready: false
-      };
-      numberValidate._accountExtension = {
-        ready: false
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => false });
-      expect(numberValidate._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _regionSettings is ready, _accountExtension is ready', () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _regionSettings is ready, _accountExtension is ready and numberValidate is ready', () => {
-      numberValidate._regionSettings = {
-        ready: true
-      };
-      numberValidate._accountExtension = {
-        ready: true
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => true });
-      expect(numberValidate._shouldInit()).to.equal(false);
-    });
+        it(`Should return false when _regionSettings is not ready and
+            _accountExtension is ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _regionSettings is not ready, _accountExtension is ready and numberValidate is ready', () => {
-      numberValidate._regionSettings = {
-        ready: false
-      };
-      numberValidate._accountExtension = {
-        ready: true
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => true });
-      expect(numberValidate._shouldInit()).to.equal(false);
-    });
+        it(`Should return false when _regionSettings is ready and
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
 
-    it('Should return false when _regionSettings is ready, _accountExtension is not ready and numberValidate is ready', () => {
-      numberValidate._regionSettings = {
-        ready: true
-      };
-      numberValidate._accountExtension = {
-        ready: false
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => true });
-      expect(numberValidate._shouldInit()).to.equal(false);
-    });
+        it('Should return false when _regionSettings and _accountExtension is not ready', () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+      });
 
-    it('Should return false when _regionSettings is not ready, _accountExtension is not ready and numberValidate is ready', () => {
-      numberValidate._regionSettings = {
-        ready: false
-      };
-      numberValidate._accountExtension = {
-        ready: false
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => true });
-      expect(numberValidate._shouldInit()).to.equal(false);
+      describe('when accountInfo is not ready', () => {
+        beforeEach(() => {
+          numberValidate._accountInfo = {
+            ready: false
+          };
+        });
+
+        it('Should return false when _regionSettings is ready, _accountExtension is ready', () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings is not ready and
+            _accountExtension is ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings is ready and
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings and
+            _accountExtension is all not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldInit()).to.equal(false);
+        });
+      });
     });
   });
 
   describe('_shouldReset', () => {
-    it('Should return true when _regionSettings is ready, _accountExtension is ready and numberValidate is not ready', () => {
-      numberValidate._regionSettings = {
-        ready: true
-      };
-      numberValidate._accountExtension = {
-        ready: true
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => false });
-      expect(numberValidate._shouldReset()).to.equal(false);
+    describe('when numberValidate is not ready', () => {
+      beforeEach(() => {
+        sinon.stub(numberValidate, 'ready', { get: () => false });
+      });
+
+      describe('when accountInfo is not ready', () => {
+        beforeEach(() => {
+          numberValidate._accountInfo = {
+            ready: false
+          };
+        });
+
+        it('Should return false when _regionSettings _accountExtension is all ready', () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldReset()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings is not ready,
+            _accountExtension is ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldReset()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings is ready,
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldReset()).to.equal(false);
+        });
+
+        it('Should return false when _regionSettings and _accountExtension is not ready', () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldReset()).to.equal(false);
+        });
+      });
+
+      describe('when accountInfo is ready', () => {
+        beforeEach(() => {
+          numberValidate._accountInfo = {
+            ready: true
+          };
+        });
+
+        it('Should return false when _regionSettings _accountExtension is all ready', () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldReset()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings is not ready and
+            _accountExtension is ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldReset()).to.equal(false);
+        });
+
+        it(`Should return false when _regionSettings is ready,
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldReset()).to.equal(false);
+        });
+
+        it('Should return false when _regionSettings and _accountExtension is not ready', () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldReset()).to.equal(false);
+        });
+      });
     });
 
-    it('Should return false when _regionSettings is not ready, _accountExtension is ready and numberValidate is not ready', () => {
-      numberValidate._regionSettings = {
-        ready: false
-      };
-      numberValidate._accountExtension = {
-        ready: true
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => false });
-      expect(numberValidate._shouldReset()).to.equal(false);
-    });
+    describe('when numberValidate is ready', () => {
+      beforeEach(() => {
+        sinon.stub(numberValidate, 'ready', { get: () => true });
+      });
 
-    it('Should return false when _regionSettings is ready, _accountExtension is not ready and numberValidate is not ready', () => {
-      numberValidate._regionSettings = {
-        ready: true
-      };
-      numberValidate._accountExtension = {
-        ready: false
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => false });
-      expect(numberValidate._shouldReset()).to.equal(false);
-    });
+      describe('when accountInfo is not ready', () => {
+        beforeEach(() => {
+          numberValidate._accountInfo = {
+            ready: false
+          };
+        });
 
-    it('Should return false when _regionSettings is not ready, _accountExtension is not ready and numberValidate is not ready', () => {
-      numberValidate._regionSettings = {
-        ready: false
-      };
-      numberValidate._accountExtension = {
-        ready: false
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => false });
-      expect(numberValidate._shouldReset()).to.equal(false);
-    });
+        it('Should return true when _regionSettings and _accountExtension is all ready', () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldReset()).to.equal(true);
+        });
 
-    it('Should return false when _regionSettings is ready, _accountExtension is ready and numberValidate is ready', () => {
-      numberValidate._regionSettings = {
-        ready: true
-      };
-      numberValidate._accountExtension = {
-        ready: true
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => true });
-      expect(numberValidate._shouldReset()).to.equal(false);
-    });
+        it(`Should return true when _regionSettings is not ready and
+            _accountExtension is ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldReset()).to.equal(true);
+        });
 
-    it('Should return true when _regionSettings is not ready, _accountExtension is ready and numberValidate is ready', () => {
-      numberValidate._regionSettings = {
-        ready: false
-      };
-      numberValidate._accountExtension = {
-        ready: true
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => true });
-      expect(numberValidate._shouldReset()).to.equal(true);
-    });
+        it(`Should return true when _regionSettings is ready,
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldReset()).to.equal(true);
+        });
 
-    it('Should return true when _regionSettings is ready, _accountExtension is not ready and numberValidate is ready', () => {
-      numberValidate._regionSettings = {
-        ready: true
-      };
-      numberValidate._accountExtension = {
-        ready: false
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => true });
-      expect(numberValidate._shouldReset()).to.equal(true);
-    });
+        it(`Should return true when _regionSettings is not ready,
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldReset()).to.equal(true);
+        });
+      });
 
-    it('Should return true when _regionSettings is not ready, _accountExtension is not ready and numberValidate is ready', () => {
-      numberValidate._regionSettings = {
-        ready: false
-      };
-      numberValidate._accountExtension = {
-        ready: false
-      };
-      sinon.stub(numberValidate, 'ready', { get: () => true });
-      expect(numberValidate._shouldReset()).to.equal(true);
+      describe('when accountInfo is ready', () => {
+        beforeEach(() => {
+          numberValidate._accountInfo = {
+            ready: true
+          };
+        });
+
+        it('Should return false when _regionSettings and _accountExtension is all ready', () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldReset()).to.equal(false);
+        });
+
+        it(`Should return true when _regionSettings is not ready and
+            _accountExtension is ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: true
+          };
+          expect(numberValidate._shouldReset()).to.equal(true);
+        });
+
+        it(`Should return true when _regionSettings is ready and
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: true
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldReset()).to.equal(true);
+        });
+
+        it(`Should return true when _regionSettings is not ready and
+            _accountExtension is not ready`, () => {
+          numberValidate._regionSettings = {
+            ready: false
+          };
+          numberValidate._accountExtension = {
+            ready: false
+          };
+          expect(numberValidate._shouldReset()).to.equal(true);
+        });
+      });
     });
   });
 
@@ -364,12 +618,12 @@ describe('NumberValidate Unit Test', () => {
     });
   });
 
-  describe('_isNotAnExtension', () => {
+  describe('isNotAnExtension', () => {
     it('should return false if extensionNumber is null', () => {
       numberValidate._accountExtension = {
         isAvailableExtension: () => false,
       };
-      const result = numberValidate._isNotAnExtension(null);
+      const result = numberValidate.isNotAnExtension(null);
       expect(result).to.equal(false);
     });
 
@@ -377,7 +631,7 @@ describe('NumberValidate Unit Test', () => {
       numberValidate._accountExtension = {
         isAvailableExtension: () => false,
       };
-      const result = numberValidate._isNotAnExtension('123456');
+      const result = numberValidate.isNotAnExtension('123456');
       expect(result).to.equal(false);
     });
 
@@ -385,7 +639,7 @@ describe('NumberValidate Unit Test', () => {
       numberValidate._accountExtension = {
         isAvailableExtension: () => true,
       };
-      const result = numberValidate._isNotAnExtension('12345');
+      const result = numberValidate.isNotAnExtension('12345');
       expect(result).to.equal(false);
     });
 
@@ -393,7 +647,54 @@ describe('NumberValidate Unit Test', () => {
       numberValidate._accountExtension = {
         isAvailableExtension: () => false,
       };
-      const result = numberValidate._isNotAnExtension('12345');
+      const result = numberValidate.isNotAnExtension('12345');
+      expect(result).to.equal(true);
+    });
+  });
+
+  describe('isCompanyExtension', () => {
+    it('should return false if companyNumber is not mainCompanyNumber', () => {
+      numberValidate._accountExtension = {
+        isAvailableExtension: () => true,
+      };
+      numberValidate._regionSettings = {
+        countryCode: 'US',
+        areaCode: '',
+      };
+      numberValidate._accountInfo = {
+        mainCompanyNumber: '+1234567890',
+      };
+      const result = numberValidate.isCompanyExtension('+1234567891', '101');
+      expect(result).to.equal(false);
+    });
+
+    it('should return false if extensionNumber is not AvailableExtension', () => {
+      numberValidate._accountExtension = {
+        isAvailableExtension: () => false,
+      };
+      numberValidate._regionSettings = {
+        countryCode: 'US',
+        areaCode: '',
+      };
+      numberValidate._accountInfo = {
+        mainCompanyNumber: '+1234567890',
+      };
+      const result = numberValidate.isCompanyExtension('+1234567890', '999');
+      expect(result).to.equal(false);
+    });
+
+    it('should return true if extensionNumber is AvailableExtension', () => {
+      numberValidate._accountExtension = {
+        isAvailableExtension: () => true,
+      };
+      numberValidate._regionSettings = {
+        countryCode: 'US',
+        areaCode: '',
+      };
+      numberValidate._accountInfo = {
+        mainCompanyNumber: '+1234567890',
+      };
+      const result = numberValidate.isCompanyExtension('+1234567890', '999');
       expect(result).to.equal(true);
     });
   });
@@ -452,7 +753,7 @@ describe('NumberValidate Unit Test', () => {
         () => [{ special: true, originalString: '999' }]
       );
       sinon.stub(numberValidate, '_isSpecial').callsFake(() => true);
-      sinon.stub(numberValidate, '_isNotAnExtension').callsFake(() => false);
+      sinon.stub(numberValidate, 'isNotAnExtension').callsFake(() => false);
       const result = await numberValidate.validateWithNumberParser(['999']);
       expect(result).to.deep.equal({
         result: false,
@@ -466,7 +767,7 @@ describe('NumberValidate Unit Test', () => {
         () => [{ special: true, originalString: '999' }]
       );
       sinon.stub(numberValidate, '_isSpecial').callsFake(() => false);
-      sinon.stub(numberValidate, '_isNotAnExtension').callsFake(() => true);
+      sinon.stub(numberValidate, 'isNotAnExtension').callsFake(() => true);
       const result = await numberValidate.validateWithNumberParser(['999']);
       expect(result).to.deep.equal({
         result: false,
@@ -480,7 +781,7 @@ describe('NumberValidate Unit Test', () => {
         () => [{ special: true, originalString: '999' }]
       );
       sinon.stub(numberValidate, '_isSpecial').callsFake(() => false);
-      sinon.stub(numberValidate, '_isNotAnExtension').callsFake(() => false);
+      sinon.stub(numberValidate, 'isNotAnExtension').callsFake(() => false);
       const result = await numberValidate.validateWithNumberParser(['999']);
       expect(result).to.deep.equal({
         result: true,

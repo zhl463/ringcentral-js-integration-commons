@@ -351,7 +351,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
           });
 
           it('Should Not Alert Anything - to Number in (xxx)xxx-xxxx*xxx Format', async () => {
-            composeText.updateTypingToNumber('(855)899-0011*101');
+            composeText.updateTypingToNumber('(888)349-5556*101');
             composeText.updateMessageText('test');
             const responses = await composeText.send();
             expect(responses[0]).to.include.keys('id', 'conversation');
@@ -368,7 +368,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
           });
 
           it('Should Not Alert Anything - to Number in (xxx) xxx-xxxx*xxx Format', async () => {
-            composeText.updateTypingToNumber('(855) 899-0011*101');
+            composeText.updateTypingToNumber('(888) 349-5556*101');
             composeText.updateMessageText('test');
             const responses = await composeText.send();
             expect(responses[0]).to.include.keys('id', 'conversation');
@@ -402,7 +402,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
           });
 
           it('Should Not Alert Anything - to Number in xxx-xxx-xxxx*xxx Format', async () => {
-            composeText.updateTypingToNumber('855-899-0011*101');
+            composeText.updateTypingToNumber('888-349-5556*101');
             composeText.updateMessageText('test');
             const responses = await composeText.send();
             expect(responses[0]).to.include.keys('id', 'conversation');
@@ -522,6 +522,22 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
 
             it('Should Alert of notAnExtension - To Number', async () => {
               composeText.addToNumber({ phoneNumber: '11111' });
+              composeText.updateMessageText('test sender');
+              await composeText.send();
+              expect(containsErrorMessage(
+                alert.state.messages,
+                messageSenderMessages.notAnExtension
+              )).to.not.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noAreaCode))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.specialNumber))
+                .to.equal(undefined);
+              expect(containsErrorMessage(alert.state.messages, messageSenderMessages.noToNumber))
+                .to.equal(undefined);
+            });
+
+            it('Should Alert of notAnExtension - To Number (xxx)xxx-xxxx*xxx Format', async () => {
+              composeText.addToNumber({ phoneNumber: '(888) 349-5556*999' });
               composeText.updateMessageText('test sender');
               await composeText.send();
               expect(containsErrorMessage(

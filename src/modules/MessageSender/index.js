@@ -141,7 +141,8 @@ export default class MessageSender extends RcModule {
     if (this._validateToNumbersIsEmpty(toNumbers)) {
       return result;
     }
-    let recipientNumbers = toNumbers.filter((item, index, arr) => arr.indexOf(item) === index);
+    const recipientNumbers
+      = toNumbers.filter((item, index, arr) => arr.indexOf(item) === index);
     this.store.dispatch({ type: this.actionTypes.validate });
     const numberValidateResult = await this._numberValidate.validateNumbers(recipientNumbers);
     if (!numberValidateResult.result) {
@@ -149,10 +150,23 @@ export default class MessageSender extends RcModule {
       this.store.dispatch({ type: this.actionTypes.validateError });
       return result;
     }
-
-    recipientNumbers = numberValidateResult.numbers.map(number => number.e164);
+    const numbers = [];
+    for (const number of numberValidateResult.numbers) {
+      if (number.subAddress && number.subAddress.length > 0) {
+        if (
+          !this._numberValidate.isCompanyExtension(number.e164, number.subAddress)
+        ) {
+          this._alertWarning(messageSenderMessages.notAnExtension);
+          this.store.dispatch({ type: this.actionTypes.validateError });
+          return result;
+        }
+        numbers.push(number.subAddress);
+      } else {
+        numbers.push(number.e164);
+      }
+    }
     result.result = true;
-    result.numbers = recipientNumbers;
+    result.numbers = numbers;
     return result;
   }
 

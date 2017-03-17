@@ -230,15 +230,21 @@ class DemoPhone extends RcModule {
       subscription: this.subscription,
       getState: () => this.state.accountExtension,
     }));
+    this.addModule('numberValidate', new NumberValidate({
+      client: this.client,
+      accountExtension: this.accountExtension,
+      regionSettings: this.regionSettings,
+      accountInfo: this.accountInfo,
+      getState: () => this.state.numberValidate,
+    }));
     this.addModule('call', new Call({
       alert: this.alert,
       client: this.client,
       storage: this.storage,
-      regionSettings: this.regionSettings,
       callingSettings: this.callingSettings,
       softphone: this.softphone,
       ringout: this.ringout,
-      accountExtension: this.accountExtension,
+      numberValidate: this.numberValidate,
       getState: () => this.state.call,
     }));
     this.addModule('presence', new Presence({
@@ -246,12 +252,6 @@ class DemoPhone extends RcModule {
       client: this.client,
       subscription: this.subscription,
       getState: () => this.state.presence,
-    }));
-    this.addModule('numberValidate', new NumberValidate({
-      client: this.client,
-      accountExtension: this.accountExtension,
-      regionSettings: this.regionSettings,
-      getState: () => this.state.numberValidate,
     }));
     this.addModule('messageSender', new MessageSender({
       alert: this.alert,

@@ -12,6 +12,7 @@ export default class NumberValidate extends RcModule {
     client,
     accountExtension,
     regionSettings,
+    accountInfo,
     ...options
   }) {
     super({
@@ -21,6 +22,7 @@ export default class NumberValidate extends RcModule {
     this._client = client;
     this._accountExtension = accountExtension;
     this._regionSettings = regionSettings;
+    this._accountInfo = accountInfo;
     this._reducer = getNumberValidateReducer(this.actionTypes);
   }
 
@@ -40,6 +42,7 @@ export default class NumberValidate extends RcModule {
     return (
       this._regionSettings.ready &&
       this._accountExtension.ready &&
+      this._accountInfo.ready &&
       !this.ready
     );
   }
@@ -53,6 +56,7 @@ export default class NumberValidate extends RcModule {
   _shouldReset() {
     return (
       (
+        !this._accountInfo.ready ||
         !this._regionSettings.ready ||
         !this._accountExtension.ready
       ) &&
@@ -107,14 +111,26 @@ export default class NumberValidate extends RcModule {
     return false;
   }
 
-  _isNotAnExtension(extensionNumber) {
-    if (extensionNumber &&
+  isNotAnExtension(extensionNumber) {
+    if (
+      extensionNumber &&
       extensionNumber.length <= 5 &&
       !this._accountExtension.isAvailableExtension(extensionNumber)
     ) {
       return true;
     }
     return false;
+  }
+
+  isCompanyExtension(companyNumber, extensionNumber) {
+    const countryCode = this._regionSettings.countryCode;
+    const areaCode = this._regionSettings.areaCode;
+    const normalizedCompanyNumber
+      = normalizeNumber({ phoneNumber: companyNumber, countryCode, areaCode });
+    if (normalizedCompanyNumber !== this._accountInfo.mainCompanyNumber) {
+      return false;
+    }
+    return this._accountExtension.isAvailableExtension(extensionNumber);
   }
 
   async validateNumbers(phoneNumbers) {
@@ -153,7 +169,7 @@ export default class NumberValidate extends RcModule {
         errors.push({ phoneNumber: phoneNumber.originalString, type: 'specialNumber' });
         return null;
       }
-      if (this._isNotAnExtension(phoneNumber.originalString)) {
+      if (this.isNotAnExtension(phoneNumber.originalString)) {
         errors.push({ phoneNumber: phoneNumber.originalString, type: 'notAnExtension' });
         return null;
       }
