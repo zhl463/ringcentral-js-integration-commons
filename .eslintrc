@@ -31,5 +31,6 @@
     "no-param-reassign": 0, // [].reduce are easier with this turned off,
     "jsx-a11y/label-has-for": 0, // allow implicit label for input implementation
     "no-multi-assign": 1,
+    "no-unused-expressions": 1
   }
 }

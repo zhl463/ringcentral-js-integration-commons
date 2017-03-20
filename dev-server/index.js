@@ -51,6 +51,8 @@ import ActivityMatcher from '../src/modules/ActivityMatcher';
 import DateTimeIntl from '../src/modules/DateTimeIntl';
 import Conference from '../src/modules/Conference';
 
+import DateTimeFormat from '../src/modules/DateTimeFormat';
+
 import config from './config';
 
 const DemoView = connect(state => ({
@@ -331,6 +333,11 @@ class DemoPhone extends RcModule {
       messageStore: this.messageStore,
       getState: () => this.state.messages,
     }));
+    this.addModule('dateTimeFormat', new DateTimeFormat({
+      locale: this.locale,
+      storage: this.storage,
+      getState: () => this.state.dateTimeFormat,
+    }));
     this.addModule('conference', new Conference({
       auth: this.auth,
       client: this.client,
@@ -377,6 +384,7 @@ class DemoPhone extends RcModule {
       messageStore: this.messageStore.reducer,
       conversation: this.conversation.reducer,
       messages: this.messages.reducer,
+      dateTimeFormat: this.dateTimeFormat.reducer,
       conference: this.conference.reducer,
       lastAction: (state = null, action) => {
         console.log(action);
