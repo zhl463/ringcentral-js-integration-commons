@@ -49,7 +49,7 @@ export default class DateTimeFormat extends RcModule {
     }
   }
   initialize() {
-    this._store.subscribe(() => this._onStateChange);
+    this.store.subscribe(() => this._onStateChange());
   }
   addFormatter({
     name,
