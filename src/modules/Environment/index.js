@@ -1,6 +1,6 @@
 import SDK from 'ringcentral';
 import RcModule from '../../lib/RcModule';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getEnvironmentReducer, {
   getServerReducer,
@@ -91,7 +91,7 @@ export default class Environment extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get server() {

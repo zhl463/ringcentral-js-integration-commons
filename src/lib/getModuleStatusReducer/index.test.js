@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import getModuleStatusReducer from './';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 const actionTypes = {
   init: 'init',
@@ -18,33 +18,33 @@ describe('getModuleStatusReducer', () => {
   });
   describe('defaultDataReducer', () => {
     const reducer = getModuleStatusReducer(actionTypes);
-    it('should have initial state of moduleStatus.pending', () => {
-      expect(reducer(undefined, {})).to.equal(moduleStatus.pending);
+    it('should have initial state of moduleStatuses.pending', () => {
+      expect(reducer(undefined, {})).to.equal(moduleStatuses.pending);
     });
     it('should return original state if type is not recognized', () => {
       const originalState = [];
       expect(reducer(originalState, { type: 'foo' }))
         .to.equal(originalState);
     });
-    it('should return moduleStatus.initializing on init', () => {
+    it('should return moduleStatuses.initializing on init', () => {
       expect(reducer(null, {
         type: actionTypes.init,
-      })).to.equal(moduleStatus.initializing);
+      })).to.equal(moduleStatuses.initializing);
     });
-    it('should return moduleStatus.ready on initSuccess', () => {
+    it('should return moduleStatuses.ready on initSuccess', () => {
       expect(reducer(null, {
         type: actionTypes.initSuccess,
-      })).to.equal(moduleStatus.ready);
+      })).to.equal(moduleStatuses.ready);
     });
-    it('should return moduleStatus.resetting on reset', () => {
+    it('should return moduleStatuses.resetting on reset', () => {
       expect(reducer(null, {
         type: actionTypes.reset,
-      })).to.equal(moduleStatus.resetting);
+      })).to.equal(moduleStatuses.resetting);
     });
-    it('should return moduleStatus.pending on resetSuccess', () => {
+    it('should return moduleStatuses.pending on resetSuccess', () => {
       expect(reducer(null, {
         type: actionTypes.resetSuccess,
-      })).to.equal(moduleStatus.pending);
+      })).to.equal(moduleStatuses.pending);
     });
   });
 });

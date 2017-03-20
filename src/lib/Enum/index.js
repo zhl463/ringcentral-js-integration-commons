@@ -26,8 +26,8 @@ const prefixCache = new Map();
  * @function
  * @description helper function to return a prefixed action definition maps
  */
-export function prefixEnum({ enumMap, prefix }) {
-  if (!prefix || prefix === '') return enumMap;
+export function prefixEnum({ enumMap, prefix, base = enumMap }) {
+  if (!prefix || prefix === '') return base;
 
   if (!prefixCache.has(prefix)) {
     prefixCache.set(prefix, new Map());
@@ -35,15 +35,15 @@ export function prefixEnum({ enumMap, prefix }) {
 
   const cache = prefixCache.get(prefix);
 
-  if (!cache.has(enumMap)) {
+  if (!cache.has(base)) {
     const definition = {};
-    for (const type in enumMap) {
+    for (const type in base) {
       /* istanbul ignore else */
-      if (enumMap::hasOwnProperty(type)) {
-        definition[type] = `${prefix}-${enumMap[type]}`;
+      if (base::hasOwnProperty(type)) {
+        definition[type] = `${prefix}-${base[type]}`;
       }
     }
-    cache.set(enumMap, new KeyValueMap(definition));
+    cache.set(base, new KeyValueMap(definition));
   }
-  return cache.get(enumMap);
+  return cache.get(base);
 }

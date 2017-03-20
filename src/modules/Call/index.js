@@ -1,6 +1,6 @@
 import RcModule from '../../lib/RcModule';
 import callingModes from '../CallingSettings/callingModes';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 import callActionTypes from './actionTypes';
 import getCallReducer, {
@@ -50,7 +50,7 @@ export default class Call extends RcModule {
         this._numberValidate.ready &&
         this._callingSettings.ready &&
         this._storage.ready &&
-        this.status === moduleStatus.pending
+        this.status === moduleStatuses.pending
       ) {
         this.store.dispatch({
           type: this.actionTypes.initSuccess,
@@ -61,7 +61,7 @@ export default class Call extends RcModule {
           !this._callingSettings.ready ||
           !this._storage.ready
         ) &&
-        this.status === moduleStatus.ready
+        this.status === moduleStatuses.ready
       ) {
         this.store.dispatch({
           type: this.actionTypes.resetSuccess,

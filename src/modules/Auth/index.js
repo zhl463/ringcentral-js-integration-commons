@@ -4,7 +4,7 @@ import getAuthReducer from './getAuthReducer';
 import actionTypes from './actionTypes';
 import loginStatus from './loginStatus';
 import authMessages from './authMessages';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import parseCallbackUri from '../../lib/parseCallbackUri';
 
 const DEFAULT_PROXY_RETRY = 5000;
@@ -145,7 +145,7 @@ export default class Auth extends RcModule {
     let loggedIn;
     this.store.subscribe(async () => {
       if (
-        this.status === moduleStatus.pending &&
+        this.status === moduleStatuses.pending &&
         this._locale.ready &&
         this._tabManager.ready &&
         (!this._environment || this._environment.ready)
@@ -212,7 +212,7 @@ export default class Auth extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get loginStatus() {

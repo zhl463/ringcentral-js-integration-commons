@@ -4,7 +4,7 @@ import { createStore } from 'redux';
 import MessageStore from './index';
 import getMessageStoreReducer from './getMessageStoreReducer';
 import actionTypes from './actionTypes';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import syncTypes from '../../enums/syncTypes';
 
 describe('MessageStore Unit Test', () => {
@@ -358,7 +358,7 @@ describe('MessageStore Unit Test', () => {
       };
       await messageStore._initMessageStore();
       sinon.assert.calledOnce(messageStore._syncMessages);
-      expect(store.getState().status).to.equal(moduleStatus.ready);
+      expect(store.getState().status).to.equal(moduleStatuses.ready);
     });
   });
 

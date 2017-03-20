@@ -1,6 +1,6 @@
 import 'core-js/fn/array/find';
 import RcModule from '../../lib/RcModule';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getCallMonitorReducer from './getCallMonitorReducer';
 import normalizeNumber from '../../lib/normalizeNumber';
@@ -242,11 +242,11 @@ export default class CallMonitor extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get pending() {
-    return this.state.status === moduleStatus.pending;
+    return this.state.status === moduleStatuses.pending;
   }
 
   get calls() {

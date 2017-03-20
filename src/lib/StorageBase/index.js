@@ -3,7 +3,7 @@ import { prefixEnum } from '../Enum';
 import SynchronizedStorage from '../../lib/SynchronizedStorage';
 
 import actionTypesBase from './actionTypesBase';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 import getStorageReducer from './getStorageReducer';
 
@@ -59,7 +59,7 @@ export default class Storage extends RcModule {
   }
 
   get ready() {
-    return this.status === moduleStatus.ready;
+    return this.status === moduleStatuses.ready;
   }
 
 }

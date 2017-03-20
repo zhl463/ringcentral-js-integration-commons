@@ -1,6 +1,6 @@
 import RcModule from '../../lib/RcModule';
 import isBlank from '../../lib/isBlank';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 import composeTextActionTypes from './composeTextActionTypes';
 import getComposeTextReducer from './getComposeTextReducer';
@@ -199,7 +199,7 @@ export default class ComposeText extends RcModule {
   }
 
   get ready() {
-    return this.status === moduleStatus.ready;
+    return this.status === moduleStatuses.ready;
   }
 
   get senderNumber() {

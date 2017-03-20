@@ -6,7 +6,7 @@ import getTabManagerReducer, {
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
 import actionTypes from './actionTypes';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 
 describe('getEventReducer', () => {

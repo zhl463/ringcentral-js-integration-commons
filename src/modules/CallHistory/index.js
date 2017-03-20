@@ -1,5 +1,5 @@
 import RcModule from '../../lib/RcModule';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import {
   sortByStartTime,
 } from '../../lib/callLogHelpers';
@@ -248,11 +248,11 @@ export default class CallHistory extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get pending() {
-    return this.state.status === moduleStatus.pending;
+    return this.state.status === moduleStatuses.pending;
   }
 
   get calls() {

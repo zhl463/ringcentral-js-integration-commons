@@ -1,5 +1,5 @@
 import RcModule from '../../lib/RcModule';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import sleep from '../../lib/sleep';
 
 export default class Softphone extends RcModule {
@@ -39,7 +39,7 @@ export default class Softphone extends RcModule {
 
   // eslint-disable-next-line class-methods-use-this
   get status() {
-    return moduleStatus.ready;
+    return moduleStatuses.ready;
   }
 
   // eslint-disable-next-line class-methods-use-this

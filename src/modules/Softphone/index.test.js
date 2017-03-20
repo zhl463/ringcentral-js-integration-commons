@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import Softphone from './index';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 describe('Softphone Unit Test', () => {
 
@@ -45,8 +45,8 @@ describe('Softphone Unit Test', () => {
 	});
 
 	describe('status', () => {
-		it('should return moduleStatus.ready', () => {
-			expect(softphone.status).to.equal(moduleStatus.ready);
+		it('should return moduleStatuses.ready', () => {
+			expect(softphone.status).to.equal(moduleStatuses.ready);
 		});
 	})
 

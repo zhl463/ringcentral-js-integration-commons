@@ -1,6 +1,6 @@
 import RcModule from '../../lib/RcModule';
 import actionTypes from './actionTypes';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import getRateLimiterReducer, {
   getTimestampReducer,
 } from './getRateLimiterReducer';
@@ -125,6 +125,6 @@ export default class RateLimiter extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 }

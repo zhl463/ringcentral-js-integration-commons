@@ -1,904 +1,949 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import { createStore } from 'redux';
 import DataMatcher from './index';
-import getMatcherReducer from './getMatcherReducer';
-import getCacheReducer from './getCacheReducer';
-import actionTypes from './actionTypesBase';
-import { matchResult } from './helpers';
+import { prefixEnum } from '../Enum';
+import baseActionTypes from './baseActionTypes';
+import moduleStatuses from '../../enums/moduleStatuses';
+import sleep from '../sleep';
+// import getMatcherReducer from './getMatcherReducer';
+// import getCacheReducer from './getCacheReducer';
+// import actionTypes from './actionTypesBase';
+// import { matchResult } from './helpers';
 
-describe('DataMatcher Unit Test', () => {
-  let dataMatcher;
-  let store;
+chai.use(chaiAsPromised);
 
-  beforeEach(() => {
-    dataMatcher = sinon.createStubInstance(DataMatcher);
-    store = createStore(getMatcherReducer(actionTypes, {
-      cache: getCacheReducer(actionTypes),
-    }));
-    dataMatcher._store = store;
-    dataMatcher._actionTypes = actionTypes;
-    [
-      '_onStateChange',
-      '_shouldInit',
-      '_shouldReset',
-      '_initModuleStatus',
-      '_resetModuleStatus',
-      '_readyCheck',
-      '_getExpiredKeys',
-      'addSearchSource',
-      'addQuerySource',
-      'triggerMatch',
-      'match',
-      '_filterQueriesFromCache',
-      '_matchSource',
-      '_startMatch',
-      '_finishMatch',
-      '_onMatchError',
-    ].forEach((key) => {
-      dataMatcher[key].restore();
+describe('DataMatcher', async () => {
+  describe('constructor', () => {
+    it('should throw if instancized without a "name" property', () => {
+      expect(() => (
+        new DataMatcher()
+      )).to.throw();
+      expect(() => (
+        new DataMatcher({
+          name: 'test',
+        })
+      )).to.not.throw();
+    });
+    it('should throw if "name" property is not a string', () => {
+      [{}, [], null, undefined, 123].forEach((name) => {
+        expect(() => (
+          new DataMatcher({
+            name,
+          })
+        )).to.throw();
+      });
+    });
+    it('should prefix baseActionTypes according to "name"', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      expect(instance.actionTypes)
+        .to.equal(prefixEnum({
+          base: baseActionTypes,
+          prefix: 'foo',
+        }));
+    });
+    it('should prefix baseActionTypes according to "name" and prefix', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+        prefix: 'bar',
+      });
+      expect(instance.actionTypes)
+        .to.equal(prefixEnum({
+          base: prefixEnum({
+            base: baseActionTypes,
+            prefix: 'foo',
+          }),
+          prefix: 'bar'
+        }));
+    });
+    it('should register dataReducer to storage if storage is found', () => {
+      const storage = {
+        registerReducer: sinon.stub(),
+      };
+      const instance = new DataMatcher({
+        name: 'foo',
+        storage,
+      });
+      expect(instance._storage).to.equal(storage);
+      sinon.assert.calledOnce(storage.registerReducer);
     });
   });
 
-  describe('_onStateChange', () => {
-    it('triggerMatch should be called once when _shouldInit is true', () => {
-      sinon.stub(dataMatcher, '_shouldInit').callsFake(() => true);
-      sinon.stub(dataMatcher, '_shouldReset').callsFake(() => false);
-      sinon.stub(dataMatcher, 'triggerMatch');
-      sinon.stub(dataMatcher, '_initModuleStatus');
-      sinon.stub(dataMatcher, '_getExpiredKeys');
-      sinon.stub(dataMatcher, '_resetModuleStatus');
-      dataMatcher._onStateChange();
-      sinon.assert.calledOnce(dataMatcher.triggerMatch);
-      sinon.assert.calledOnce(dataMatcher._initModuleStatus);
-      sinon.assert.notCalled(dataMatcher._resetModuleStatus);
+  describe('addQuerySource', () => {
+    const instance = new DataMatcher({
+      name: 'foo',
     });
-
-    it('_resetModuleStatus should be called once when _shouldReset is true', () => {
-      sinon.stub(dataMatcher, '_shouldInit').callsFake(() => false);
-      sinon.stub(dataMatcher, '_shouldReset').callsFake(() => true);
-      sinon.stub(dataMatcher, '_resetModuleStatus');
-      sinon.stub(dataMatcher, 'triggerMatch');
-      sinon.stub(dataMatcher, '_initModuleStatus');
-      dataMatcher._onStateChange();
-      sinon.assert.notCalled(dataMatcher.triggerMatch);
-      sinon.assert.notCalled(dataMatcher._initModuleStatus);
-      sinon.assert.calledOnce(dataMatcher._resetModuleStatus);
+    it('should be a function', () => {
+      expect(instance.addQuerySource).to.be.a('function');
     });
+    it('should add getQueriesFn and readyCheckFn to instance._querySources', () => {
+      const getQueriesFn = () => [];
+      const readyCheckFn = () => true;
+      instance.addQuerySource({
+        getQueriesFn,
+        readyCheckFn,
+      });
+      expect(instance._querySources.has(getQueriesFn)).to.equal(true);
+      expect(instance._querySources.get(getQueriesFn)).to.equal(readyCheckFn);
+    });
+    it('should throw when getQueriesFn is not a function', () => {
+      [{}, [], 123, undefined, null, 'foo'].forEach((getQueriesFn) => {
+        expect(() => {
+          instance.addQuerySource({
+            getQueriesFn,
+            readyCheckFn: () => true,
+          });
+        }).to.throw();
+      });
+    });
+    it('should throw when readyCheckFn is not a function', () => {
+      [{}, [], 123, undefined, null, 'foo'].forEach((readyCheckFn) => {
+        expect(() => {
+          instance.addQuerySource({
+            getQueriesFn: () => true,
+            readyCheckFn,
+          });
+        }).to.throw();
+      });
+    });
+    it('should throw when the same getQueriesFn is added twice', () => {
+      const getQueriesFn = () => [];
+      const readyCheckFn = () => true;
+      instance.addQuerySource({
+        getQueriesFn,
+        readyCheckFn,
+      });
+      expect(() => {
+        instance.addQuerySource({
+          getQueriesFn,
+          readyCheckFn,
+        });
+      }).to.throw();
+    });
+  });
 
-    it('triggerMatch and _resetModuleStatus should Not be called', () => {
-      sinon.stub(dataMatcher, '_shouldInit').callsFake(() => false);
-      sinon.stub(dataMatcher, '_shouldReset').callsFake(() => false);
-      sinon.stub(dataMatcher, '_resetModuleStatus');
-      sinon.stub(dataMatcher, 'triggerMatch');
-      sinon.stub(dataMatcher, '_initModuleStatus');
-      dataMatcher._onStateChange();
-      sinon.assert.notCalled(dataMatcher._resetModuleStatus);
-      sinon.assert.notCalled(dataMatcher._initModuleStatus);
-      sinon.assert.notCalled(dataMatcher.triggerMatch);
+  describe('addSearchProvider', () => {
+    const instance = new DataMatcher({
+      name: 'foo',
+    });
+    it('should be a function', () => {
+      expect(instance.addSearchProvider).to.be.a('function');
+    });
+    it('should add getQueriesFn and readyCheckFn to instance._querySources', () => {
+      const searchFn = () => { };
+      const readyCheckFn = () => true;
+      const name = 'bar';
+      instance.addSearchProvider({
+        name,
+        searchFn,
+        readyCheckFn,
+      });
+      expect(instance._searchProviders.has(name)).to.equal(true);
+      expect(instance._searchProviders.get(name)).to.deep.equal({
+        searchFn,
+        readyCheckFn,
+      });
+    });
+    it('should throw when name is not defined', () => {
+      const searchFn = () => { };
+      const readyCheckFn = () => true;
+      expect(() => {
+        instance.addSearchProvider({
+          searchFn,
+          readyCheckFn,
+        });
+      }).to.throw();
+    });
+    it('should throw when a provider of the same name was already added', () => {
+      const searchFn = () => { };
+      const readyCheckFn = () => true;
+      const name = 'rogue';
+      instance.addSearchProvider({
+        name,
+        searchFn,
+        readyCheckFn,
+      });
+      expect(() => {
+        instance.addSearchProvider({
+          name,
+          searchFn,
+          readyCheckFn,
+        });
+      }).to.throw();
+    });
+    it('should throw when searchFn is not a function', () => {
+      const readyCheckFn = () => true;
+      const name = 'rogue2';
+      [null, undefined, {}, [], 123, '123'].forEach((searchFn) => {
+        expect(() => {
+          instance.addSearchProvider({
+            name,
+            searchFn,
+            readyCheckFn,
+          });
+        }).to.throw();
+      });
+    });
+    it('should throw when readyCheckFn is not a function', () => {
+      const searchFn = () => { };
+      const name = 'rogue2';
+      [null, undefined, {}, [], 123, '123'].forEach((readyCheckFn) => {
+        expect(() => {
+          instance.addSearchProvider({
+            name,
+            searchFn,
+            readyCheckFn,
+          });
+        }).to.throw();
+      });
     });
   });
 
   describe('_shouldInit', () => {
-    describe('when dataMatcher is not ready', () => {
-      beforeEach(() => {
-        sinon.stub(dataMatcher, 'ready', { get: () => false });
-      });
+    const options = [true, false];
+    options.forEach((modulePending) => {
+      options.forEach((searchProvidersReady) => {
+        options.forEach((querySourcesReady) => {
+          const result = modulePending && searchProvidersReady && querySourcesReady;
+          it(`should return ${result} when this.pending === ${modulePending}, this.searchProvidersReady === ${searchProvidersReady}, and this.querySourcesReady === ${querySourcesReady}`, () => {
+            const instance = new DataMatcher({
+              name: 'foo',
+            });
+            sinon.stub(instance, 'pending', {
+              get: () => modulePending,
+            });
+            sinon.stub(instance, 'searchProvidersReady', {
+              get: () => searchProvidersReady,
+            });
+            sinon.stub(instance, 'querySourcesReady', {
+              get: () => querySourcesReady,
+            });
+            expect(instance._shouldInit()).to.equal(result);
+          });
 
-      describe('when _auth is loggedIn', () => {
-        beforeEach(() => {
-          dataMatcher._auth = {
-            loggedIn: true,
-          };
-        });
-
-        it('Should return true when _storage is ready and _readyCheck return true', () => {
-          dataMatcher._storage = {
-            ready: true
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(true);
-        });
-
-        it('Should return false when _storage is ready and _readyCheck return false', () => {
-          dataMatcher._storage = {
-            ready: true
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is not ready and _readyCheck return true', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is not ready and _readyCheck return false', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return true when _storage is undefined and _readyCheck return true', () => {
-          dataMatcher._storage = undefined;
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(true);
-        });
-
-        it('Should return false when _storage is undefined and _readyCheck return false', () => {
-          dataMatcher._storage = undefined;
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-      });
-
-      describe('when _auth is not loggedIn', () => {
-        beforeEach(() => {
-          dataMatcher._auth = {
-            loggedIn: false,
-          };
-        });
-
-        it('Should return false when _storage is ready and _readyCheck return true', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is ready and _readyCheck return false', () => {
-          dataMatcher._storage = {
-            ready: true
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is not ready and _readyCheck return true', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is not ready and _readyCheck return false', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is undefined and _readyCheck return true', () => {
-          dataMatcher._storage = undefined;
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is undefined and _readyCheck return false', () => {
-          dataMatcher._storage = undefined;
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-      });
-    });
-
-    describe('when dataMatcher is ready', () => {
-      beforeEach(() => {
-        sinon.stub(dataMatcher, 'ready', { get: () => true });
-      });
-
-      describe('when _auth is loggedIn', () => {
-        beforeEach(() => {
-          dataMatcher._auth = {
-            loggedIn: true,
-          };
-        });
-
-        it('Should return false when _storage is ready and _readyCheck return true', () => {
-          dataMatcher._storage = {
-            ready: true
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is ready and _readyCheck return false', () => {
-          dataMatcher._storage = {
-            ready: true
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is not ready and _readyCheck return true', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is not ready and _readyCheck return false', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is undefined and _readyCheck return true', () => {
-          dataMatcher._storage = undefined;
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is undefined and _readyCheck return false', () => {
-          dataMatcher._storage = undefined;
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-      });
-
-      describe('when _auth is not loggedIn', () => {
-        beforeEach(() => {
-          dataMatcher._auth = {
-            loggedIn: false,
-          };
-        });
-
-        it('Should return false when _storage is ready and _readyCheck return true', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is ready and _readyCheck return false', () => {
-          dataMatcher._storage = {
-            ready: true
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is not ready and _readyCheck return true', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is not ready and _readyCheck return false', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is undefined and _readyCheck return true', () => {
-          dataMatcher._storage = undefined;
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => true);
-          expect(dataMatcher._shouldInit()).to.equal(false);
-        });
-
-        it('Should return false when _storage is undefined and _readyCheck return false', () => {
-          dataMatcher._storage = undefined;
-          sinon.stub(dataMatcher, '_readyCheck').callsFake(() => false);
-          expect(dataMatcher._shouldInit()).to.equal(false);
+          options.forEach((storageReady) => {
+            const sResult = modulePending && searchProvidersReady &&
+              querySourcesReady && storageReady;
+            it(`should return ${sResult} when this.pending === ${modulePending}, this.searchProvidersReady === ${searchProvidersReady}, this.querySourcesReady === ${querySourcesReady}, and this._storage.ready === ${storageReady}`, () => {
+              const sInstance = new DataMatcher({
+                name: 'foo',
+                storage: {
+                  ready: storageReady,
+                  registerReducer: () => { },
+                },
+              });
+              sinon.stub(sInstance, 'pending', {
+                get: () => modulePending,
+              });
+              sinon.stub(sInstance, 'searchProvidersReady', {
+                get: () => searchProvidersReady,
+              });
+              sinon.stub(sInstance, 'querySourcesReady', {
+                get: () => querySourcesReady,
+              });
+              expect(sInstance._shouldInit()).to.equal(sResult);
+            });
+          });
         });
       });
     });
   });
 
   describe('_shouldReset', () => {
-    describe('when dataMatcher is ready', () => {
-      beforeEach(() => {
-        sinon.stub(dataMatcher, 'ready', { get: () => true });
-      });
+    const options = [true, false];
+    options.forEach((moduleReady) => {
+      options.forEach((searchProvidersReady) => {
+        options.forEach((querySourcesReady) => {
+          const result = moduleReady && (!searchProvidersReady || !querySourcesReady);
+          it(`should return ${result} when this.ready === ${moduleReady}, this.searchProvidersReady === ${searchProvidersReady}, and this.querySourcesReady === ${querySourcesReady}`, () => {
+            const instance = new DataMatcher({
+              name: 'foo',
+            });
+            sinon.stub(instance, 'ready', {
+              get: () => moduleReady,
+            });
+            sinon.stub(instance, 'searchProvidersReady', {
+              get: () => searchProvidersReady,
+            });
+            sinon.stub(instance, 'querySourcesReady', {
+              get: () => querySourcesReady,
+            });
+            expect(instance._shouldReset()).to.equal(result);
+          });
 
-      describe('when _auth is loggedIn', () => {
-        beforeEach(() => {
-          dataMatcher._auth = {
-            loggedIn: true,
-          };
-        });
-
-        it('Should return true when _storage is not ready', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          expect(dataMatcher._shouldReset()).to.equal(true);
-        });
-
-        it('Should return false when _storage is ready', () => {
-          dataMatcher._storage = {
-            ready: true
-          };
-          expect(dataMatcher._shouldReset()).to.equal(false);
-        });
-
-        it('Should return false when _storage is undefined', () => {
-          dataMatcher._storage = undefined;
-          expect(dataMatcher._shouldReset()).to.equal(false);
-        });
-      });
-
-      describe('when _auth is not loggedIn', () => {
-        beforeEach(() => {
-          dataMatcher._auth = {
-            loggedIn: false,
-          };
-        });
-
-        it('Should return true when _storage is not ready', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          expect(dataMatcher._shouldReset()).to.equal(true);
-        });
-
-        it('Should return true when _storage is ready', () => {
-          dataMatcher._storage = {
-            ready: true
-          };
-          expect(dataMatcher._shouldReset()).to.equal(true);
-        });
-
-        it('Should return true when _storage is undefined', () => {
-          dataMatcher._storage = undefined;
-          expect(dataMatcher._shouldReset()).to.equal(true);
-        });
-      });
-    });
-
-    describe('when dataMatcher is not ready', () => {
-      beforeEach(() => {
-        sinon.stub(dataMatcher, 'ready', { get: () => false });
-      });
-
-      describe('when _auth is loggedIn', () => {
-        beforeEach(() => {
-          dataMatcher._auth = {
-            loggedIn: true,
-          };
-        });
-
-        it('Should return false when _storage is not ready', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          expect(dataMatcher._shouldReset()).to.equal(false);
-        });
-
-        it('Should return false when _storage is ready', () => {
-          dataMatcher._storage = {
-            ready: true
-          };
-          expect(dataMatcher._shouldReset()).to.equal(false);
-        });
-
-        it('Should return false when _storage is undefined', () => {
-          dataMatcher._storage = undefined;
-          expect(dataMatcher._shouldReset()).to.equal(false);
-        });
-      });
-
-      describe('when _auth is not loggedIn', () => {
-        beforeEach(() => {
-          dataMatcher._auth = {
-            loggedIn: false,
-          };
-        });
-
-        it('Should return false when _storage is not ready', () => {
-          dataMatcher._storage = {
-            ready: false
-          };
-          expect(dataMatcher._shouldReset()).to.equal(false);
-        });
-
-        it('Should return false when _storage is ready', () => {
-          dataMatcher._storage = {
-            ready: true
-          };
-          expect(dataMatcher._shouldReset()).to.equal(false);
-        });
-
-        it('Should return false when _storage is undefined', () => {
-          dataMatcher._storage = undefined;
-          expect(dataMatcher._shouldReset()).to.equal(false);
+          options.forEach((storageReady) => {
+            const sResult = moduleReady &&
+              (
+                !searchProvidersReady ||
+                !querySourcesReady ||
+                !storageReady)
+              ;
+            it(`should return ${sResult} when this.ready === ${moduleReady}, this.searchProvidersReady === ${searchProvidersReady}, this.querySourcesReady === ${querySourcesReady}, and this._storage.ready === ${storageReady}`, () => {
+              const sInstance = new DataMatcher({
+                name: 'foo',
+                storage: {
+                  ready: storageReady,
+                  registerReducer: () => { },
+                },
+              });
+              sinon.stub(sInstance, 'ready', {
+                get: () => moduleReady,
+              });
+              sinon.stub(sInstance, 'searchProvidersReady', {
+                get: () => searchProvidersReady,
+              });
+              sinon.stub(sInstance, 'querySourcesReady', {
+                get: () => querySourcesReady,
+              });
+              expect(sInstance._shouldReset()).to.equal(sResult);
+            });
+          });
         });
       });
     });
   });
 
-  describe('_readyCheck', () => {
-    describe('when _querySources is blank', () => {
-      beforeEach(() => {
-        dataMatcher._querySources = new Map();
+  describe('_onStateChange', () => {
+    it('should initialize when _shouldInit returns true', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
       });
-
-      it('should return true if _searchSource is blank and ', () => {
-        dataMatcher._searchSource = {};
-        expect(dataMatcher._readyCheck()).to.equal(true);
+      instance._store = createStore(instance.reducer);
+      sinon.stub(instance, '_shouldInit').callsFake(() => true);
+      sinon.stub(instance, '_shouldReset').callsFake(() => false);
+      sinon.stub(instance, '_cleanUp');
+      instance._onStateChange();
+      sinon.assert.calledOnce(instance._cleanUp);
+      expect(instance._store.getState().status === moduleStatuses.ready);
+    });
+    it('should reset when _shouldReset returns true', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
       });
-
-      it('should return true if _searchSource is all ready', () => {
-        dataMatcher._searchSource = {
-          test: {
-            readyCheckFn: () => true,
-          },
-        };
-        expect(dataMatcher._readyCheck()).to.equal(true);
+      instance._store = createStore(instance.reducer);
+      sinon.stub(instance, '_shouldInit').callsFake(() => false);
+      sinon.stub(instance, '_shouldReset').callsFake(() => true);
+      sinon.stub(instance, '_cleanUp');
+      instance._onStateChange();
+      sinon.assert.notCalled(instance._cleanUp);
+      expect(instance._store.getState().status === moduleStatuses.pending);
+    });
+    it('should do nothing when both _shouldInit and _shouldReset return false', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
       });
+      instance._store = createStore(instance.reducer);
+      instance._store.dispatch({
+        type: instance.actionTypes.init,
+      });
+      sinon.stub(instance, '_shouldInit').callsFake(() => false);
+      sinon.stub(instance, '_shouldReset').callsFake(() => false);
+      sinon.stub(instance, '_cleanUp');
+      instance._onStateChange();
+      sinon.assert.notCalled(instance._cleanUp);
+      expect(instance._store.getState().status === moduleStatuses.initializing);
+    });
+  });
 
-      it('should return false if one of _searchSource is not ready', () => {
-        dataMatcher._searchSource = {
-          test: {
-            readyCheckFn: () => false,
-          },
-        };
-        expect(dataMatcher._readyCheck()).to.equal(false);
+  describe('searchProvidersReady', () => {
+    it('should return true if there are no searchProviders', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      expect(instance.searchProvidersReady).to.equal(true);
+    });
+    it('should return false if any one of the searchProviders is not ready', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance.addSearchProvider({
+        name: 'search1',
+        searchFn: () => { },
+        readyCheckFn: () => false,
+      });
+      instance.addSearchProvider({
+        name: 'search2',
+        searchFn: () => { },
+        readyCheckFn: () => true,
+      });
+      expect(instance.searchProvidersReady).to.equal(false);
+    });
+    it('should return true if all of the searchProviders are ready', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance.addSearchProvider({
+        name: 'search1',
+        searchFn: () => { },
+        readyCheckFn: () => true,
+      });
+      instance.addSearchProvider({
+        name: 'search2',
+        searchFn: () => { },
+        readyCheckFn: () => true,
+      });
+      expect(instance.searchProvidersReady).to.equal(true);
+    });
+  });
+
+  describe('querySourcesReady', () => {
+    it('should return true if there are no querySources', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      expect(instance.querySourcesReady).to.equal(true);
+    });
+    it('should return false if any one of the querySources is not ready', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance.addQuerySource({
+        getQueriesFn: () => [],
+        readyCheckFn: () => false,
+      });
+      instance.addQuerySource({
+        getQueriesFn: () => [],
+        readyCheckFn: () => true,
+      });
+      expect(instance.querySourcesReady).to.equal(false);
+    });
+    it('should return true if all of the querySources are ready', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance.addQuerySource({
+        getQueriesFn: () => [],
+        readyCheckFn: () => true,
+      });
+      instance.addQuerySource({
+        getQueriesFn: () => [],
+        readyCheckFn: () => true,
+      });
+      expect(instance.querySourcesReady).to.equal(true);
+    });
+  });
+
+  describe('_getQueries', () => {
+    it('should return empty array if no querySources is present', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      expect(instance._getQueries()).to.deep.equal([]);
+    });
+    it('should return empty array if querySourcesReady === false', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance.addQuerySource({
+        getQueriesFn: () => [1, 2, 3],
+        readyCheckFn: () => false,
+      });
+      expect(instance._getQueries()).to.deep.equal([]);
+    });
+    it('should return an array of all the unique queries from all sources', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance.addQuerySource({
+        getQueriesFn: () => [1, 2, 3],
+        readyCheckFn: () => true,
+      });
+      instance.addQuerySource({
+        getQueriesFn: () => [3, 4, 5, 6],
+        readyCheckFn: () => true,
+      });
+      expect(instance._getQueries()).to.deep.equal([1, 2, 3, 4, 5, 6]);
+    });
+  });
+
+  describe('data', () => {
+    it('should return data from state if storage is not available', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance._store = createStore(instance.reducer);
+      expect(instance.data).to.be.a('object');
+      expect(instance.data).to.equal(instance._store.getState().data);
+    });
+    it('should return data from storage if storage is available', () => {
+      const data = {};
+      const storage = {
+        registerReducer: () => { },
+        getItem: sinon.stub().callsFake(() => data),
+      };
+      const instance = new DataMatcher({
+        name: 'foo',
+        storage,
+      });
+      expect(instance.data).to.equal(data);
+      sinon.assert.calledOnce(storage.getItem);
+    });
+    it('should return empty object if storage has no data', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+        storage: {
+          registerReducer: () => { },
+          getItem: sinon.stub(),
+        },
+      });
+      expect(instance.data).to.deep.equal({});
+      sinon.assert.calledOnce(instance._storage.getItem);
+    });
+  });
+
+  describe('_fetchMatchResult', async () => {
+    it('should return a promise', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance._onStateChange();
+      sinon.spy(instance._store, 'dispatch');
+      expect(instance.ready).to.equal(true);
+      const queries = [0, 1, 2, 3, 4];
+      const promise = instance._fetchMatchResult({
+        name: 'bar',
+        queries,
+      });
+      expect(promise).to.be.a.instanceOf(Promise);
+      await promise;
+      expect(instance._store.dispatch.args[0][0].type)
+        .to.equal(instance.actionTypes.match);
+      expect(instance._store.dispatch.args[1][0].type)
+        .to.equal(instance.actionTypes.matchSuccess);
+    });
+    it('should throw if provider does not exist', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance._onStateChange();
+      sinon.spy(instance._store, 'dispatch');
+      const queries = [0, 1, 2, 3, 4];
+      await expect(instance._fetchMatchResult({
+        name: 'bad',
+        queries,
+      })).to.be.rejected;
+    });
+    it('should clear promise cache if fetch is successful', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance._onStateChange();
+      sinon.spy(instance._store, 'dispatch');
+      const queries = [0, 1, 2, 3, 4];
+      await instance._fetchMatchResult({
+        name: 'bar',
+        queries,
+      });
+      queries.forEach((query) => {
+        expect(instance._matchPromises.has(`bar-${query}`)).to.equal(false);
       });
     });
-
-    describe('_querySources is all ready', () => {
-      beforeEach(() => {
-        dataMatcher._querySources = new Map();
-        dataMatcher._querySources.set(
-          () => null,
-          () => true,
-        );
+    it('should not clear promises not from the same request', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
       });
-
-      it('should return true if _searchSource is blank', () => {
-        dataMatcher._searchSource = {};
-        expect(dataMatcher._readyCheck()).to.equal(true);
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
       });
-
-      it('should return true if _searchSource is all ready', () => {
-        dataMatcher._searchSource = {
-          test: {
-            readyCheckFn: () => true,
-          },
-        };
-        expect(dataMatcher._readyCheck()).to.equal(true);
+      instance._onStateChange();
+      sinon.spy(instance._store, 'dispatch');
+      const queries = [0, 1, 2, 3, 4];
+      const firstRequest = instance._fetchMatchResult({
+        name: 'bar',
+        queries,
+      });
+      await sleep(10);
+      const secondRequest = instance._fetchMatchResult({
+        name: 'bar',
+        queries,
+      });
+      await firstRequest;
+      queries.forEach((query) => {
+        expect(instance._matchPromises.has(`bar-${query}`)).to.equal(true);
+      });
+      await secondRequest;
+      queries.forEach((query) => {
+        expect(instance._matchPromises.has(`bar-${query}`)).to.equal(false);
       });
     });
-
-    describe('_querySources is all ready', () => {
-      beforeEach(() => {
-        dataMatcher._querySources = new Map();
-        dataMatcher._querySources.set(
-          () => null,
-          () => false,
-        );
+    it('should clear promises if fetch fails', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
       });
-
-      it(`should return false if _searchSource is blank and
-          one of _querySources is not ready`, () => {
-        dataMatcher._searchSource = {};
-        expect(dataMatcher._readyCheck()).to.equal(false);
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          throw new Error('some error');
+        },
+        readyCheckFn: () => true,
       });
-
-      it(`should return false if one of _searchSource is not ready
-          and one of _querySources is not ready`, () => {
-        dataMatcher._searchSource = {
-          test: {
-            readyCheckFn: () => false,
-          },
-        };
-        expect(dataMatcher._readyCheck()).to.equal(false);
+      instance._onStateChange();
+      sinon.spy(instance._store, 'dispatch');
+      const queries = [0, 1, 2, 3, 4];
+      try {
+        await instance._fetchMatchResult({
+          name: 'bar',
+          queries,
+        });
+      } catch (error) {
+        /* falls through */
+      }
+      queries.forEach((query) => {
+        expect(instance._matchPromises.has(`bar-${query}`)).to.equal(false);
       });
     });
   });
 
-  describe('_getExpiredKeys', () => {
-    it('should return empty keys if matchRecord in cache is empty', () => {
-      sinon.stub(dataMatcher, 'cache', { get: () => ({ matchRecord: {} }) });
-      const result = dataMatcher._getExpiredKeys();
-      expect(result).to.deep.equal([]);
-    });
-
-    it('should return expired keys if matchRecord which is found is expired', () => {
-      dataMatcher._ttl = 30 * 60 * 1000;
-      dataMatcher._noMatchTtl = 30 * 1000;
-      sinon.stub(dataMatcher, 'cache', {
-        get: () => ({
-          matchRecord: {
-            test: {
-              result: matchResult.found,
-              timestamp: 0,
-            }
-          }
-        })
+  describe('_matchSource', async () => {
+    it('should return a promise', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
       });
-      const result = dataMatcher._getExpiredKeys();
-      expect(result).to.deep.equal(['test']);
-    });
-
-    it('should return expired keys if matchRecord which is unfound is expired', () => {
-      dataMatcher._ttl = 30 * 60 * 1000;
-      dataMatcher._noMatchTtl = 30 * 1000;
-      sinon.stub(dataMatcher, 'cache', {
-        get: () => ({
-          matchRecord: {
-            test: {
-              result: matchResult.notFound,
-              timestamp: 0,
-            }
-          }
-        })
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
       });
-      const result = dataMatcher._getExpiredKeys();
-      expect(result).to.deep.equal(['test']);
-    });
-
-    it('should return empty keys if matchRecord is not expired', () => {
-      dataMatcher._ttl = 30 * 60 * 1000;
-      dataMatcher._noMatchTtl = 30 * 1000;
-      sinon.stub(dataMatcher, 'cache', {
-        get: () => ({
-          matchRecord: {
-            test: {
-              result: matchResult.found,
-              timestamp: Date.now(),
-            }
-          }
-        })
+      instance._onStateChange();
+      sinon.spy(instance._store, 'dispatch');
+      const queries = [0, 1, 2, 3, 4];
+      const promise = instance._matchSource({
+        name: 'bar',
+        queries,
       });
-      const result = dataMatcher._getExpiredKeys();
-      expect(result).to.deep.equal([]);
+      expect(promise).to.be.a.instanceOf(Promise);
+      await promise;
+    });
+    it('should call _fetchMatchResult when querying new items', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance._onStateChange();
+      sinon.spy(instance, '_fetchMatchResult');
+      const queries = [0, 1, 2, 3, 4];
+      await instance._matchSource({
+        name: 'bar',
+        queries,
+      });
+      sinon.assert.calledOnce(instance._fetchMatchResult);
+    });
+    it('should not call _fetchMatchResult if the queries are already fetching', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance._onStateChange();
+      sinon.spy(instance, '_fetchMatchResult');
+      const queries = [0, 1, 2, 3, 4];
+      await Promise.all([
+        instance._matchSource({
+          name: 'bar',
+          queries,
+        }),
+        instance._matchSource({
+          name: 'bar',
+          queries,
+        }),
+      ]);
+      sinon.assert.calledOnce(instance._fetchMatchResult);
+    });
+    it('should not call _fetchMatchResult if the queries are already fetched', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance._onStateChange();
+      sinon.spy(instance, '_fetchMatchResult');
+      const queries = [0, 1, 2, 3, 4];
+      await instance._matchSource({
+        name: 'bar',
+        queries,
+      });
+      await instance._matchSource({
+        name: 'bar',
+        queries,
+      });
+      sinon.assert.calledOnce(instance._fetchMatchResult);
+    });
+    it('should call _fetchMatchResult if the queries are already fetched and ignoreCache is true', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+      });
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance._onStateChange();
+      sinon.spy(instance, '_fetchMatchResult');
+      const queries = [0, 1, 2, 3, 4];
+      await instance._matchSource({
+        name: 'bar',
+        queries,
+      });
+      await instance._matchSource({
+        name: 'bar',
+        queries,
+        ignoreCache: true,
+      });
+      sinon.assert.calledTwice(instance._fetchMatchResult);
+    });
+    it('should call _fetchMatchResult if the queries are already fetched but non-matches are expired', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+        noMatchTtl: 20,
+      });
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance._onStateChange();
+      sinon.spy(instance, '_fetchMatchResult');
+      const queries = [0, 1, 2, 3, 4];
+      await instance._matchSource({
+        name: 'bar',
+        queries,
+      });
+      await sleep(30);
+      await instance._matchSource({
+        name: 'bar',
+        queries,
+      });
+      sinon.assert.calledTwice(instance._fetchMatchResult);
     });
   });
-
-  describe('addSearchSource', () => {
-    it('should raise that source name is required', () => {
-      const searchFn = () => null;
-      const readyCheckFn = () => null;
-      let error = null;
-      try {
-        dataMatcher.addSearchSource({ searchFn, readyCheckFn });
-      } catch (e) {
-        error = e;
-      }
-      expect(error.message).to.equal('DataMatcher: "sourceName" is required.');
-    });
-
-    it('should raise that source name already exists', () => {
-      dataMatcher._searchSource = {};
-      const sourceName = 'test';
-      const searchFn = () => null;
-      const readyCheckFn = () => null;
-      dataMatcher._searchSource[sourceName] = {};
-      let error = null;
-      try {
-        dataMatcher.addSearchSource({ sourceName, searchFn, readyCheckFn });
-      } catch (e) {
-        error = e;
-      }
-      expect(error.message).to.equal('DataMatcher: A source named "test" already exists.');
-    });
-
-    it('should raise that searchFn is not a function', () => {
-      dataMatcher._searchSource = {};
-      const sourceName = 'test';
-      const searchFn = 'abc';
-      const readyCheckFn = () => null;
-      let error = null;
-      try {
-        dataMatcher.addSearchSource({ sourceName, searchFn, readyCheckFn });
-      } catch (e) {
-        error = e;
-      }
-      expect(error.message).to.equal('DataMatcher: "searchFn" must be a function.');
-    });
-
-    it('should raise that readyCheckFn is not a function', () => {
-      dataMatcher._searchSource = {};
-      const sourceName = 'test';
-      const readyCheckFn = 'abc';
-      const searchFn = () => null;
-      let error = null;
-      try {
-        dataMatcher.addSearchSource({ sourceName, searchFn, readyCheckFn });
-      } catch (e) {
-        error = e;
-      }
-      expect(error.message).to.equal('DataMatcher: "readyCheckFn" must be a function.');
-    });
-
-    it('should add source to _searchSource', () => {
-      dataMatcher._searchSource = {};
-      const sourceName = 'test';
-      const searchFn = () => null;
-      const readyCheckFn = () => null;
-      dataMatcher.addSearchSource({ sourceName, searchFn, readyCheckFn });
-      expect(dataMatcher._searchSource).to.have.keys(sourceName);
-    });
-  });
-
-  describe('addQuerySource', () => {
-    it('should raise that getQueriesFn is not a function', () => {
-      const getQueriesFn = 'test';
-      const readyCheckFn = () => null;
-      let error = null;
-      try {
-        dataMatcher.addQuerySource({ getQueriesFn, readyCheckFn });
-      } catch (e) {
-        error = e;
-      }
-      expect(error.message).to.equal('DataMatcher: "getQueriesFn" must be a function.');
-    });
-
-    it('should raise that readyCheckFn is not a function', () => {
-      const getQueriesFn = () => null;
-      const readyCheckFn = 'test';
-      let error = null;
-      try {
-        dataMatcher.addQuerySource({ getQueriesFn, readyCheckFn });
-      } catch (e) {
-        error = e;
-      }
-      expect(error.message).to.equal('DataMatcher: "readyCheckFn" must be a function.');
-    });
-
-    it('should raise that getQueriesFn already exists', () => {
-      const getQueriesFn = () => null;
-      const readyCheckFn = () => null;
-      dataMatcher._querySources = new Map();
-      dataMatcher._querySources.set(getQueriesFn, null);
-      let error = null;
-      try {
-        dataMatcher.addQuerySource({ getQueriesFn, readyCheckFn });
-      } catch (e) {
-        error = e;
-      }
-      expect(error.message).to.equal('DataMatcher: "getQueriesFn" is already added.');
-    });
-
-    it('should add getQueriesFn to _querySources', () => {
-      const getQueriesFn = () => null;
-      const readyCheckFn = () => null;
-      dataMatcher._querySources = new Map();
-      dataMatcher.addQuerySource({ getQueriesFn, readyCheckFn });
-      expect(dataMatcher._querySources.has(getQueriesFn)).to.equal(true);
+  describe('match', async () => {
+    it('should call _matchSource for each provider', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+        noMatchTtl: 20,
+      });
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance.addSearchProvider({
+        name: 'baz',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(20);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance._onStateChange();
+      sinon.stub(instance, '_matchSource').callsFake(async () => { });
+      const queries = [0, 1, 2, 3, 4];
+      await instance.match({
+        queries,
+      });
+      let idx = 0;
+      await instance.match({
+        queries,
+        ignoreCache: true,
+      });
+      [false, true].forEach((ignoreCache) => {
+        instance._searchProviders.forEach((_, name) => {
+          expect(instance._matchSource.args[idx][0])
+            .to.deep.equal({
+              queries,
+              name,
+              ignoreCache,
+            });
+          idx += 1;
+        });
+      });
     });
   });
 
   describe('triggerMatch', () => {
-    it('should call match with queries params', async () => {
-      sinon.stub(dataMatcher, 'match');
-      sinon.stub(dataMatcher, 'ready', { get: () => true });
-      const getQueriesFn = () => [1, 2, 3];
-      const readyCheckFn = () => null;
-      dataMatcher._querySources = new Map();
-      dataMatcher._querySources.set(getQueriesFn, readyCheckFn);
-      await dataMatcher.triggerMatch();
-      sinon.assert.calledWith(dataMatcher.match, { queries: [1, 2, 3] });
-    });
-
-    it('should not call match if dataMatcher is not ready', async () => {
-      sinon.stub(dataMatcher, 'match');
-      sinon.stub(dataMatcher, 'ready', { get: () => false });
-      const getQueriesFn = () => [1, 2, 3];
-      const readyCheckFn = () => null;
-      dataMatcher._querySources = new Map();
-      dataMatcher._querySources.set(getQueriesFn, readyCheckFn);
-      await dataMatcher.triggerMatch();
-      sinon.assert.notCalled(dataMatcher.match);
-    });
-
-    it('should not call match if queries length is zero', async () => {
-      sinon.stub(dataMatcher, 'match');
-      sinon.stub(dataMatcher, 'ready', { get: () => true });
-      const getQueriesFn = () => [];
-      const readyCheckFn = () => null;
-      dataMatcher._querySources = new Map();
-      dataMatcher._querySources.set(getQueriesFn, readyCheckFn);
-      await dataMatcher.triggerMatch();
-      sinon.assert.notCalled(dataMatcher.match);
-    });
-  });
-
-  describe('match', () => {
-    it('should not call _matchSource if _searchSource is empty', async () => {
-      dataMatcher._searchSource = {};
-      sinon.stub(dataMatcher, '_matchSource');
-      const queries = [1];
-      await dataMatcher.match({ queries });
-      sinon.assert.notCalled(dataMatcher._matchSource);
-    });
-
-    it('should call _matchSource once if _searchSource has one key', async () => {
-      dataMatcher._searchSource = {
-        test: 1,
-      };
-      sinon.stub(dataMatcher, '_matchSource');
-      const queries = [1];
-      await dataMatcher.match({ queries });
-      sinon.assert.calledOnce(dataMatcher._matchSource);
-    });
-
-    it('should call _matchSource twice if _searchSource has two key', async () => {
-      dataMatcher._searchSource = {
-        test: 1,
-        test2: 2,
-      };
-      sinon.stub(dataMatcher, '_matchSource');
-      const queries = [1];
-      await dataMatcher.match({ queries });
-      sinon.assert.callCount(dataMatcher._matchSource, 2);
-    });
-  });
-
-  describe('_filterQueriesFromCache', () => {
-    it('should filter query if query is not expired ', () => {
-      const queries = ['1234'];
-      const sourceName = 'test';
-      dataMatcher._ttl = 30 * 60 * 1000;
-      dataMatcher._noMatchTtl = 30 * 1000;
-      sinon.stub(dataMatcher, 'state', {
-        get: () => ({
-          matching: [],
-        }),
+    it('should call _cleanUp and match if module is ready', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
       });
-      sinon.stub(dataMatcher, 'cache', {
-        get: () => ({
-          matchRecord: {
-            '["test","1234"]': {
-              result: matchResult.notFound,
-              timestamp: Date.now(),
-            }
-          }
-        }),
+      sinon.stub(instance, 'ready', {
+        get() {
+          return true;
+        },
       });
-      const result = dataMatcher._filterQueriesFromCache({ sourceName, queries });
-      expect(result).to.deep.equal([]);
+      sinon.stub(instance, '_cleanUp');
+      sinon.stub(instance, 'match').callsFake(async () => {});
+      instance.triggerMatch();
+      sinon.assert.calledOnce(instance._cleanUp);
+      sinon.assert.calledOnce(instance.match);
     });
-
-    it('should return query if query is expired ', () => {
-      const queries = ['1234'];
-      const sourceName = 'test';
-      dataMatcher._ttl = 30 * 60 * 1000;
-      dataMatcher._noMatchTtl = 30 * 1000;
-      sinon.stub(dataMatcher, 'state', {
-        get: () => ({
-          matching: [],
-        }),
+    it('should not do anything if module is not ready', () => {
+      const instance = new DataMatcher({
+        name: 'foo',
       });
-      sinon.stub(dataMatcher, 'cache', {
-        get: () => ({
-          matchRecord: {
-            '["test","1234"]': {
-              result: matchResult.notFound,
-              timestamp: 0,
-            }
-          }
-        }),
+      sinon.stub(instance, 'ready', {
+        get() {
+          return false;
+        },
       });
-      const result = dataMatcher._filterQueriesFromCache({ sourceName, queries });
-      expect(result).to.deep.equal(['1234']);
-    });
-
-    it('should filter query if query is matching', () => {
-      const queries = ['1234'];
-      const sourceName = 'test';
-      dataMatcher._ttl = 30 * 60 * 1000;
-      dataMatcher._noMatchTtl = 30 * 1000;
-      sinon.stub(dataMatcher, 'state', {
-        get: () => ({
-          matching: ['["test","1234"]'],
-        }),
-      });
-      sinon.stub(dataMatcher, 'cache', {
-        get: () => ({
-          matchRecord: {}
-        }),
-      });
-      const result = dataMatcher._filterQueriesFromCache({ sourceName, queries });
-      expect(result).to.deep.equal([]);
-    });
-
-    it('should all queries if matching and matchRecord are empty', () => {
-      const queries = ['1234'];
-      const sourceName = 'test';
-      dataMatcher._ttl = 30 * 60 * 1000;
-      dataMatcher._noMatchTtl = 30 * 1000;
-      sinon.stub(dataMatcher, 'state', {
-        get: () => ({
-          matching: [],
-        }),
-      });
-      sinon.stub(dataMatcher, 'cache', {
-        get: () => ({
-          matchRecord: {}
-        }),
-      });
-      const result = dataMatcher._filterQueriesFromCache({ sourceName, queries });
-      expect(result).to.deep.equal(['1234']);
-    });
-  });
-
-  describe('_matchSource', () => {
-    it('should not call _startMatch if queries is empty', async () => {
-      sinon.stub(dataMatcher, '_filterQueriesFromCache');
-      sinon.stub(dataMatcher, '_startMatch');
-      sinon.stub(dataMatcher, '_finishMatch');
-      sinon.stub(dataMatcher, '_onMatchError');
-      const sourceName = 'test';
-      const queries = [];
-      const ignoreCache = true;
-      await dataMatcher._matchSource({ sourceName, queries, ignoreCache });
-      sinon.assert.notCalled(dataMatcher._startMatch);
-      sinon.assert.notCalled(dataMatcher._onMatchError);
-    });
-
-    it(`should not call _startMatch if ignoreCache is false
-        and _filterQueriesFromCache is empty`, async () => {
-      sinon.stub(dataMatcher, '_filterQueriesFromCache').callsFake(
-        () => [],
-      );
-      sinon.stub(dataMatcher, '_startMatch');
-      sinon.stub(dataMatcher, '_finishMatch');
-      sinon.stub(dataMatcher, '_onMatchError');
-      const sourceName = 'test';
-      const queries = [];
-      const ignoreCache = false;
-      await dataMatcher._matchSource({ sourceName, queries, ignoreCache });
-      sinon.assert.notCalled(dataMatcher._startMatch);
-      sinon.assert.notCalled(dataMatcher._onMatchError);
-    });
-
-    it('should call _startMatch and _finishMatch', async () => {
-      sinon.stub(dataMatcher, '_filterQueriesFromCache');
-      sinon.stub(dataMatcher, '_startMatch');
-      sinon.stub(dataMatcher, '_finishMatch');
-      sinon.stub(dataMatcher, '_onMatchError');
-      const sourceName = 'test';
-      const queries = ['1234'];
-      const ignoreCache = true;
-      dataMatcher._searchSource = {
-        test: {
-          searchFn: () => ['123'],
-        }
-      };
-      await dataMatcher._matchSource({ sourceName, queries, ignoreCache });
-      sinon.assert.calledOnce(dataMatcher._startMatch);
-      sinon.assert.calledOnce(dataMatcher._finishMatch);
-      sinon.assert.notCalled(dataMatcher._onMatchError);
-    });
-
-    it('should call _onMatchError when match throw error', async () => {
-      sinon.stub(dataMatcher, '_filterQueriesFromCache');
-      sinon.stub(dataMatcher, '_startMatch');
-      sinon.stub(dataMatcher, '_finishMatch');
-      sinon.stub(dataMatcher, '_onMatchError');
-      const sourceName = 'test';
-      const queries = ['1234'];
-      const ignoreCache = true;
-      dataMatcher._searchSource = {
-        test: {
-          searchFn: () => {
-            throw new Error('error');
-          },
-        }
-      };
-      await dataMatcher._matchSource({ sourceName, queries, ignoreCache });
-      sinon.assert.calledOnce(dataMatcher._startMatch);
-      sinon.assert.notCalled(dataMatcher._finishMatch);
-      sinon.assert.calledOnce(dataMatcher._onMatchError);
+      sinon.stub(instance, '_cleanUp');
+      sinon.stub(instance, 'match').callsFake(async () => {});
+      instance.triggerMatch();
+      sinon.assert.notCalled(instance._cleanUp);
+      sinon.assert.notCalled(instance.match);
     });
   });
 });

@@ -1,7 +1,7 @@
 import 'core-js/fn/array/find';
 import RcModule from '../../lib/RcModule';
 import isBlank from '../../lib/isBlank';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 import messageSenderActionTypes from './messageSenderActionTypes';
 import getMessageSenderReducer from './getMessageSenderReducer';
@@ -290,7 +290,7 @@ export default class MessageSender extends RcModule {
   }
 
   get ready() {
-    return this.status === moduleStatus.ready;
+    return this.status === moduleStatuses.ready;
   }
 
   get idle() {

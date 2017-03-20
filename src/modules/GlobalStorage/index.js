@@ -1,5 +1,5 @@
 import StorageBase from '../../lib/StorageBase';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 /**
  * @class
@@ -46,7 +46,7 @@ export default class GlobalStorage extends StorageBase {
     };
     this._storage.on('storage', this._storageHandler);
     this.store.subscribe(() => {
-      if (this.status !== moduleStatus.pending) {
+      if (this.status !== moduleStatuses.pending) {
         // save new data to storage when changed
         const currentData = this.data;
         for (const key in currentData) {

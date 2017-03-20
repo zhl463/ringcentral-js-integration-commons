@@ -1,6 +1,6 @@
 import RcModule from '../../lib/RcModule';
 import actionTypes from './actionTypes';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import getConnectivityMonitorReducer from './getConnectivityMonitorReducer';
 import connectivityMonitorMessages from './connectivityMonitorMessages';
 
@@ -120,7 +120,7 @@ export default class ConnectivityMonitor extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get connectivity() {

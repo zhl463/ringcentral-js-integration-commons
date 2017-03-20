@@ -1,6 +1,6 @@
 import RcModule from '../../lib/RcModule';
 import isBlank from '../../lib/isBlank';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import normalizeNumber from '../../lib/normalizeNumber';
 import parseNumber from '../../lib/parseNumber';
 
@@ -209,6 +209,6 @@ export default class NumberValidate extends RcModule {
   }
 
   get ready() {
-    return this.status === moduleStatus.ready;
+    return this.status === moduleStatuses.ready;
   }
 }

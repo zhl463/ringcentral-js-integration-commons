@@ -1,6 +1,6 @@
 import RcModule from '../../lib/RcModule';
 import loginStatus from '../Auth/loginStatus';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import getSubscriptionReducer, {
   getCachedSubscriptionReducer,
 } from './getSubscriptionReducer';
@@ -40,7 +40,7 @@ export default class Subscription extends RcModule {
       if (
         this._auth.loginStatus === loginStatus.loggedIn &&
         this._storage.ready &&
-        this.status === moduleStatus.pending
+        this.status === moduleStatuses.pending
       ) {
         this.store.dispatch({
           type: this.actionTypes.initSuccess,
@@ -65,7 +65,7 @@ export default class Subscription extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get filters() {

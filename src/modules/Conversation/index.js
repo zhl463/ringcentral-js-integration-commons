@@ -1,5 +1,5 @@
 import RcModule from '../../lib/RcModule';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 import {
   getMyNumberFromMessage,
@@ -241,7 +241,7 @@ export default class Conversation extends RcModule {
   }
 
   get ready() {
-    return this.status === moduleStatus.ready;
+    return this.status === moduleStatuses.ready;
   }
 
   get pushing() {

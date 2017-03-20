@@ -5,7 +5,7 @@ import getCallingSettingsReducer, {
   getMyLocationReducer,
   getTimestampReducer,
 } from './getCallingSettingsReducer';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import mapOptionToMode from './mapOptionToMode';
 import callingOptions from './callingOptions';
 import callingSettingsMessages from './callingSettingsMessages';
@@ -127,7 +127,7 @@ export default class CallingSettings extends RcModule {
         this._extensionPhoneNumber.ready &&
         this._forwardingNumber.ready &&
         this._rolesAndPermissions.ready &&
-        this.status === moduleStatus.pending
+        this.status === moduleStatuses.pending
       ) {
         this._myPhoneNumbers = this.myPhoneNumbers;
         this._otherPhoneNumbers = this.otherPhoneNumbers;
@@ -216,7 +216,7 @@ export default class CallingSettings extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get callWith() {

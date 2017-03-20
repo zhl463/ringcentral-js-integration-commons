@@ -1,6 +1,6 @@
 import RcModule from '../../lib/RcModule';
 import sliceExecute from '../../lib/sliceExecute';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getDateTimeIntlReducer from './getDateTimeIntlReducer';
 import getStorageReducer from './getStorageReducer';
@@ -268,11 +268,11 @@ export default class DateTimeIntl extends RcModule {
   }
 
   get ready() {
-    return this.status === moduleStatus.ready;
+    return this.status === moduleStatuses.ready;
   }
 
   get pending() {
-    return this.status === moduleStatus.pending;
+    return this.status === moduleStatuses.pending;
   }
 
   get cache() {

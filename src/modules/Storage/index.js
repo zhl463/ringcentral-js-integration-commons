@@ -1,6 +1,6 @@
 import StorageBase from '../../lib/StorageBase';
 import loginStatus from '../Auth/loginStatus';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 /**
  * @class
@@ -72,7 +72,7 @@ export default class Storage extends StorageBase {
           type: this.actionTypes.resetSuccess,
         });
       }
-      if (this.status !== moduleStatus.pending) {
+      if (this.status !== moduleStatuses.pending) {
         // save new data to storage when changed
         const currentData = this.data;
         for (const key in currentData) {

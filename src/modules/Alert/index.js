@@ -1,6 +1,6 @@
 import uuid from 'uuid';
 import RcModule from '../../lib/RcModule';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import alertLevels from './alertLevels';
 import getAlertReducer from './getAlertReducer';
@@ -29,7 +29,7 @@ export default class Alert extends RcModule {
   // this module has no dependency, and is always ready
   // eslint-disable-next-line class-methods-use-this
   get status() {
-    return moduleStatus.ready;
+    return moduleStatuses.ready;
   }
   // eslint-disable-next-line class-methods-use-this
   get ready() {

@@ -1,6 +1,6 @@
 import Pollable from '../../lib/Pollable';
 import fetchList from '../../lib/fetchList';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import getDateFrom from '../../lib/getDateFrom';
 import actionTypes from './actionTypes';
 import getCallLogReducer, {
@@ -130,7 +130,7 @@ export default class CallLog extends Pollable {
       this._storage.ready &&
       (!this._subscription || this._subscription.ready) &&
       this._rolesAndPermissions.ready &&
-      this.status === moduleStatus.pending
+      this.status === moduleStatuses.pending
     ) {
       this.store.dispatch({
         type: this.actionTypes.init,
@@ -192,7 +192,7 @@ export default class CallLog extends Pollable {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get data() {

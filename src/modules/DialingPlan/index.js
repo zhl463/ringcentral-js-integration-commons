@@ -1,6 +1,6 @@
 import fetchList from '../../lib/fetchList';
 import DataFetcher from '../../lib/DataFetcher';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 export default class DialingPlan extends DataFetcher {
   constructor({
@@ -37,7 +37,7 @@ export default class DialingPlan extends DataFetcher {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 }
 

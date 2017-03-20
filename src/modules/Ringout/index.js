@@ -1,5 +1,5 @@
 import RcModule from '../../lib/RcModule';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getRingoutReducer from './getRingoutReducer' ;
 import ringoutErrors from './ringoutErrors';
@@ -42,7 +42,7 @@ export default class Ringout extends RcModule {
   }
 
   async makeCall({ fromNumber, toNumber, prompt }) {
-    if (this.status === moduleStatus.ready) {
+    if (this.status === moduleStatuses.ready) {
       this.store.dispatch({
         type: this.actionTypes.startToConnect
       });
@@ -104,7 +104,7 @@ export default class Ringout extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
 }

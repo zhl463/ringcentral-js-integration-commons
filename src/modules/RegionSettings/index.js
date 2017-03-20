@@ -4,7 +4,7 @@ import getRegionSettingsReducer, {
   getCountryCodeReducer,
   getAreaCodeReducer,
 } from './getRegionSettingsReducer';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import regionSettingsMessages from '../RegionSettings/regionSettingsMessages';
 import actionTypes from './actionTypes';
 import validateAreaCode from '../../lib/validateAreaCode';
@@ -48,7 +48,7 @@ export default class RegionSettings extends RcModule {
         this._storage.ready &&
         this._dialingPlan.ready &&
         this._extensionInfo.ready &&
-        this.status === moduleStatus.pending
+        this.status === moduleStatuses.pending
       ) {
         this.store.dispatch({
           type: this.actionTypes.init,
@@ -84,7 +84,7 @@ export default class RegionSettings extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get availableCountries() {

@@ -1,6 +1,6 @@
 import RcModule from '../../lib/RcModule';
 import Tabbie from '../../lib/Tabbie';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getTabManagerReducer from './getTabManagerReducer';
 
@@ -50,7 +50,7 @@ export default class TabManager extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get active() {

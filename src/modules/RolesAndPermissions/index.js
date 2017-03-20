@@ -1,5 +1,5 @@
 import DataFetcher from '../../lib/DataFetcher';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 const DEFAULT_TTL = 24 * 60 * 60 * 1000;
 

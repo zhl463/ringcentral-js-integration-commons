@@ -1,5 +1,5 @@
 import Presence from '../Presence';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getDetailedPresenceReducer from './getDetailedPresenceReducer';
 import subscriptionFilters from '../../enums/subscriptionFilters';
@@ -67,7 +67,7 @@ export default class DetailedPresence extends Presence {
       this._auth.loggedIn &&
       this._subscription.ready &&
       (!this._connectivityMonitor || this._connectivityMonitor.ready) &&
-      this.status === moduleStatus.pending
+      this.status === moduleStatuses.pending
     ) {
       this.store.dispatch({
         type: this.actionTypes.init,

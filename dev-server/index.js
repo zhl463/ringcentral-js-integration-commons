@@ -289,12 +289,10 @@ class DemoPhone extends RcModule {
       getState: () => this.state.dateTimeIntl,
     }));
     this.addModule('contactMatcher', new ContactMatcher({
-      auth: this.auth,
       storage: this.storage,
       getState: () => this.state.contactMatcher,
     }));
     this.addModule('activityMatcher', new ActivityMatcher({
-      auth: this.auth,
       storage: this.storage,
       getState: () => this.state.activityMatcher,
     }));

@@ -2,7 +2,7 @@ import RcModule from '../../lib/RcModule';
 import getPresenceReducer from './getPresenceReducer';
 import presenceActionTypes from './actionTypes';
 import loginStatus from '../Auth/loginStatus';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 const presenceEndPoint = /.*\/presence(\?.*)?/;
 
@@ -41,7 +41,7 @@ export default class Presence extends RcModule {
       if (
         this._auth.loginStatus === loginStatus.loggedIn &&
         this._subscription.ready &&
-        this.status === moduleStatus.pending
+        this.status === moduleStatuses.pending
       ) {
         this.store.dispatch({
           type: this.actionTypes.init,
@@ -105,7 +105,7 @@ export default class Presence extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get dndStatus() {

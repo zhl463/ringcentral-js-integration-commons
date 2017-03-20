@@ -4,7 +4,7 @@ import getDataFetcherReducer, {
   getDefaultTimestampReducer,
 } from './getDataFetcherReducer';
 import getModuleStatusReducer from '../getModuleStatusReducer';
-import actionTypes from './actionTypesBase';
+import actionTypes from './baseActionTypes';
 
 describe('getDefaultDataReducer', () => {
   it('should be a function', () => {

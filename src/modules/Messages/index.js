@@ -1,5 +1,5 @@
 import RcModule from '../../lib/RcModule';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 import actionTypes from './actionTypes';
 import getMessagesReducer from './getMessagesReducer';
@@ -151,11 +151,11 @@ export default class Messages extends RcModule {
   }
 
   get ready() {
-    return this.status === moduleStatus.ready;
+    return this.status === moduleStatuses.ready;
   }
 
   get pending() {
-    return this.status === moduleStatus.pending;
+    return this.status === moduleStatuses.pending;
   }
 
   get messages() {

@@ -4,8 +4,8 @@ import getDataFetcherReducer, {
   getDefaultDataReducer,
   getDefaultTimestampReducer,
 } from './getDataFetcherReducer';
-import moduleStatus from '../../enums/moduleStatus';
-import actionTypesBase from './actionTypesBase';
+import moduleStatuses from '../../enums/moduleStatuses';
+import baseActionTypes from './baseActionTypes';
 
 const DEFAULT_TTL = 30 * 60 * 1000;
 const DEFAULT_RETRY = 62 * 1000;
@@ -21,7 +21,7 @@ export default class DataFetcher extends Pollable {
     ttl = DEFAULT_TTL,
     polling = false,
     name,
-    actionTypes = prefixEnum({ enumMap: actionTypesBase, prefix: name }),
+    actionTypes = prefixEnum({ enumMap: baseActionTypes, prefix: name }),
     getReducer = getDataFetcherReducer,
     getDataReducer = getDefaultDataReducer,
     getTimestampReducer = getDefaultTimestampReducer,
@@ -86,7 +86,7 @@ export default class DataFetcher extends Pollable {
       (!this._storage || this._storage.ready) &&
       (!this._readyCheckFn || this._readyCheckFn()) &&
       (!this._subscription || this._subscription.ready) &&
-      this.status === moduleStatus.pending
+      this.status === moduleStatuses.pending
     ) {
       this.store.dispatch({
         type: this.actionTypes.init,
@@ -162,7 +162,7 @@ export default class DataFetcher extends Pollable {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   get ttl() {

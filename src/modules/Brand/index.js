@@ -1,5 +1,5 @@
 import RcModule from '../../lib/RcModule';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 export default class Brand extends RcModule {
   constructor({ id, name, fullName, ...options }) {
@@ -22,7 +22,7 @@ export default class Brand extends RcModule {
 
   // eslint-disable-next-line class-methods-use-this
   get status() {
-    return moduleStatus.ready;
+    return moduleStatuses.ready;
   }
 
   // eslint-disable-next-line class-methods-use-this

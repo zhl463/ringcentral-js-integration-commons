@@ -5,7 +5,7 @@ import I18n, {
   DEFAULT_LOCALE,
   PSEUDO_LOCALE,
 } from '../../lib/I18n';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getLocaleReducer from './getLocaleReducer';
 
@@ -77,7 +77,7 @@ export default class Locale extends RcModule {
   }
 
   get ready() {
-    return this.state.status === moduleStatus.ready;
+    return this.state.status === moduleStatuses.ready;
   }
 
   /**
