@@ -69,6 +69,29 @@ export default class DataMatcher extends RcModule {
       ),
       data => (data || {}),
     );
+
+    this.addSelector('dataMapping',
+      this._selectors.data,
+      (data) => {
+        const dataMap = {};
+        Object.keys(data).forEach((query) => {
+          const queryResult = data[query];
+          if (!queryResult) {
+            return;
+          }
+          let matchesList = [];
+          Object.keys(queryResult).forEach((providerName) => {
+            if (queryResult[providerName] && queryResult[providerName].data.length > 0) {
+              matchesList = matchesList.concat(queryResult[providerName].data);
+            }
+          });
+          if (matchesList.length > 0) {
+            dataMap[query] = matchesList;
+          }
+        });
+        return dataMap;
+      }
+    );
     this._requestCounter = 0;
   }
 
@@ -324,5 +347,9 @@ export default class DataMatcher extends RcModule {
 
   get data() {
     return this._selectors.data();
+  }
+
+  get dataMapping() {
+    return this._selectors.dataMapping();
   }
 }

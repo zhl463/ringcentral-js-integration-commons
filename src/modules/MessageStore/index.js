@@ -122,8 +122,12 @@ export default class MessageStore extends RcModule {
   }
 
   async _initMessageStore() {
-    await this._syncMessages();
-    this._subscription.subscribe('/account/~/extension/~/message-store');
+    try {
+      await this._syncMessages();
+      this._subscription.subscribe('/account/~/extension/~/message-store');
+    } catch (e) {
+      console.error(e);
+    }
     this.store.dispatch({
       type: this.actionTypes.initSuccess,
     });

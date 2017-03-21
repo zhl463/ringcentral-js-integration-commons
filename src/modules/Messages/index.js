@@ -7,19 +7,95 @@ import getMessagesReducer from './getMessagesReducer';
 export default class Messages extends RcModule {
   constructor({
     messageStore,
-    perPage = 10,
+    perPage = 20,
+    contactMatcher,
     ...options
   }) {
     super({
       ...options,
       actionTypes,
     });
+    this._contactMatcher = contactMatcher;
     this._messageStore = messageStore;
     this._perPage = perPage;
     this._reducer = getMessagesReducer(this.actionTypes);
     this.loadNextPageMessages = this.loadNextPageMessages.bind(this);
     this.updateSearchingString = this.updateSearchingString.bind(this);
     this.updateSearchResults = this.updateSearchResults.bind(this);
+
+    this.addSelector('normalizedMessages',
+      () => this.messages,
+      () => (this._contactMatcher && this._contactMatcher.ready ?
+        this._contactMatcher.dataMapping :
+        null),
+      (messages, dataMapping) => messages.map((message) => {
+        if (!dataMapping || !message.from || !message.to) {
+          return message;
+        }
+        let recipients = message.recipients;
+        const fromUser = { ...message.from };
+        let toUsers = message.to;
+        const fromNumber = fromUser.phoneNumber || fromUser.extensionNumber;
+        fromUser.matchedNames = dataMapping[fromNumber];
+        const addMatchedNamesToRecipients = (recipient) => {
+          const number = recipient.phoneNumber || recipient.extensionNumber;
+          return {
+            ...recipient,
+            matchedNames: dataMapping[number]
+          };
+        };
+        toUsers = toUsers.map(addMatchedNamesToRecipients);
+        if (recipients) {
+          recipients = recipients.map(addMatchedNamesToRecipients);
+        }
+        return {
+          ...message,
+          from: fromUser,
+          to: toUsers,
+          recipients,
+        };
+      })
+    );
+
+    this.addSelector('uniqueNumbers',
+      () => this._messageStore.conversations,
+      (messages) => {
+        const output = [];
+        const numberMap = {};
+        function addIfNotExist(number) {
+          if (!numberMap[number]) {
+            output.push(number);
+            numberMap[number] = true;
+          }
+        }
+        messages.forEach((message) => {
+          if (message.from && message.from.phoneNumber) {
+            addIfNotExist(message.from.phoneNumber);
+          } else if (message.from && message.from.extensionNumber) {
+            addIfNotExist(message.from.extensionNumber);
+          }
+          if (message.to && message.to.length > 0) {
+            message.to.forEach((toUser) => {
+              if (toUser && toUser.phoneNumber) {
+                addIfNotExist(toUser.phoneNumber);
+              } else if (toUser && toUser.extensionNumber) {
+                addIfNotExist(toUser.extensionNumber);
+              }
+            });
+          }
+        });
+        return output;
+      },
+    );
+
+    if (this._contactMatcher) {
+      this._contactMatcher.addQuerySource({
+        getQueriesFn: this._selectors.uniqueNumbers,
+        readyCheckFn: () => (
+          this._messageStore.ready
+        ),
+      });
+    }
   }
 
   initialize() {
@@ -185,5 +261,9 @@ export default class Messages extends RcModule {
 
   get searchingResults() {
     return this.state.searchingResults;
+  }
+
+  get normalizedMessages() {
+    return this._selectors.normalizedMessages();
   }
 }
