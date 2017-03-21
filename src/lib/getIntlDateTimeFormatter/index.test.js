@@ -123,12 +123,22 @@ describe('getIntlDateTimeFormatter', () => {
         locale,
       })).to.equal(formatter.format(now));
     });
-    it('should format timestamp to date string if type is not defined and time is not today', () => {
-      const formatter = getFormatter(locale, DEFAULT_DATE_OPTIONS);
-      expect(intlFormatter({
-        utcTimestamp: yesterday,
-        locale,
-      })).to.equal(formatter.format(yesterday));
+    it('should format timestamp to date string if type is not defined and time is not today',
+      () => {
+        const formatter = getFormatter(locale, DEFAULT_DATE_OPTIONS);
+        expect(intlFormatter({
+          utcTimestamp: yesterday,
+          locale,
+        })).to.equal(formatter.format(yesterday));
+      }
+    );
+    it('should support iso formatted timestamp string', () => {
+      expect(() => {
+        intlFormatter({
+          utcTimestamp: (new Date()).toISOString(),
+          locale,
+        });
+      }).to.not.throw();
     });
   });
 });
