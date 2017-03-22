@@ -265,6 +265,7 @@ class DemoPhone extends RcModule {
     }));
     this.addModule('composeText', new ComposeText({
       alert: this.alert,
+      auth: this.auth,
       storage: this.storage,
       getState: () => this.state.composeText,
       messageSender: this.messageSender,

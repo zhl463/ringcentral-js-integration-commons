@@ -37,73 +37,180 @@ describe('ComposeText Unit Test', () => {
   });
 
   describe('_onStateChange', () => {
-    it('_initSenderNumber should be called once when _shouldInit is true', () => {
+    it('_initSenderNumber and clean should be called once', () => {
       sinon.stub(composeText, '_shouldInit').callsFake(() => true);
       sinon.stub(composeText, '_shouldReset').callsFake(() => false);
+      composeText._auth = {
+        isFreshLogin: true
+      };
       sinon.stub(composeText, '_initSenderNumber');
       sinon.stub(composeText, '_resetModuleStatus');
+      sinon.stub(composeText, 'clean');
       composeText._onStateChange();
       sinon.assert.calledOnce(composeText._initSenderNumber);
       sinon.assert.notCalled(composeText._resetModuleStatus);
+      sinon.assert.calledOnce(composeText.clean);
     });
-
-    it('_resetModuleStatus should be called once when _shouldReset is true', () => {
+    it('_initSenderNumber should be called once', () => {
+      sinon.stub(composeText, '_shouldInit').callsFake(() => true);
+      sinon.stub(composeText, '_shouldReset').callsFake(() => false);
+      composeText._auth = {
+        isFreshLogin: false
+      };
+      sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, '_resetModuleStatus');
+      sinon.stub(composeText, 'clean');
+      composeText._onStateChange();
+      sinon.assert.calledOnce(composeText._initSenderNumber);
+      sinon.assert.notCalled(composeText._resetModuleStatus);
+      sinon.assert.notCalled(composeText.clean);
+    });
+    it('_resetModuleStatus should be called once', () => {
       sinon.stub(composeText, '_shouldInit').callsFake(() => false);
       sinon.stub(composeText, '_shouldReset').callsFake(() => true);
+      composeText._auth = {
+        isFreshLogin: true
+      };
       sinon.stub(composeText, '_resetModuleStatus');
       sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, 'clean');
       composeText._onStateChange();
       sinon.assert.notCalled(composeText._initSenderNumber);
       sinon.assert.calledOnce(composeText._resetModuleStatus);
+      sinon.assert.notCalled(composeText.clean);
     });
-
-    it('_initSenderNumber and _resetModuleStatus should Not be called', () => {
+    it('_resetModuleStatus should be called once when _shouldReset is true', () => {
       sinon.stub(composeText, '_shouldInit').callsFake(() => false);
-      sinon.stub(composeText, '_shouldReset').callsFake(() => false);
+      sinon.stub(composeText, '_shouldReset').callsFake(() => true);
+      composeText._auth = {
+        isFreshLogin: false
+      };
       sinon.stub(composeText, '_resetModuleStatus');
       sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, 'clean');
+      composeText._onStateChange();
+      sinon.assert.notCalled(composeText._initSenderNumber);
+      sinon.assert.calledOnce(composeText._resetModuleStatus);
+      sinon.assert.notCalled(composeText.clean);
+    });
+    it('_initSenderNumber and _resetModuleStatus and clean should Not be called', () => {
+      sinon.stub(composeText, '_shouldInit').callsFake(() => false);
+      sinon.stub(composeText, '_shouldReset').callsFake(() => false);
+      composeText._auth = {
+        isFreshLogin: true
+      };
+      sinon.stub(composeText, '_resetModuleStatus');
+      sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, 'clean');
       composeText._onStateChange();
       sinon.assert.notCalled(composeText._resetModuleStatus);
       sinon.assert.notCalled(composeText._initSenderNumber);
+      sinon.assert.notCalled(composeText.clean);
+    });
+    it('_initSenderNumber and _resetModuleStatus and clean should Not be called', () => {
+      sinon.stub(composeText, '_shouldInit').callsFake(() => false);
+      sinon.stub(composeText, '_shouldReset').callsFake(() => false);
+      composeText._auth = {
+        isFreshLogin: false
+      };
+      sinon.stub(composeText, '_resetModuleStatus');
+      sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, 'clean');
+      composeText._onStateChange();
+      sinon.assert.notCalled(composeText._resetModuleStatus);
+      sinon.assert.notCalled(composeText._initSenderNumber);
+      sinon.assert.notCalled(composeText.clean);
     });
   });
 
   describe('_shouldInit', () => {
-    it(`Should return true when composeText is not ready and _messageSender is ready`, () => {
-      composeText._messageSender = {
-        ready: true
-      };
-      sinon.stub(composeText, 'ready', { get: () => false });
-      expect(composeText._shouldInit()).to.equal(true);
-    });
+    describe('when composeText is not ready', () => {
+      beforeEach(() => {
+        sinon.stub(composeText, 'ready', { get: () => false });
+      });
+      it('Should return true when _messageSender is ready and _auth is ready', () => {
+        composeText._messageSender = {
+          ready: true
+        };
+        composeText._auth = {
+          ready: true
+        };
+        expect(composeText._shouldInit()).to.equal(true);
+      });
 
-    it(`Should return false when composeText is not ready and _messageSender is not ready`, () => {
-      composeText._messageSender = {
-        ready: false
-      };
-      sinon.stub(composeText, 'ready', { get: () => false });
-      expect(composeText._shouldInit()).to.equal(false);
+      it('Should return false when _messageSender is not ready and _auth is ready', () => {
+        composeText._messageSender = {
+          ready: false
+        };
+        composeText._auth = {
+          ready: true
+        };
+        expect(composeText._shouldInit()).to.equal(false);
+      });
+      it('Should return false when _messageSender is ready and auth is not ready', () => {
+        composeText._messageSender = {
+          ready: true
+        };
+        composeText._auth = {
+          ready: false
+        };
+        expect(composeText._shouldInit()).to.equal(false);
+      });
+      it('Should return false when _messageSender is not ready and auth is not ready', () => {
+        composeText._messageSender = {
+          ready: false
+        };
+        composeText._auth = {
+          ready: false
+        };
+        expect(composeText._shouldInit()).to.equal(false);
+      });
     });
-
-    it(`Should return false when composeText is ready and _messageSender is ready`, () => {
-      composeText._messageSender = {
-        ready: true
-      };
-      sinon.stub(composeText, 'ready', { get: () => true });
-      expect(composeText._shouldInit()).to.equal(false);
-    });
-
-    it(`Should return false when composeText is ready and _messageSender is not ready`, () => {
-      composeText._messageSender = {
-        ready: false
-      };
-      sinon.stub(composeText, 'ready', { get: () => true });
-      expect(composeText._shouldInit()).to.equal(false);
+    describe('when composeText is ready', () => {
+      beforeEach(() => {
+        sinon.stub(composeText, 'ready', { get: () => true });
+      });
+      it('Should return false when _messageSender is ready and _auth is ready', () => {
+        composeText._messageSender = {
+          ready: true
+        };
+        composeText._auth = {
+          ready: true
+        };
+        expect(composeText._shouldInit()).to.equal(false);
+      });
+      it('Should return false when  _messageSender is ready and _auth is not ready', () => {
+        composeText._messageSender = {
+          ready: true
+        };
+        composeText._auth = {
+          ready: false
+        };
+        expect(composeText._shouldInit()).to.equal(false);
+      });
+      it('Should return false when _messageSender is not ready and _auth is ready', () => {
+        composeText._messageSender = {
+          ready: false
+        };
+        composeText._auth = {
+          ready: true
+        };
+        expect(composeText._shouldInit()).to.equal(false);
+      });
+      it('Should return false when _messageSender is not ready and _auth is not ready', () => {
+        composeText._messageSender = {
+          ready: false
+        };
+        composeText._auth = {
+          ready: false
+        };
+        expect(composeText._shouldInit()).to.equal(false);
+      });
     });
   });
 
   describe('_shouldReset', () => {
-    it(`Should return true when composeText is ready and _messageSender is not ready`, () => {
+    it('Should return true when composeText is ready and _messageSender is not ready', () => {
       composeText._messageSender = {
         ready: false
       };
@@ -111,7 +218,7 @@ describe('ComposeText Unit Test', () => {
       expect(composeText._shouldReset()).to.equal(true);
     });
 
-    it(`Should return false when composeText is ready and _messageSender is ready`, () => {
+    it('Should return false when composeText is ready and _messageSender is ready', () => {
       composeText._messageSender = {
         ready: true
       };
@@ -119,7 +226,7 @@ describe('ComposeText Unit Test', () => {
       expect(composeText._shouldReset()).to.equal(false);
     });
 
-    it(`Should return false when composeText is not ready and _messageSender is ready`, () => {
+    it('Should return false when composeText is not ready and _messageSender is ready', () => {
       composeText._messageSender = {
         ready: true
       };
@@ -127,7 +234,7 @@ describe('ComposeText Unit Test', () => {
       expect(composeText._shouldReset()).to.equal(false);
     });
 
-    it(`Should return false when composeText is not ready and _messageSender is not ready`, () => {
+    it('Should return false when composeText is not ready and _messageSender is not ready', () => {
       composeText._messageSender = {
         ready: false
       };
@@ -137,7 +244,7 @@ describe('ComposeText Unit Test', () => {
   });
 
   describe('_initSenderNumber', () => {
-    it(`Should return call updateSenderNumber with user's first senderNumber`, () => {
+    it('Should return call updateSenderNumber with user\'s first senderNumber', () => {
       composeText._messageSender = {
         senderNumbersList: ['+1234567890']
       };
@@ -147,7 +254,7 @@ describe('ComposeText Unit Test', () => {
       sinon.assert.calledWith(composeText.updateSenderNumber, '+1234567890');
     });
 
-    it(`Should return call updateSenderNumber with undefined`, () => {
+    it('Should return call updateSenderNumber with undefined', () => {
       composeText._messageSender = {
         senderNumbersList: []
       };
@@ -157,7 +264,7 @@ describe('ComposeText Unit Test', () => {
       sinon.assert.calledWith(composeText.updateSenderNumber, undefined);
     });
 
-    it(`Should return call updateSenderNumber with cachedPhoneNumber`, () => {
+    it('Should return call updateSenderNumber with cachedPhoneNumber', () => {
       sinon.stub(composeText, 'cache', { get: () => ({ senderNumber: '+1234567891' }) });
       sinon.stub(composeText, 'updateSenderNumber');
       composeText._initSenderNumber();

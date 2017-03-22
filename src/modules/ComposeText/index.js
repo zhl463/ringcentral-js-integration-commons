@@ -11,6 +11,7 @@ import messageSenderMessages from '../MessageSender/messageSenderMessages';
 export default class ComposeText extends RcModule {
   constructor({
     alert,
+    auth,
     storage,
     messageSender,
     numberValidate,
@@ -22,6 +23,7 @@ export default class ComposeText extends RcModule {
     });
 
     this._alert = alert;
+    this._auth = auth;
     this._storage = storage;
     this._storageKey = 'composeText';
     this._reducer = getComposeTextReducer(this.actionTypes);
@@ -50,6 +52,9 @@ export default class ComposeText extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
+      if (this._auth.isFreshLogin) {
+        this.clean();
+      }
       this._initSenderNumber();
     } else if (
       this._shouldReset()
@@ -61,6 +66,7 @@ export default class ComposeText extends RcModule {
   _shouldInit() {
     return (
       this._messageSender.ready &&
+      this._auth.ready &&
       !this.ready
     );
   }
