@@ -206,9 +206,10 @@ describe('DataMatcher', async () => {
     const options = [true, false];
     options.forEach((modulePending) => {
       options.forEach((searchProvidersReady) => {
-        options.forEach((querySourcesReady) => {
-          const result = modulePending && searchProvidersReady && querySourcesReady;
-          it(`should return ${result} when this.pending === ${modulePending}, this.searchProvidersReady === ${searchProvidersReady}, and this.querySourcesReady === ${querySourcesReady}`, () => {
+        const result = modulePending && searchProvidersReady;
+        it(`should return ${result} when this.pending === ${modulePending},
+          this.searchProvidersReady === ${searchProvidersReady}}`,
+          () => {
             const instance = new DataMatcher({
               name: 'foo',
             });
@@ -218,16 +219,15 @@ describe('DataMatcher', async () => {
             sinon.stub(instance, 'searchProvidersReady', {
               get: () => searchProvidersReady,
             });
-            sinon.stub(instance, 'querySourcesReady', {
-              get: () => querySourcesReady,
-            });
             expect(instance._shouldInit()).to.equal(result);
           });
 
-          options.forEach((storageReady) => {
-            const sResult = modulePending && searchProvidersReady &&
-              querySourcesReady && storageReady;
-            it(`should return ${sResult} when this.pending === ${modulePending}, this.searchProvidersReady === ${searchProvidersReady}, this.querySourcesReady === ${querySourcesReady}, and this._storage.ready === ${storageReady}`, () => {
+        options.forEach((storageReady) => {
+          const sResult = modulePending && searchProvidersReady && storageReady;
+          it(`should return ${sResult} when this.pending === ${modulePending},
+          this.searchProvidersReady === ${searchProvidersReady},
+          and this._storage.ready === ${storageReady}`,
+            () => {
               const sInstance = new DataMatcher({
                 name: 'foo',
                 storage: {
@@ -241,12 +241,8 @@ describe('DataMatcher', async () => {
               sinon.stub(sInstance, 'searchProvidersReady', {
                 get: () => searchProvidersReady,
               });
-              sinon.stub(sInstance, 'querySourcesReady', {
-                get: () => querySourcesReady,
-              });
               expect(sInstance._shouldInit()).to.equal(sResult);
             });
-          });
         });
       });
     });
@@ -256,9 +252,10 @@ describe('DataMatcher', async () => {
     const options = [true, false];
     options.forEach((moduleReady) => {
       options.forEach((searchProvidersReady) => {
-        options.forEach((querySourcesReady) => {
-          const result = moduleReady && (!searchProvidersReady || !querySourcesReady);
-          it(`should return ${result} when this.ready === ${moduleReady}, this.searchProvidersReady === ${searchProvidersReady}, and this.querySourcesReady === ${querySourcesReady}`, () => {
+        const result = moduleReady && !searchProvidersReady;
+        it(`should return ${result} when this.ready === ${moduleReady},
+        this.searchProvidersReady === ${searchProvidersReady}`,
+          () => {
             const instance = new DataMatcher({
               name: 'foo',
             });
@@ -268,20 +265,19 @@ describe('DataMatcher', async () => {
             sinon.stub(instance, 'searchProvidersReady', {
               get: () => searchProvidersReady,
             });
-            sinon.stub(instance, 'querySourcesReady', {
-              get: () => querySourcesReady,
-            });
             expect(instance._shouldReset()).to.equal(result);
           });
 
-          options.forEach((storageReady) => {
-            const sResult = moduleReady &&
-              (
-                !searchProvidersReady ||
-                !querySourcesReady ||
-                !storageReady)
-              ;
-            it(`should return ${sResult} when this.ready === ${moduleReady}, this.searchProvidersReady === ${searchProvidersReady}, this.querySourcesReady === ${querySourcesReady}, and this._storage.ready === ${storageReady}`, () => {
+        options.forEach((storageReady) => {
+          const sResult = moduleReady &&
+            (
+              !searchProvidersReady ||
+              !storageReady)
+            ;
+          it(`should return ${sResult} when this.ready === ${moduleReady},
+          this.searchProvidersReady === ${searchProvidersReady},
+          and this._storage.ready === ${storageReady}`,
+            () => {
               const sInstance = new DataMatcher({
                 name: 'foo',
                 storage: {
@@ -295,12 +291,8 @@ describe('DataMatcher', async () => {
               sinon.stub(sInstance, 'searchProvidersReady', {
                 get: () => searchProvidersReady,
               });
-              sinon.stub(sInstance, 'querySourcesReady', {
-                get: () => querySourcesReady,
-              });
               expect(sInstance._shouldReset()).to.equal(sResult);
             });
-          });
         });
       });
     });
@@ -389,43 +381,6 @@ describe('DataMatcher', async () => {
     });
   });
 
-  describe('querySourcesReady', () => {
-    it('should return true if there are no querySources', () => {
-      const instance = new DataMatcher({
-        name: 'foo',
-      });
-      expect(instance.querySourcesReady).to.equal(true);
-    });
-    it('should return false if any one of the querySources is not ready', () => {
-      const instance = new DataMatcher({
-        name: 'foo',
-      });
-      instance.addQuerySource({
-        getQueriesFn: () => [],
-        readyCheckFn: () => false,
-      });
-      instance.addQuerySource({
-        getQueriesFn: () => [],
-        readyCheckFn: () => true,
-      });
-      expect(instance.querySourcesReady).to.equal(false);
-    });
-    it('should return true if all of the querySources are ready', () => {
-      const instance = new DataMatcher({
-        name: 'foo',
-      });
-      instance.addQuerySource({
-        getQueriesFn: () => [],
-        readyCheckFn: () => true,
-      });
-      instance.addQuerySource({
-        getQueriesFn: () => [],
-        readyCheckFn: () => true,
-      });
-      expect(instance.querySourcesReady).to.equal(true);
-    });
-  });
-
   describe('_getQueries', () => {
     it('should return empty array if no querySources is present', () => {
       const instance = new DataMatcher({
@@ -433,7 +388,7 @@ describe('DataMatcher', async () => {
       });
       expect(instance._getQueries()).to.deep.equal([]);
     });
-    it('should return empty array if querySourcesReady === false', () => {
+    it('should return empty array if no querySources are ready', () => {
       const instance = new DataMatcher({
         name: 'foo',
       });
@@ -443,7 +398,7 @@ describe('DataMatcher', async () => {
       });
       expect(instance._getQueries()).to.deep.equal([]);
     });
-    it('should return an array of all the unique queries from all sources', () => {
+    it('should return an array of all the unique queries from sources that are ready', () => {
       const instance = new DataMatcher({
         name: 'foo',
       });
@@ -454,6 +409,10 @@ describe('DataMatcher', async () => {
       instance.addQuerySource({
         getQueriesFn: () => [3, 4, 5, 6],
         readyCheckFn: () => true,
+      });
+      instance.addQuerySource({
+        getQueriesFn: () => [7, 8, 9],
+        readyCheckFn: () => false,
       });
       expect(instance._getQueries()).to.deep.equal([1, 2, 3, 4, 5, 6]);
     });
@@ -925,7 +884,7 @@ describe('DataMatcher', async () => {
         },
       });
       sinon.stub(instance, '_cleanUp');
-      sinon.stub(instance, 'match').callsFake(async () => {});
+      sinon.stub(instance, 'match').callsFake(async () => { });
       instance.triggerMatch();
       sinon.assert.calledOnce(instance._cleanUp);
       sinon.assert.calledOnce(instance.match);
@@ -940,7 +899,7 @@ describe('DataMatcher', async () => {
         },
       });
       sinon.stub(instance, '_cleanUp');
-      sinon.stub(instance, 'match').callsFake(async () => {});
+      sinon.stub(instance, 'match').callsFake(async () => { });
       instance.triggerMatch();
       sinon.assert.notCalled(instance._cleanUp);
       sinon.assert.notCalled(instance.match);

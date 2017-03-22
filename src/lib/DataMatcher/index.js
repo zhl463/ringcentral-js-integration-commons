@@ -100,13 +100,13 @@ export default class DataMatcher extends RcModule {
   }
   _getQueries() {
     const output = new Set();
-    if (this.querySourcesReady) {
-      this._querySources.forEach((_, getQueriesFn) => {
+    this._querySources.forEach((readyCheckFn, getQueriesFn) => {
+      if (readyCheckFn()) {
         getQueriesFn().forEach((query) => {
           output.add(query);
         });
-      });
-    }
+      }
+    });
     return [...output];
   }
   _cleanUp() {
@@ -140,8 +140,7 @@ export default class DataMatcher extends RcModule {
     return !!(
       this.pending &&
       (!this._storage || this._storage.ready) &&
-      this.searchProvidersReady &&
-      this.querySourcesReady
+      this.searchProvidersReady
     );
   }
 
@@ -150,8 +149,7 @@ export default class DataMatcher extends RcModule {
       this.ready &&
       (
         (!!this._storage && !this._storage.ready) ||
-        !this.searchProvidersReady ||
-        !this.querySourcesReady
+        !this.searchProvidersReady
       )
     );
   }
@@ -159,10 +157,6 @@ export default class DataMatcher extends RcModule {
   get searchProvidersReady() {
     return [...this._searchProviders.values()]
       .every(({ readyCheckFn }) => readyCheckFn());
-  }
-  get querySourcesReady() {
-    return [...this._querySources.values()]
-      .every(readyCheckFn => readyCheckFn());
   }
 
   addSearchProvider({ name, searchFn, readyCheckFn }) {
