@@ -65,7 +65,7 @@ export default class CallHistory extends RcModule {
       () => this.state.endedCalls,
       () => (this._contactMatcher && this._contactMatcher.dataMapping),
       () => (this._activityMatcher && this._activityMatcher.dataMapping),
-      (normalizedCalls, endedCalls, contactMapping, activityMapping) => {
+      (normalizedCalls, endedCalls, contactMapping = {}, activityMapping = {}) => {
         const sessionIds = {};
         return normalizedCalls.map((call) => {
           sessionIds[call.sessionId] = true;

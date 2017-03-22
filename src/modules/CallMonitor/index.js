@@ -77,7 +77,7 @@ export default class CallMonitor extends RcModule {
       this._selectors.normalizedCalls,
       () => (this._contactMatcher && this._contactMatcher.dataMapping),
       () => (this._activityMatcher && this._activityMatcher.dataMapping),
-      (normalizedCalls, contactMapping, activityMapping) => (
+      (normalizedCalls, contactMapping = {}, activityMapping = {}) => (
         normalizedCalls.map((call) => {
           const fromNumber = call.from && call.from.phoneNumber;
           const toNumber = call.to && call.to.phoneNumber;
