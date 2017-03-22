@@ -63,13 +63,9 @@ export default class CallHistory extends RcModule {
     this.addSelector('calls',
       this._selectors.normalizedCalls,
       () => this.state.endedCalls,
-      () => (this._contactMatcher && this._contactMatcher.ready ?
-        this._contactMatcher.cache :
-        null),
-      () => (this._activityMatcher && this._activityMatcher.ready ?
-        this._activityMatcher.cache :
-        null),
-      (normalizedCalls, endedCalls, contactCache, activityCache) => {
+      () => (this._contactMatcher && this._contactMatcher.dataMapping),
+      () => (this._activityMatcher && this._activityMatcher.dataMapping),
+      (normalizedCalls, endedCalls, contactMapping, activityMapping) => {
         const sessionIds = {};
         return normalizedCalls.map((call) => {
           sessionIds[call.sessionId] = true;
@@ -77,9 +73,9 @@ export default class CallHistory extends RcModule {
           const toNumber = call.to && (call.to.phoneNumber || call.to.extensionNumber);
           return {
             ...call,
-            fromMatches: (fromNumber && contactCache && contactCache.dataMap[fromNumber]) || [],
-            toMatches: (toNumber && contactCache && contactCache.dataMap[toNumber]) || [],
-            activityMatches: (activityCache && activityCache.dataMap[call.sessionId]) || [],
+            fromMatches: (fromNumber && contactMapping[fromNumber]) || [],
+            toMatches: (toNumber && contactMapping[toNumber]) || [],
+            activityMatches: (activityMapping[call.sessionId]) || [],
           };
         }).concat(endedCalls.filter(call => !sessionIds[call.sessionId]))
           .sort(sortByStartTime);

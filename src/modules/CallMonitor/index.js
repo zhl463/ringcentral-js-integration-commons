@@ -75,21 +75,17 @@ export default class CallMonitor extends RcModule {
     );
     this.addSelector('calls',
       this._selectors.normalizedCalls,
-      () => (this._contactMatcher && this._contactMatcher.ready ?
-        this._contactMatcher.cache :
-        null),
-      () => (this._activityMatcher && this._activityMatcher.ready ?
-        this._activityMatcher.cache :
-        null),
-      (normalizedCalls, contactCache, activityCache) => (
+      () => (this._contactMatcher && this._contactMatcher.dataMapping),
+      () => (this._activityMatcher && this._activityMatcher.dataMapping),
+      (normalizedCalls, contactMapping, activityMapping) => (
         normalizedCalls.map((call) => {
           const fromNumber = call.from && call.from.phoneNumber;
           const toNumber = call.to && call.to.phoneNumber;
           return {
             ...call,
-            fromMatches: (fromNumber && contactCache && contactCache.dataMap[fromNumber]) || [],
-            toMatches: (toNumber && contactCache && contactCache.dataMap[toNumber]) || [],
-            activityMatches: (activityCache && activityCache.dataMap[call.sessionId]) || [],
+            fromMatches: (fromNumber && contactMapping[fromNumber]) || [],
+            toMatches: (toNumber && contactMapping[toNumber]) || [],
+            activityMatches: (activityMapping[call.sessionId]) || [],
           };
         }).sort(sortByStartTime)
       )
