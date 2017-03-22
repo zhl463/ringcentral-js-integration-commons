@@ -22,6 +22,7 @@ describe('Messages Unit Test', () => {
       '_initMessages',
       '_resetModuleStatus',
       '_reloadMessages',
+      '_triggerMatch',
       '_updateMessages',
       '_getCurrnetPageMessages',
       'loadNextPageMessages',
@@ -40,6 +41,7 @@ describe('Messages Unit Test', () => {
       sinon.stub(messages, '_initMessages');
       sinon.stub(messages, '_resetModuleStatus');
       sinon.stub(messages, '_reloadMessages');
+      sinon.stub(messages, '_triggerMatch');
       messages._onStateChange();
       sinon.assert.calledOnce(messages._initMessages);
       sinon.assert.notCalled(messages._resetModuleStatus);
@@ -53,6 +55,7 @@ describe('Messages Unit Test', () => {
       sinon.stub(messages, '_initMessages');
       sinon.stub(messages, '_resetModuleStatus');
       sinon.stub(messages, '_reloadMessages');
+      sinon.stub(messages, '_triggerMatch');
       messages._onStateChange();
       sinon.assert.notCalled(messages._initMessages);
       sinon.assert.calledOnce(messages._resetModuleStatus);
@@ -66,10 +69,12 @@ describe('Messages Unit Test', () => {
       sinon.stub(messages, '_initMessages');
       sinon.stub(messages, '_resetModuleStatus');
       sinon.stub(messages, '_reloadMessages');
+      sinon.stub(messages, '_triggerMatch');
       messages._onStateChange();
       sinon.assert.notCalled(messages._initMessages);
       sinon.assert.notCalled(messages._resetModuleStatus);
       sinon.assert.calledOnce(messages._reloadMessages);
+      sinon.assert.calledOnce(messages._triggerMatch);
     });
   });
 
@@ -221,6 +226,60 @@ describe('Messages Unit Test', () => {
       sinon.stub(messages, '_updateMessages');
       messages._reloadMessages();
       sinon.assert.calledWith(messages._updateMessages, []);
+    });
+  });
+
+  describe('_triggerMatch', () => {
+    it('should not call triggerMatch if _lastProcessedNumbers is equal uniqueNumbers', () => {
+      const uniqueNumbers = [1];
+      let isCallTriggerMatch = false;
+      messages._selectors = {
+        uniqueNumbers: () => uniqueNumbers,
+      };
+      messages._contactMatcher = {
+        triggerMatch: () => {
+          isCallTriggerMatch = true;
+        },
+        ready: true,
+      };
+      messages._lastProcessedNumbers = uniqueNumbers;
+      messages._triggerMatch();
+      expect(isCallTriggerMatch).to.equal(false);
+    });
+
+    it('should call triggerMatch if _lastProcessedNumbers is not equal uniqueNumbers', () => {
+      const uniqueNumbers = [1];
+      let isCallTriggerMatch = false;
+      messages._selectors = {
+        uniqueNumbers: () => uniqueNumbers,
+      };
+      messages._contactMatcher = {
+        triggerMatch: () => {
+          isCallTriggerMatch = true;
+        },
+        ready: true,
+      };
+      messages._lastProcessedNumbers = null;
+      messages._triggerMatch();
+      expect(messages._lastProcessedNumbers).to.be.equal(uniqueNumbers);
+      expect(isCallTriggerMatch).to.equal(true);
+    });
+
+    it('should call not triggerMatch if _contactMatcher is not ready', () => {
+      const uniqueNumbers = [1];
+      let isCallTriggerMatch = false;
+      messages._selectors = {
+        uniqueNumbers: () => uniqueNumbers,
+      };
+      messages._contactMatcher = {
+        triggerMatch: () => {
+          isCallTriggerMatch = true;
+        },
+        ready: false,
+      };
+      messages._lastProcessedNumbers = null;
+      messages._triggerMatch();
+      expect(isCallTriggerMatch).to.equal(false);
     });
   });
 

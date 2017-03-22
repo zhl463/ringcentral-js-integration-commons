@@ -23,40 +23,6 @@ export default class Messages extends RcModule {
     this.updateSearchingString = this.updateSearchingString.bind(this);
     this.updateSearchResults = this.updateSearchResults.bind(this);
 
-    this.addSelector('normalizedMessages',
-      () => this.messages,
-      () => (this._contactMatcher && this._contactMatcher.ready ?
-        this._contactMatcher.dataMapping :
-        null),
-      (messages, dataMapping) => messages.map((message) => {
-        if (!dataMapping || !message.from || !message.to) {
-          return message;
-        }
-        let recipients = message.recipients;
-        const fromUser = { ...message.from };
-        let toUsers = message.to;
-        const fromNumber = fromUser.phoneNumber || fromUser.extensionNumber;
-        fromUser.matchedNames = dataMapping[fromNumber];
-        const addMatchedNamesToRecipients = (recipient) => {
-          const number = recipient.phoneNumber || recipient.extensionNumber;
-          return {
-            ...recipient,
-            matchedNames: dataMapping[number]
-          };
-        };
-        toUsers = toUsers.map(addMatchedNamesToRecipients);
-        if (recipients) {
-          recipients = recipients.map(addMatchedNamesToRecipients);
-        }
-        return {
-          ...message,
-          from: fromUser,
-          to: toUsers,
-          recipients,
-        };
-      })
-    );
-
     this.addSelector('uniqueNumbers',
       () => this._messageStore.conversations,
       (messages) => {
@@ -96,6 +62,8 @@ export default class Messages extends RcModule {
         ),
       });
     }
+
+    this._lastProcessedNumbers = null;
   }
 
   initialize() {
@@ -115,6 +83,7 @@ export default class Messages extends RcModule {
       this._resetModuleStatus();
     } else if (this._shouldReload()) {
       this._reloadMessages();
+      this._triggerMatch();
     }
   }
 
@@ -170,6 +139,16 @@ export default class Messages extends RcModule {
       messagesTimestamp: this._messageStore.updatedTimestamp,
       messages,
     });
+  }
+
+  _triggerMatch() {
+    const uniqueNumbers = this._selectors.uniqueNumbers();
+    if (this._lastProcessedNumbers !== uniqueNumbers) {
+      this._lastProcessedNumbers = uniqueNumbers;
+      if (this._contactMatcher && this._contactMatcher.ready) {
+        this._contactMatcher.triggerMatch();
+      }
+    }
   }
 
   _getCurrnetPageMessages(page) {
