@@ -80,7 +80,7 @@ export default class DataMatcher extends RcModule {
             return;
           }
           let matchesList = [];
-          Object.keys(queryResult).forEach((providerName) => {
+          this._searchProviders.keys().forEach((providerName) => {
             if (queryResult[providerName] && queryResult[providerName].data.length > 0) {
               matchesList = matchesList.concat(queryResult[providerName].data);
             }
