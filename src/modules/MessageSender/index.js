@@ -111,6 +111,7 @@ export default class MessageSender extends RcModule {
     if (isBlank(senderNumber)) {
       validateResult = false;
     }
+    this.store.dispatch({ type: this.actionTypes.validate });
     if (validateResult) {
       const isMySenderNumber = this.senderNumbersList.find(number => (
         number === senderNumber
@@ -120,6 +121,7 @@ export default class MessageSender extends RcModule {
       }
     }
     if (!validateResult) {
+      this.store.dispatch({ type: this.actionTypes.validateError });
       this._alertWarning(messageSenderMessages.senderNumberInvalids);
     }
     return validateResult;
@@ -174,7 +176,6 @@ export default class MessageSender extends RcModule {
     if (!this._validateText(text)) {
       return null;
     }
-
     try {
       const validateToNumberResult = await this._validateToNumbers(toNumbers);
       if (!validateToNumberResult.result) {
