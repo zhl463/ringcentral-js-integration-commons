@@ -29,6 +29,7 @@ export default class Conversation extends RcModule {
     this._promise = null;
     this.replyToReceivers = this.replyToReceivers.bind(this);
     this.changeDefaultRecipient = this.changeDefaultRecipient.bind(this);
+    this.changeMatchedNames = this.changeMatchedNames.bind(this);
   }
 
   initialize() {
@@ -95,6 +96,17 @@ export default class Conversation extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.unload,
     });
+  }
+
+  changeMatchedNames(matchedNames) {
+    const recipients = this.recipients.slice();
+    if (recipients.length !== 1) {
+      return;
+    }
+    if (matchedNames) {
+      recipients[0].matchedNames = matchedNames;
+      this._updateConversationRecipients(recipients);
+    }
   }
 
   changeDefaultRecipient(phoneNumber) {

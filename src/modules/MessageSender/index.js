@@ -258,7 +258,11 @@ export default class MessageSender extends RcModule {
     ) {
       errResp._json.errors.map((err) => {
         if (
-          (err.errorCode === 'CMN-101' || err.errorCode === 'CMN-102') &&
+          (
+            err.errorCode === 'CMN-101' ||
+            err.errorCode === 'CMN-102' ||
+            err.errorCode === 'CMN-414'
+          ) &&
           err.parameterName.startsWith('to')
         ) {
           // 101 : "Parameter [to.extensionNumber] value is invalid"

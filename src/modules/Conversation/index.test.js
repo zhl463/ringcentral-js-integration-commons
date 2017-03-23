@@ -24,6 +24,7 @@ describe('Conversation Unit Test', () => {
       'loadConversationById',
       'unloadConversation',
       'changeDefaultRecipient',
+      'changeMatchedNames',
       '_updateConversationRecipients',
       '_loadConversation',
       '_updateRecipients',
@@ -630,14 +631,16 @@ describe('Conversation Unit Test', () => {
   });
 
   describe('changeDefaultRecipient', () => {
-    it('should not call _updateConversationRecipients if conversation recipients length is one', () => {
+    it(`should not call _updateConversationRecipients
+        if conversation recipients length is one`, () => {
       sinon.stub(conversation, 'recipients', { get: () => ['123'] });
       sinon.stub(conversation, '_updateConversationRecipients');
       conversation.changeDefaultRecipient('123');
       sinon.assert.notCalled(conversation._updateConversationRecipients);
     });
 
-    it('should not call _updateConversationRecipients if phoneNumber is not included in recipients', () => {
+    it(`should not call _updateConversationRecipients
+        if phoneNumber is not included in recipients`, () => {
       sinon.stub(conversation, 'recipients', {
         get: () => [{ extensionNumber: '123' }, { extensionNumber: '321' }]
       });
@@ -667,6 +670,31 @@ describe('Conversation Unit Test', () => {
         conversation._updateConversationRecipients,
         [{ extensionNumber: '321' }, { extensionNumber: '123' }]
       );
+    });
+  });
+
+  describe('changeMatchedNames', () => {
+    it(`should not call _updateConversationRecipients
+        if conversation recipients length is not one`, () => {
+      sinon.stub(conversation, 'recipients', { get: () => ['123', '111'] });
+      sinon.stub(conversation, '_updateConversationRecipients');
+      conversation.changeMatchedNames(['123']);
+      sinon.assert.notCalled(conversation._updateConversationRecipients);
+    });
+
+    it(`should not call _updateConversationRecipients
+        if matchedNames is null`, () => {
+      sinon.stub(conversation, 'recipients', { get: () => [{ phoneNumber: '1234' }] });
+      sinon.stub(conversation, '_updateConversationRecipients');
+      conversation.changeMatchedNames(null);
+      sinon.assert.notCalled(conversation._updateConversationRecipients);
+    });
+
+    it('should call _updateConversationRecipients', () => {
+      sinon.stub(conversation, 'recipients', { get: () => [{ phoneNumber: '1234' }] });
+      sinon.stub(conversation, '_updateConversationRecipients');
+      conversation.changeMatchedNames(['123']);
+      sinon.assert.calledOnce(conversation._updateConversationRecipients);
     });
   });
 
