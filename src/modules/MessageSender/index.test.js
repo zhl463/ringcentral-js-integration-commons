@@ -364,49 +364,50 @@ describe('MessageSender Unit Test', () => {
       expect(result).to.equal(true);
     });
 
-    it('should return false and warning senderNumberInvalids when senderNumber is blank', () => {
+    it('should return false and warning senderNumberInvalid when senderNumber is blank', () => {
       sinon.stub(messageSender, '_alertWarning');
       const senderNumber = '';
       sinon.stub(messageSender, 'senderNumbersList', { get: () => ['1234567891'] });
       const result = messageSender._validateSenderNumber(senderNumber);
       sinon.assert.calledWith(
         messageSender._alertWarning,
-        messageSenderMessages.senderNumberInvalids
+        messageSenderMessages.senderNumberInvalid
       );
       expect(result).to.equal(false);
     });
 
-    it('should return false and warning senderNumberInvalids when senderNumber is null', () => {
+    it('should return false and warning senderNumberInvalid when senderNumber is null', () => {
       sinon.stub(messageSender, '_alertWarning');
       const senderNumber = null;
       sinon.stub(messageSender, 'senderNumbersList', { get: () => ['1234567891'] });
       const result = messageSender._validateSenderNumber(senderNumber);
       sinon.assert.calledWith(
         messageSender._alertWarning,
-        messageSenderMessages.senderNumberInvalids
+        messageSenderMessages.senderNumberInvalid
       );
       expect(result).to.equal(false);
     });
 
-    it('should return false and warning senderNumberInvalids when senderNumber is undefined', () => {
+    it('should return false and warning senderNumberInvalid when senderNumber is undefined', () => {
       sinon.stub(messageSender, '_alertWarning');
       sinon.stub(messageSender, 'senderNumbersList', { get: () => ['1234567891'] });
       const result = messageSender._validateSenderNumber();
       sinon.assert.calledWith(
         messageSender._alertWarning,
-        messageSenderMessages.senderNumberInvalids
+        messageSenderMessages.senderNumberInvalid
       );
       expect(result).to.equal(false);
     });
 
-    it('should return false and warning senderNumberInvalids when senderNumber is not included in senderNumbersList', () => {
+    it(`should return false and warning senderNumberInvalid 
+      when senderNumber is not included in senderNumbersList`, () => {
       const senderNumber = '123456789';
       sinon.stub(messageSender, '_alertWarning');
       sinon.stub(messageSender, 'senderNumbersList', { get: () => ['1234567891'] });
       const result = messageSender._validateSenderNumber(senderNumber);
       sinon.assert.calledWith(
         messageSender._alertWarning,
-        messageSenderMessages.senderNumberInvalids
+        messageSenderMessages.senderNumberInvalid
       );
       expect(result).to.equal(false);
     });
@@ -603,7 +604,7 @@ describe('MessageSender Unit Test', () => {
       expect(result).to.equal(null);
     });
 
-    it('should return null and warning senderNumberInvalids', async () => {
+    it('should return null and warning senderNumberInvalid', async () => {
       sinon.stub(messageSender, '_alertWarning');
       sinon.stub(messageSender, '_validateToNumbers').callsFake(
         toNumbers => ({ result: true, numbers: toNumbers })
@@ -619,7 +620,7 @@ describe('MessageSender Unit Test', () => {
       });
       sinon.assert.calledWith(
         messageSender._alertWarning,
-        messageSenderMessages.senderNumberInvalids
+        messageSenderMessages.senderNumberInvalid
       );
       expect(result).to.equal(null);
     });

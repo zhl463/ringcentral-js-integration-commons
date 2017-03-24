@@ -122,7 +122,7 @@ export default class MessageSender extends RcModule {
     }
     if (!validateResult) {
       this.store.dispatch({ type: this.actionTypes.validateError });
-      this._alertWarning(messageSenderMessages.senderNumberInvalids);
+      this._alertWarning(messageSenderMessages.senderNumberInvalid);
     }
     return validateResult;
   }

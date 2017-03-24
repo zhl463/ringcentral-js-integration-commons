@@ -11,7 +11,7 @@ export default new Enum([
   'noToNumber',
   'recipientsEmpty',
   'recipientNumberInvalids',
-  'senderNumberInvalids',
+  'senderNumberInvalid',
   'noAreaCode',
   'specialNumber',
   'internalError',
