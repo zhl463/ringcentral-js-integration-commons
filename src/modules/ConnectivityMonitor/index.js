@@ -3,8 +3,10 @@ import actionTypes from './actionTypes';
 import moduleStatuses from '../../enums/moduleStatuses';
 import getConnectivityMonitorReducer from './getConnectivityMonitorReducer';
 import connectivityMonitorMessages from './connectivityMonitorMessages';
+import ensureExist from '../../lib/ensureExist';
 
-const DEFAULT_TIME_TO_RETRY = 5000;
+export const DEFAULT_TIME_TO_RETRY = 5 * 1000;
+export const DEFAULT_HEART_BEAT_INTERVAL = 60 * 1000;
 
 export default class ConnectivityMonitor extends RcModule {
   constructor({
@@ -12,6 +14,7 @@ export default class ConnectivityMonitor extends RcModule {
     client,
     environment,
     timeToRetry = DEFAULT_TIME_TO_RETRY,
+    heartBeatInterval = DEFAULT_HEART_BEAT_INTERVAL,
     ...options
   }) {
     super({
@@ -19,31 +22,48 @@ export default class ConnectivityMonitor extends RcModule {
       actionTypes,
     });
     this._alert = alert;
-    this._client = client;
+    this._client = this::ensureExist(client, 'client');
     this._environment = environment;
     this._timeToRetry = timeToRetry;
+    this._heartBeatInterval = heartBeatInterval;
     this._reducer = getConnectivityMonitorReducer(this.actionTypes);
-    this._timeoutId = null;
+    this._retryTimeoutId = null;
+    this._lastEnvironmentCounter = 0;
+
+    // auto bind this
+    this._beforeRequestHandler = this::this._beforeRequestHandler;
+    this._requestSuccessHandler = this::this._requestSuccessHandler;
+    this._requestErrorHandler = this::this._requestErrorHandler;
+  }
+  _shouldInit() {
+    return !!(this.pending &&
+      (!this._environment || this._environment.ready));
+  }
+  _shouldRebindHandlers() {
+    return !!(this.ready &&
+      this._environment &&
+      this._environment.ready &&
+      this._environment.changeCounter !== this._lastEnvironmentCounter);
+  }
+  _onStateChange() {
+    if (this._shouldInit()) {
+      this._bindHandlers();
+      this.store.dispatch({
+        type: this.actionTypes.initSuccess,
+      });
+      this._retry();
+    } else if (this._shouldRebindHandlers()) {
+      this._lastEnvironmentCounter = this._environment.changeCounter;
+      this._bindHandlers();
+    }
   }
   initialize() {
-    this.store.subscribe(async () => {
-      if (
-        !this.ready &&
-        (!this._environment || this._environment.ready)
-      ) {
-        this._bindHandlers();
-        this.store.dispatch({
-          type: this.actionTypes.initSuccess,
-        });
-      } else if (
-        this.ready &&
-        this._environment && this._environment.changed
-      ) {
-        this._bindHandlers();
-      }
-    });
+    this.store.subscribe(() => this._onStateChange());
   }
-  _requestSuccessHandler = () => {
+  _beforeRequestHandler() {
+    this._clearTimeout();
+  }
+  _requestSuccessHandler() {
     if (!this.connectivity) {
       this.store.dispatch({
         type: this.actionTypes.connectSuccess,
@@ -58,7 +78,7 @@ export default class ConnectivityMonitor extends RcModule {
         }
       }
     }
-    this._clearTimeout();
+    this._retry();
   }
   showAlert() {
     if (!this.connectivity && this._alert) {
@@ -68,7 +88,7 @@ export default class ConnectivityMonitor extends RcModule {
       });
     }
   }
-  _requestErrorHandler = (apiResponse) => {
+  _requestErrorHandler(apiResponse) {
     if (
       apiResponse instanceof Error &&
       apiResponse.message === 'Failed to fetch'
@@ -105,12 +125,15 @@ export default class ConnectivityMonitor extends RcModule {
     }
   }
   _clearTimeout() {
-    if (this._timeoutId) clearTimeout(this._timeoutId);
+    if (this._retryTimeoutId) {
+      clearTimeout(this._retryTimeoutId);
+      this._retryTimeoutId = null;
+    }
   }
-  _retry(t = this._timeToRetry) {
+  _retry(t = (this.connectivity ? this._heartBeatInterval : this._timeToRetry)) {
     this._clearTimeout();
-    this._timeoutId = setTimeout(() => {
-      this._timeoutId = null;
+    this._retryTimeoutId = setTimeout(() => {
+      this._retryTimeoutId = null;
       this._checkConnection();
     }, t);
   }
@@ -123,7 +146,12 @@ export default class ConnectivityMonitor extends RcModule {
     return this.state.status === moduleStatuses.ready;
   }
 
+  get pending() {
+    return this.state.status === moduleStatuses.pending;
+  }
+
   get connectivity() {
     return this.state.connectivity;
   }
 }
+

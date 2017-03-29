@@ -33,6 +33,7 @@ export default class RateLimiter extends RcModule {
       reducer: getTimestampReducer(this.actionTypes),
     });
     this._timeoutId = null;
+    this._lastEnvironmentCounter = 0;
   }
   initialize() {
     this.store.subscribe(async () => {
@@ -47,8 +48,10 @@ export default class RateLimiter extends RcModule {
         });
       } else if (
         this.ready &&
-        this._environment && this._environment.changed
+        this._environment &&
+        this._environment.changeCounter !== this._lastEnvironmentCounter
       ) {
+        this._lastEnvironmentCounter = this._environment.changeCounter;
         this._bindHandlers();
       }
     });

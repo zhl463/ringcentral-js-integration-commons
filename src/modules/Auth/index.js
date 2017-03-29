@@ -61,6 +61,7 @@ export default class Auth extends RcModule {
     this._proxyFrame = null;
     this._proxyFrameLoaded = false;
     this._unbindEvents = null;
+    this._lastEnvironmentCounter = 0;
   }
   _bindEvents() {
     if (this._unbindEvents) this._unbindEvents();
@@ -188,8 +189,9 @@ export default class Auth extends RcModule {
       if (
         this.ready &&
         this._environment &&
-        this._environment.changed
+        this._environment.changeCounter !== this._lastEnvironmentCounter
       ) {
+        this._lastEnvironmentCounter = this._environment.changeCounter;
         this._bindEvents();
       }
     });

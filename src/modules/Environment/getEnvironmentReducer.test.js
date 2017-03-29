@@ -1,38 +1,44 @@
 import { expect } from 'chai';
 import actionTypes from './actionTypes';
 import getEnvironmentReducer, {
-  getChangedReducer,
+  getChangeCounterReducer,
   getServerReducer,
   getEnabledReducer,
 } from './getEnvironmentReducer';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
-describe('getChangedReducer', () => {
+describe('getChangeCounter', () => {
   it('should be a function', () => {
-    expect(getChangedReducer).to.be.a('function');
+    expect(getChangeCounterReducer).to.be.a('function');
   });
   it('should return a reducer', () => {
-    expect(getChangedReducer(actionTypes)).to.be.a('function');
+    expect(getChangeCounterReducer()).to.be.a('function');
   });
-  describe('changedReducer', () => {
-    const reducer = getChangedReducer(actionTypes);
-    it('should have initial state of false', () => {
-      expect(reducer(undefined, {})).to.be.false;
+  describe('changeCounterReducer', () => {
+    const reducer = getChangeCounterReducer(actionTypes);
+    it('should have initial state of 0', () => {
+      expect(reducer(undefined, {})).to.equal(0);
     });
-    it('should return false if type is not recognized', () => {
+    it('should increment state when type === setData and enviromentChanged === true', () => {
+      [0, 1, 2, 3, 4].forEach((state) => {
+        expect(reducer(state, {
+          type: actionTypes.setData,
+          environmentChanged: true
+        })).to.equal(state + 1);
+      });
+    });
+    it('should return originalState when type === setData and environmentChanged === false', () => {
       const originalState = {};
-      expect(reducer(originalState, { type: 'foo' }))
-        .to.be.false;
-    });
-    it('should return action.environmentChanged on setData', () => {
-      expect(reducer(null, {
-        type: actionTypes.setData,
-        environmentChanged: true,
-      })).to.true;
-      expect(reducer(null, {
+      expect(reducer(originalState, {
         type: actionTypes.setData,
         environmentChanged: false,
-      })).to.false;
+      })).to.equal(originalState);
+    });
+    it('should return originalState for all other action types', () => {
+      const originalState = {};
+      expect(reducer(originalState, {
+        type: 'foo',
+      })).to.equal(originalState);
     });
   });
 });
@@ -103,11 +109,11 @@ describe('getEnvironmentReducer', () => {
   describe('serverReducer', () => {
     const reducer = getEnvironmentReducer(actionTypes);
     const statusReducer = getModuleStatusReducer(actionTypes);
-    const changedReducer = getChangedReducer(actionTypes);
+    const changeCounterReducer = getChangeCounterReducer(actionTypes);
     it('should return the combined initialState', () => {
       expect(reducer(undefined, {})).to.deep.equal({
         status: statusReducer(undefined, {}),
-        changed: changedReducer(undefined, {}),
+        changeCounter: changeCounterReducer(undefined, {}),
       });
     });
   });

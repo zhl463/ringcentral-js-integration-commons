@@ -1,10 +1,10 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
-export function getChangedReducer(types) {
-  return (state = false, { type, environmentChanged }) => {
-    if (type === types.setData) return environmentChanged;
-    return false;
+export function getChangeCounterReducer(types) {
+  return (state = 0, { type, environmentChanged }) => {
+    if (type === types.setData && environmentChanged) return state + 1;
+    return state;
   };
 }
 
@@ -25,6 +25,6 @@ export function getEnabledReducer(types) {
 export default function getEnvironmentReducer(types) {
   return combineReducers({
     status: getModuleStatusReducer(types),
-    changed: getChangedReducer(types),
+    changeCounter: getChangeCounterReducer(types),
   });
 }

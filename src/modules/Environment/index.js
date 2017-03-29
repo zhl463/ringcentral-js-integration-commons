@@ -102,7 +102,7 @@ export default class Environment extends RcModule {
     return this._globalStorage.getItem(this._enabledStorageKey);
   }
 
-  get changed() {
-    return this.state.changed;
+  get changeCounter() {
+    return this.state.changeCounter;
   }
 }
