@@ -8,6 +8,7 @@ import * as messageStoreHelper from './messageStoreHelper';
 import actionTypes from './actionTypes';
 import getMessageStoreReducer from './getMessageStoreReducer';
 import getDataReducer from './getDataReducer';
+import sleep from '../../lib/sleep';
 
 export function processResponseData(data) {
   const records = data.records.slice();
@@ -155,14 +156,51 @@ export default class MessageStore extends RcModule {
                              .list(params);
     return response;
   }
-
+  async _recursiveFSync({
+    dateFrom,
+    dateTo,
+    recordCount = 250,
+    syncToken
+  }) {
+    const params = messageStoreHelper.getMessageSyncParams({
+      dateFrom,
+      dateTo,
+      syncToken
+    });
+    const response = await this._messageSyncApi(params);
+    const records = response.records;
+    if (records.length < recordCount) {
+      return {
+        records,
+        syncInfo: response.syncInfo
+      };
+    }
+    await sleep(1000);
+    const _dateTo = new Date(response.records[response.records.length - 1].creationTime);
+    const lastResponse = this._recursiveFSync({
+      dateFrom,
+      dateTo: _dateTo,
+      syncToken
+    });
+    return {
+      records: records.concat(lastResponse.records),
+      syncInfo: response.syncInfo
+    };
+  }
   async _updateMessagesFromSync() {
+    let response;
     this.store.dispatch({
       type: this.actionTypes.sync,
     });
     const oldSyncToken = this.syncToken;
     const params = messageStoreHelper.getMessageSyncParams({ syncToken: oldSyncToken });
-    const response = await this._messageSyncApi(params);
+    if (!oldSyncToken) {
+      response = await this._recursiveFSync({
+        ...params,
+      });
+    } else {
+      response = await this._messageSyncApi(params);
+    }
     const {
       records,
       syncTimestamp,
@@ -177,6 +215,7 @@ export default class MessageStore extends RcModule {
   }
 
   async _updateConversationFromSync(conversationId) {
+    let response;
     const conversation = this.conversationMap[conversationId.toString()];
     if (!conversation) {
       return;
@@ -189,7 +228,13 @@ export default class MessageStore extends RcModule {
       syncToken: oldSyncToken,
       conversationId: conversation.id,
     });
-    const response = await this._messageSyncApi(params);
+    if (!oldSyncToken) {
+      response = await this._recursiveFSync({
+        ...params,
+      });
+    } else {
+      response = await this._messageSyncApi(params);
+    }
     const {
       records,
       syncTimestamp,

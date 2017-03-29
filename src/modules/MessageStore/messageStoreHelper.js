@@ -17,7 +17,12 @@ export function messageIsUnread(message) {
   );
 }
 
-export function getMessageSyncParams({ syncToken, conversationId }) {
+export function getMessageSyncParams({
+  syncToken,
+  conversationId,
+  dateTo = new Date(),
+  recordCount = 250,
+}) {
   if (syncToken) {
     return {
       syncToken,
@@ -29,6 +34,8 @@ export function getMessageSyncParams({ syncToken, conversationId }) {
   const params = {
     syncType: syncTypes.fSync,
     dateFrom: lastSevenDate.toISOString(),
+    dateTo: new Date(dateTo).toISOString(),
+    recordCount
   };
   if (conversationId) {
     params.conversationId = conversationId;
