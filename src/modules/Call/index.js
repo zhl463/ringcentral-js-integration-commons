@@ -112,7 +112,6 @@ export default class Call extends RcModule {
               payroll: error
             });
           } else if (error.message === 'Failed to fetch') {
-            console.log(error);
             this._alert.danger({
               message: callErrors.networkError,
               payroll: error,
