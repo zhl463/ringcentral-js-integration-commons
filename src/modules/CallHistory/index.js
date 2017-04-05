@@ -215,6 +215,7 @@ export default class CallHistory extends RcModule {
               endedCalls,
               timestamp: Date.now(),
             });
+            this._callLog.sync();
           }
         }
       }

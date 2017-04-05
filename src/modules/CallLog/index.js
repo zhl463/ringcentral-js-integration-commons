@@ -340,8 +340,20 @@ export default class CallLog extends Pollable {
   sync(syncType = this.token ? syncTypes.iSync : syncTypes.fSync) {
     if (!this._promise) {
       this._promise = this._sync(syncType);
+      return this._promise;
+    } else if (!this._queueSync) {
+      this._queueSync = (async () => {
+        await this._promise;
+        this._promise = (async () => {
+          await sleep(300);
+          return this._sync(syncType);
+        })();
+        this._queueSync = null;
+        return this._promise;
+      })();
+      return this._queueSync;
     }
-    return this._promise;
+    return this._queueSync;
   }
   fetchData() {
     this.sync();
