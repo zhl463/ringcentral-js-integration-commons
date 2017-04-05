@@ -18,6 +18,7 @@ export default class CallLogger extends LoggerBase {
   constructor({
     storage,
     callMonitor,
+    callHistory,
     contactMatcher,
     activityMatcher,
     ...options,
@@ -33,6 +34,7 @@ export default class CallLogger extends LoggerBase {
     this._callMonitor = this::ensureExist(callMonitor, 'callMonitor');
     this._contactMatcher = this::ensureExist(contactMatcher, 'contactMatcher');
     this._activityMatcher = this::ensureExist(activityMatcher, 'activityMatcher');
+    this._callHistory = callHistory;
     this._storageKey = `${this._name}Data`;
     this._storage.registerReducer({
       key: this._storageKey,
@@ -40,6 +42,7 @@ export default class CallLogger extends LoggerBase {
     });
 
     this._lastProcessedCalls = null;
+    this._lastProcessedEndedCalls = null;
   }
 
   addLogProvider({
@@ -60,11 +63,13 @@ export default class CallLogger extends LoggerBase {
 
   _onReset() {
     this._lastProcessedCalls = null;
+    this._lastProcessedEndedCalls = null;
   }
 
   _shouldInit() {
     return this.pending &&
       this._callMonitor.ready &&
+      (!this._callHistory || this._callHistory.ready) &&
       this._contactMatcher.ready &&
       this._activityMatcher.ready &&
       this.logProvidersReady &&
@@ -75,6 +80,8 @@ export default class CallLogger extends LoggerBase {
     return this.ready &&
       (
         !this._callMonitor.ready ||
+        (this._callMonitor && !this._callMonitor.ready) ||
+        (this._callHistory && !this._callHistory.ready) ||
         !this._contactMatcher.ready ||
         !this._activityMatcher.ready ||
         !this.logProvidersReady ||
@@ -150,8 +157,10 @@ export default class CallLogger extends LoggerBase {
       }).map(name => this.log({
         call: {
           ...call,
-          duration: Math.round((Date.now() - call.startTime) / 1000),
-          result: call.telephonyStatus,
+          duration: call::Object.prototype.hasOwnProperty('duration') ?
+            call.duration :
+            Math.round((Date.now() - call.startTime) / 1000),
+          result: call.result || call.telephonyStatus,
         },
         name,
         fromEntity,
@@ -179,29 +188,55 @@ export default class CallLogger extends LoggerBase {
     }
   }
   _processCalls() {
-    if (this.ready && this._lastProcessedCalls !== this._callMonitor.calls) {
-      const oldCalls = (
-        this._lastProcessedCalls &&
-        this._lastProcessedCalls.slice()
-      ) || [];
-      this._lastProcessedCalls = this._callMonitor.calls;
+    if (this.ready) {
+      if (this._lastProcessedCalls !== this._callMonitor.calls) {
+        const oldCalls = (
+          this._lastProcessedCalls &&
+          this._lastProcessedCalls.slice()
+        ) || [];
+        this._lastProcessedCalls = this._callMonitor.calls;
 
-      this._lastProcessedCalls.forEach((call) => {
-        const oldCallIndex = oldCalls.findIndex(item => item.sessionId === call.sessionId);
+        this._lastProcessedCalls.forEach((call) => {
+          const oldCallIndex = oldCalls.findIndex(item => item.sessionId === call.sessionId);
 
-        if (oldCallIndex === -1) {
-          this._onNewCall(call);
-        } else {
-          const oldCall = oldCalls[oldCallIndex];
-          oldCalls.splice(oldCallIndex, 1);
-          if (call.telephonyStatus !== oldCall.telephonyStatus) {
-            this._onCallUpdated(call);
+          if (oldCallIndex === -1) {
+            this._onNewCall(call);
+          } else {
+            const oldCall = oldCalls[oldCallIndex];
+            oldCalls.splice(oldCallIndex, 1);
+            if (call.telephonyStatus !== oldCall.telephonyStatus) {
+              this._onCallUpdated(call);
+            }
           }
-        }
-      });
-      oldCalls.forEach((call) => {
-        this._onCallUpdated(call);
-      });
+        });
+        oldCalls.forEach((call) => {
+          this._onCallUpdated(call);
+        });
+      }
+      if (
+        this._callHistory &&
+        this._lastProcessedEndedCalls !== this._callHistory.recentlyEndedCalls
+      ) {
+        const oldCalls = (
+          this._lastProcessedEndedCalls &&
+          this._lastProcessedEndedCalls.slice()
+        ) || [];
+        this._lastProcessedEndedCalls = this._callHistory.recentlyEndedCalls;
+        const currentSessions = {};
+        this._lastProcessedEndedCalls.forEach((call) => {
+          currentSessions[call.sessionId] = true;
+        });
+        oldCalls.forEach((call) => {
+          if (!currentSessions[call.sessionId]) {
+            // call log updated
+            const callInfo = this._callHistory.calls
+              .find(item => item.sessionId === call.sessionId);
+            if (callInfo) {
+              this._onCallUpdated(callInfo);
+            }
+          }
+        });
+      }
     }
   }
   async _onStateChange() {

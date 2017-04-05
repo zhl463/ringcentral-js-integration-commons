@@ -254,4 +254,8 @@ export default class CallHistory extends RcModule {
   get calls() {
     return this._selectors.calls();
   }
+
+  get recentlyEndedCalls() {
+    return this.state.endedCalls;
+  }
 }

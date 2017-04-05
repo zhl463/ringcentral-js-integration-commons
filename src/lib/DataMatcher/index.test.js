@@ -7,10 +7,6 @@ import { prefixEnum } from '../Enum';
 import baseActionTypes from './baseActionTypes';
 import moduleStatuses from '../../enums/moduleStatuses';
 import sleep from '../sleep';
-// import getMatcherReducer from './getMatcherReducer';
-// import getCacheReducer from './getCacheReducer';
-// import actionTypes from './actionTypesBase';
-// import { matchResult } from './helpers';
 
 chai.use(chaiAsPromised);
 
@@ -542,47 +538,7 @@ describe('DataMatcher', async () => {
         queries,
       });
       queries.forEach((query) => {
-        expect(instance._matchPromises.has(`bar-${query}`)).to.equal(false);
-      });
-    });
-    it('should not clear promises not from the same request', async () => {
-      const instance = new DataMatcher({
-        name: 'foo',
-      });
-      instance._store = createStore(instance.reducer);
-      instance.addSearchProvider({
-        name: 'bar',
-        searchFn: async ({ queries }) => {
-          const output = {};
-          await Promise.all(queries.map(async (query, idx) => {
-            await sleep(20);
-            output[query] = (idx % 2 === 1) ?
-              [] :
-              ['rogue'];
-          }));
-          return output;
-        },
-        readyCheckFn: () => true,
-      });
-      instance._onStateChange();
-      sinon.spy(instance._store, 'dispatch');
-      const queries = [0, 1, 2, 3, 4];
-      const firstRequest = instance._fetchMatchResult({
-        name: 'bar',
-        queries,
-      });
-      await sleep(10);
-      const secondRequest = instance._fetchMatchResult({
-        name: 'bar',
-        queries,
-      });
-      await firstRequest;
-      queries.forEach((query) => {
-        expect(instance._matchPromises.has(`bar-${query}`)).to.equal(true);
-      });
-      await secondRequest;
-      queries.forEach((query) => {
-        expect(instance._matchPromises.has(`bar-${query}`)).to.equal(false);
+        expect(instance._matchPromises.has('bar')).to.equal(false);
       });
     });
     it('should clear promises if fetch fails', async () => {
@@ -616,7 +572,7 @@ describe('DataMatcher', async () => {
         /* falls through */
       }
       queries.forEach((query) => {
-        expect(instance._matchPromises.has(`bar-${query}`)).to.equal(false);
+        expect(instance._matchPromises.has('bar')).to.equal(false);
       });
     });
   });
@@ -811,6 +767,88 @@ describe('DataMatcher', async () => {
         queries,
       });
       sinon.assert.calledTwice(instance._fetchMatchResult);
+    });
+    it('should queue queries when a query is already occuring', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+        noMatchTtl: 20,
+      });
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(30);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance._onStateChange();
+      sinon.spy(instance, '_fetchMatchResult');
+      instance._matchSource({
+        name: 'bar',
+        queries: [0, 1, 2, 3, 4],
+      });
+      await sleep(10);
+      const secondPromise = instance._matchSource({
+        name: 'bar',
+        queries: [5, 6, 7, 8, 9],
+      });
+      expect(instance._matchQueues.has('bar')).to.equal(true);
+      await sleep(20);
+      expect(instance._matchQueues.has('bar')).to.equal(false);
+      await secondPromise;
+      sinon.assert.calledTwice(instance._fetchMatchResult);
+      expect(instance._matchPromises.has('bar')).to.equal(false);
+    });
+    it('should add queries to queue when a queue exists', async () => {
+      const instance = new DataMatcher({
+        name: 'foo',
+        noMatchTtl: 20,
+      });
+      instance._store = createStore(instance.reducer);
+      instance.addSearchProvider({
+        name: 'bar',
+        searchFn: async ({ queries }) => {
+          const output = {};
+          await Promise.all(queries.map(async (query, idx) => {
+            await sleep(30);
+            output[query] = (idx % 2 === 1) ?
+              [] :
+              ['rogue'];
+          }));
+          return output;
+        },
+        readyCheckFn: () => true,
+      });
+      instance._onStateChange();
+      sinon.spy(instance, '_fetchMatchResult');
+      instance._matchSource({
+        name: 'bar',
+        queries: [0, 1, 2, 3, 4],
+      });
+      await sleep(10);
+      const secondPromise = instance._matchSource({
+        name: 'bar',
+        queries: [5, 6, 7, 8, 9],
+      });
+      instance._matchSource({
+        name: 'bar',
+        queries: [10, 11, 12, 13, 14],
+      });
+      expect(instance._matchQueues.has('bar')).to.equal(true);
+      expect(instance._matchQueues.get('bar').queries)
+        .to.deep.equal([5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
+      await sleep(20);
+      expect(instance._matchQueues.has('bar')).to.equal(false);
+      await secondPromise;
+      sinon.assert.calledTwice(instance._fetchMatchResult);
+      expect(instance._matchPromises.has('bar')).to.equal(false);
     });
   });
   describe('match', async () => {

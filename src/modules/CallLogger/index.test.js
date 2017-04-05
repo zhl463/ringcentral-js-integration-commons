@@ -172,14 +172,17 @@ describe('CallLogger', () => {
           booleanValues.forEach((activityMatcherReady) => {
             booleanValues.forEach((storageReady) => {
               booleanValues.forEach((logProvidersReady) => {
-                fn({
-                  pending,
-                  ready: pending,
-                  callMonitorReady,
-                  contactMatcherReady,
-                  activityMatcherReady,
-                  storageReady,
-                  logProvidersReady,
+                booleanValues.forEach((callHistoryReady) => {
+                  fn({
+                    pending,
+                    ready: pending,
+                    callMonitorReady,
+                    callHistoryReady,
+                    contactMatcherReady,
+                    activityMatcherReady,
+                    storageReady,
+                    logProvidersReady,
+                  });
                 });
               });
             });
@@ -192,6 +195,7 @@ describe('CallLogger', () => {
     runOnAllStates(({
       pending,
       callMonitorReady,
+      callHistoryReady,
       contactMatcherReady,
       activityMatcherReady,
       storageReady,
@@ -199,12 +203,14 @@ describe('CallLogger', () => {
     }) => {
       const result = pending &&
         callMonitorReady &&
+        callHistoryReady &&
         contactMatcherReady &&
         activityMatcherReady &&
         storageReady &&
         logProvidersReady;
       it(`should return ${result} when this.pending === ${pending},
       and this._callMonitor.ready === ${callMonitorReady},
+      and this._callHistory.ready === ${callHistoryReady},
       and this._contactMatcher.ready === ${contactMatcherReady},
       and this._activityMatcher.ready === ${activityMatcherReady},
       and this._storage.ready === ${storageReady},
@@ -221,6 +227,11 @@ describe('CallLogger', () => {
               return callMonitorReady;
             },
           };
+          const callHistory = {
+            get ready() {
+              return callHistoryReady;
+            },
+          };
           const contactMatcher = {
             get ready() {
               return contactMatcherReady;
@@ -234,6 +245,7 @@ describe('CallLogger', () => {
           const instance = new CallLogger({
             storage,
             callMonitor,
+            callHistory,
             contactMatcher,
             activityMatcher,
           });
@@ -256,6 +268,7 @@ describe('CallLogger', () => {
     runOnAllStates(({
       ready,
       callMonitorReady,
+      callHistoryReady,
       contactMatcherReady,
       activityMatcherReady,
       storageReady,
@@ -264,6 +277,7 @@ describe('CallLogger', () => {
       const result = ready &&
         (
           !callMonitorReady ||
+          !callHistoryReady ||
           !contactMatcherReady ||
           !activityMatcherReady ||
           !storageReady ||
@@ -271,6 +285,7 @@ describe('CallLogger', () => {
         );
       it(`should return ${result} when this.ready === ${ready},
       and this._callMonitor.ready === ${callMonitorReady},
+      and this._callHistory.ready === ${callHistoryReady},
       and this._contactMatcher.ready === ${contactMatcherReady},
       and this._activityMatcher.ready === ${activityMatcherReady},
       and this._storage.ready === ${storageReady},
@@ -287,6 +302,11 @@ describe('CallLogger', () => {
               return callMonitorReady;
             },
           };
+          const callHistory = {
+            get ready() {
+              return callHistoryReady;
+            },
+          };
           const contactMatcher = {
             get ready() {
               return contactMatcherReady;
@@ -300,6 +320,7 @@ describe('CallLogger', () => {
           const instance = new CallLogger({
             storage,
             callMonitor,
+            callHistory,
             contactMatcher,
             activityMatcher,
           });
@@ -559,6 +580,87 @@ describe('CallLogger', () => {
         expect(instance._onCallUpdated.args[idx][0].sessionId).to.equal(sessionId);
       });
     });
+    it(`should call _onCallUpdated for each entry that is dismissed from
+    recentlyEndedCall that has callLog entry from callHistory`,
+      async () => {
+        const storage = {
+          registerReducer: sinon.stub()
+        };
+        const recentlyEndedCalls = Array.from(new Array(5)).map((_, idx) => ({
+          sessionId: `session-${idx}`,
+          telephonyStatus: telephonyStatuses.ringing,
+        }));
+        const calls = Array.from(new Array(3)).map((_, idx) => ({
+          sessionId: `session-${idx}`,
+          telephonyStatus: telephonyStatuses.callConnected,
+        }));
+        const callMonitor = {
+          calls: [],
+        };
+        const callHistory = {
+          calls,
+          recentlyEndedCalls: [],
+        };
+        const contactMatcher = {};
+        const activityMatcher = {};
+        const instance = new CallLogger({
+          storage,
+          callMonitor,
+          callHistory,
+          contactMatcher,
+          activityMatcher,
+        });
+        sinon.stub(instance, 'ready', {
+          get() {
+            return true;
+          },
+        });
+        sinon.stub(instance, '_onCallUpdated');
+        instance._lastProcessedEndedCalls = recentlyEndedCalls;
+        instance._processCalls();
+        sinon.assert.callCount(instance._onCallUpdated, 3);
+        calls.forEach(({ sessionId }, idx) => {
+          expect(instance._onCallUpdated.args[idx][0].sessionId).to.equal(sessionId);
+        });
+      },
+    );
+    it(`should not call _onCallUpdated if entry is not dismissed from
+    recentlyEndedCall in callHistory`,
+      async () => {
+        const storage = {
+          registerReducer: sinon.stub()
+        };
+        const recentlyEndedCalls = Array.from(new Array(5)).map((_, idx) => ({
+          sessionId: `session-${idx}`,
+          telephonyStatus: telephonyStatuses.ringing,
+        }));
+        const callMonitor = {
+          calls: [],
+        };
+        const callHistory = {
+          calls: [],
+          recentlyEndedCalls,
+        };
+        const contactMatcher = {};
+        const activityMatcher = {};
+        const instance = new CallLogger({
+          storage,
+          callMonitor,
+          callHistory,
+          contactMatcher,
+          activityMatcher,
+        });
+        sinon.stub(instance, 'ready', {
+          get() {
+            return true;
+          },
+        });
+        sinon.stub(instance, '_onCallUpdated');
+        instance._lastProcessedEndedCalls = recentlyEndedCalls.slice();
+        instance._processCalls();
+        sinon.assert.notCalled(instance._onCallUpdated);
+      },
+    );
     it('should call only _onCallUpdated for call.telephonyStatus has changes', async () => {
       const storage = {
         registerReducer: sinon.stub()
