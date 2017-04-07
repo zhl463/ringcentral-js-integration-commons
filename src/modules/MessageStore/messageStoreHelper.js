@@ -20,8 +20,7 @@ export function messageIsUnread(message) {
 export function getMessageSyncParams({
   syncToken,
   conversationId,
-  dateTo = new Date(),
-  recordCount = 250,
+  dateTo,
 }) {
   if (syncToken) {
     return {
@@ -34,9 +33,10 @@ export function getMessageSyncParams({
   const params = {
     syncType: syncTypes.fSync,
     dateFrom: lastSevenDate.toISOString(),
-    dateTo: new Date(dateTo).toISOString(),
-    recordCount
   };
+  if (dateTo) {
+    params.dateTo = new Date(dateTo).toISOString();
+  }
   if (conversationId) {
     params.conversationId = conversationId;
   }

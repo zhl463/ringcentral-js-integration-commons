@@ -71,7 +71,7 @@ describe('MessageStore:: Helper :: getMessageSyncParams', () => {
   it('should return syncToken and syncType is ISync when syncToken exist', () => {
     const result = messageStoreHelper.getMessageSyncParams({});
     expect(result.syncType).to.equal('FSync');
-    expect(Object.keys(result)).to.deep.equal(['syncType', 'dateFrom', 'dateTo', 'recordCount']);
+    expect(Object.keys(result)).to.deep.equal(['syncType', 'dateFrom']);
   });
 
   it('should return params with conversationId when conversationId exist', () => {
@@ -82,8 +82,6 @@ describe('MessageStore:: Helper :: getMessageSyncParams', () => {
     expect(Object.keys(result)).to.deep.equal([
       'syncType',
       'dateFrom',
-      'dateTo',
-      'recordCount',
       'conversationId'
     ]);
   });

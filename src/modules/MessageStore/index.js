@@ -158,18 +158,20 @@ export default class MessageStore extends RcModule {
   }
   async _recursiveFSync({
     dateFrom,
-    dateTo,
-    recordCount = 250,
-    syncToken
+    dateTo = null,
+    syncToken,
+    recordsLength = 0,
   }) {
+    const MAX_MSG_LENGTH = 1000;
     const params = messageStoreHelper.getMessageSyncParams({
       dateFrom,
       dateTo,
-      syncToken
+      syncToken,
     });
     const response = await this._messageSyncApi(params);
     const records = response.records;
-    if (records.length < recordCount) {
+    recordsLength += records.length;
+    if (recordsLength > MAX_MSG_LENGTH || !response.syncInfo.olderRecordsExist) {
       return {
         records,
         syncInfo: response.syncInfo
@@ -177,10 +179,11 @@ export default class MessageStore extends RcModule {
     }
     await sleep(1000);
     const _dateTo = new Date(response.records[response.records.length - 1].creationTime);
-    const lastResponse = this._recursiveFSync({
+    const lastResponse = await this._recursiveFSync({
       dateFrom,
       dateTo: _dateTo,
-      syncToken
+      syncToken,
+      recordsLength,
     });
     return {
       records: records.concat(lastResponse.records),
