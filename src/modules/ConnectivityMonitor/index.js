@@ -91,7 +91,11 @@ export default class ConnectivityMonitor extends RcModule {
   _requestErrorHandler(apiResponse) {
     if (
       apiResponse instanceof Error &&
-      apiResponse.message === 'Failed to fetch'
+      (
+        !apiResponse.apiResponse ||
+        typeof apiResponse.apiResponse.response !== 'function' ||
+        !apiResponse.apiResponse.response()
+      )
     ) {
       if (this.connectivity) {
         this.store.dispatch({
