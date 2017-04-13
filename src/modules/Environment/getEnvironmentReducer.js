@@ -15,6 +15,13 @@ export function getServerReducer({ types, defaultServer }) {
   };
 }
 
+export function getRecordingHostReducer({ types, defaultRecordingHost }) {
+  return (state = defaultRecordingHost, { type, recordingHost }) => {
+    if (type === types.setData) return recordingHost;
+    return state;
+  };
+}
+
 export function getEnabledReducer(types) {
   return (state = false, { type, enabled }) => {
     if (type === types.setData) return enabled;

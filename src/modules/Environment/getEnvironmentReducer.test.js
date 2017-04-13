@@ -3,6 +3,7 @@ import actionTypes from './actionTypes';
 import getEnvironmentReducer, {
   getChangeCounterReducer,
   getServerReducer,
+  getRecordingHostReducer,
   getEnabledReducer,
 } from './getEnvironmentReducer';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
@@ -69,6 +70,33 @@ describe('getServerReducer', () => {
   });
 });
 
+describe('getRecordingHostReducer', () => {
+  it('should be a function', () => {
+    expect(getRecordingHostReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getRecordingHostReducer({ types: actionTypes, defaultRecordingHost: 'foo' })).to.be.a('function');
+  });
+  describe('serverReducer', () => {
+    const reducer = getRecordingHostReducer({ types: actionTypes, defaultRecordingHost: 'foo' });
+    it('should have initial state of defaultRecordingHost', () => {
+      expect(reducer(undefined, {})).to.equal('foo');
+    });
+    it('should return originalState if type is not recognized', () => {
+      const originalState = {};
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it('should return action.recordingHost on setData', () => {
+      expect(reducer(null, {
+        type: actionTypes.setData,
+        recordingHost: 'bar',
+      })).to.equal('bar');
+    });
+  });
+});
+
+
 describe('getEnabledReducer', () => {
   it('should be a function', () => {
     expect(getEnabledReducer).to.be.a('function');
@@ -76,7 +104,7 @@ describe('getEnabledReducer', () => {
   it('should return a reducer', () => {
     expect(getEnabledReducer(actionTypes)).to.be.a('function');
   });
-  describe('serverReducer', () => {
+  describe('enabledReducer', () => {
     const reducer = getEnabledReducer(actionTypes);
     it('should have initial state of false', () => {
       expect(reducer(undefined, {})).to.be.false;

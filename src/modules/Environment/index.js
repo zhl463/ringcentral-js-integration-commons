@@ -4,6 +4,7 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getEnvironmentReducer, {
   getServerReducer,
+  getRecordingHostReducer,
   getEnabledReducer,
 } from './getEnvironmentReducer';
 
@@ -15,6 +16,7 @@ export default class Environment extends RcModule {
   constructor({
     client,
     globalStorage,
+    defaultRecordingHost,
     sdkConfig,
     ...options
   }) {
@@ -27,12 +29,21 @@ export default class Environment extends RcModule {
     this._sdkConfig = sdkConfig;
     this._reducer = getEnvironmentReducer(this.actionTypes);
     this._serverStorageKey = 'environmentServer';
+    this._recordingHostStoragekey = 'environmentRecordingHost';
     this._enabledStorageKey = 'environmentEnabled';
     this._globalStorage.registerReducer({
       key: this._serverStorageKey,
       reducer: getServerReducer({
         types: this.actionTypes,
         defaultServer: SDK.server.sandbox,
+      }),
+    });
+    this._globalStorage.registerReducer({
+      key: this._recordingHostStoragekey,
+      reducer: getRecordingHostReducer({
+        types: this.actionTypes,
+        defaultRecordingHost: defaultRecordingHost ||
+          'https://s3.ap-northeast-2.amazonaws.com/fetch-call-recording/test/index.html',
       }),
     });
     this._globalStorage.registerReducer({
@@ -72,16 +83,18 @@ export default class Environment extends RcModule {
     this._client.service = new SDK(newConfig);
   }
 
-  setData({ server, enabled }) {
+  setData({ server, recordingHost, enabled }) {
     const environmentChanged =
       this.enabled !== enabled ||
       (enabled && this.server !== server);
-    if (environmentChanged) {
+    if (environmentChanged) { // recordingHost changed no need to set to SDK
       this._changeEnvironment(enabled, server);
     }
+
     this.store.dispatch({
       type: this.actionTypes.setData,
       server,
+      recordingHost,
       enabled,
       environmentChanged,
     });
@@ -96,6 +109,10 @@ export default class Environment extends RcModule {
 
   get server() {
     return this._globalStorage.getItem(this._serverStorageKey);
+  }
+
+  get recordingHost() {
+    return this._globalStorage.getItem(this._recordingHostStoragekey);
   }
 
   get enabled() {

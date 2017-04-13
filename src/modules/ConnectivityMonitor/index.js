@@ -114,8 +114,8 @@ export default class ConnectivityMonitor extends RcModule {
     client.on(client.events.requestSuccess, this._requestSuccessHandler);
     client.on(client.events.requestError, this._requestErrorHandler);
     this._unbindHandlers = () => {
-      client.off(client.events.requestSuccess, this._requestSuccessHandler);
-      client.off(client.events.requestError, this._requestErrorHandler);
+      client.removeListener(client.events.requestSuccess, this._requestSuccessHandler);
+      client.removeListener(client.events.requestError, this._requestErrorHandler);
       this._unbindHandlers = null;
     };
   }
