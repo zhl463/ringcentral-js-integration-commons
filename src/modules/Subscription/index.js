@@ -129,7 +129,8 @@ export default class Subscription extends RcModule {
         this._auth.loginStatus === loginStatus.loggedIn &&
         this._storage.ready
       ) {
-        this._retry();
+        // immediately start the retry process after the first renewError
+        this._retry(0);
       }
     });
     this._subscription.on(this._subscription.events.subscribeSuccess, () => {
