@@ -238,7 +238,7 @@ export function pushRecordsToMessageData({
     newMessages[index] = normalizeRecord(removeUri(record));
   };
   records.forEach((record) => {
-    if (!record.conversation) {
+    if (!record || !record.conversation) {
       return;
     }
     const existedIndexofMessages = findIndexOfMessages(messageMap, record);
