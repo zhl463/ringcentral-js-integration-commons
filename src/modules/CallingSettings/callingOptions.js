@@ -5,4 +5,5 @@ export default new Enum([
   'myphone', // ringout branding rc..
   'otherphone', // ringout
   'customphone', // ringout
+  'browser', // webphone
 ], 'callingOptions');

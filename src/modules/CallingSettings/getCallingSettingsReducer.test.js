@@ -7,8 +7,6 @@ import getCallingSettingsReducer, {
 } from './getCallingSettingsReducer';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import actionTypes from './actionTypes';
-import callingOptions from './callingOptions';
-
 
 describe('getCallWithReducer', () => {
   it('should be a function', () => {
@@ -19,8 +17,8 @@ describe('getCallWithReducer', () => {
   });
   describe('callWithReducer', () => {
     const reducer = getCallWithReducer(actionTypes);
-    it('should have initial state of callingOptions.softphone', () => {
-      expect(reducer(undefined, {})).to.equal(callingOptions.softphone);
+    it('should have initial state of null', () => {
+      expect(reducer(undefined, {})).to.equal(null);
     });
     it('should return original state of actionTypes is not recognized', () => {
       const originalState = {};

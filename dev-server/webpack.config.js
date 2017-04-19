@@ -19,6 +19,10 @@ const base = {
         test: /\.json$/i,
         loader: 'json',
       },
+      {
+        test: /\.ogg$/,
+        loader: 'url?publicPath=./&name=audio/[name]_[hash].[ext]',
+      },
     ],
   },
 };

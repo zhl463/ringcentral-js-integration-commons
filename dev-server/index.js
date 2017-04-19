@@ -11,6 +11,7 @@ import RcModule from '../src/lib/RcModule';
 import AccountExtension from '../src/modules/AccountExtension';
 import AccountInfo from '../src/modules/AccountInfo';
 import ActiveCalls from '../src/modules/ActiveCalls';
+import ActiveCall from '../src/modules/ActiveCall';
 import Alert from '../src/modules/Alert';
 import Auth from '../src/modules/Auth';
 import BlockedNumber from '../src/modules/BlockedNumber';
@@ -35,6 +36,7 @@ import RegionSettings from '../src/modules/RegionSettings';
 import Ringout from '../src/modules/Ringout';
 import RolesAndPermissions from '../src/modules/RolesAndPermissions';
 import Softphone from '../src/modules/Softphone';
+import Webphone from '../src/modules/Webphone';
 import Storage from '../src/modules/Storage';
 import Subscription from '../src/modules/Subscription';
 import TabManager from '../src/modules/TabManager';
@@ -198,7 +200,19 @@ class DemoPhone extends RcModule {
       storage: this.storage,
       rolesAndPermissions: this.rolesAndPermissions,
       tabManager: this._tabManager,
+      addWebphone: true,
       getState: () => this.state.callingSettings,
+    }));
+    this.addModule('webphone', new Webphone({
+      appKey: config.api.appKey,
+      appName: 'RingCentral Integration',
+      appVersion: '0.1.0',
+      auth: this.auth,
+      alert: this.alert,
+      client: this.client,
+      storage: this.storage,
+      rolesAndPermissions: this.rolesAndPermissions,
+      getState: () => this.state.webphone,
     }));
     this.addModule('subscription', new Subscription({
       auth: this.auth,
@@ -212,6 +226,10 @@ class DemoPhone extends RcModule {
       client: this.client,
       subscription: this.subscription,
       getState: () => this.state.detailedPresence,
+    }));
+    this.addModule('activeCall', new ActiveCall({
+      webphone: this.webphone,
+      getState: () => this.state.activeCall,
     }));
     this.addModule('activeCalls', new ActiveCalls({
       auth: this.auth,
@@ -246,9 +264,12 @@ class DemoPhone extends RcModule {
       client: this.client,
       storage: this.storage,
       callingSettings: this.callingSettings,
+      regionSettings: this.regionSettings,
       softphone: this.softphone,
       ringout: this.ringout,
+      webphone: this.webphone,
       numberValidate: this.numberValidate,
+      extensionPhoneNumber: this.extensionPhoneNumber,
       getState: () => this.state.call,
     }));
     this.addModule('presence', new Presence({
@@ -357,6 +378,7 @@ class DemoPhone extends RcModule {
     this._reducer = combineReducers({
       accountInfo: this.accountInfo.reducer,
       accountExtension: this.accountExtension.reducer,
+      activeCall: this.activeCall.reducer,
       activeCalls: this.activeCalls.reducer,
       alert: this.alert.reducer,
       auth: this.auth.reducer,
@@ -396,6 +418,7 @@ class DemoPhone extends RcModule {
       messages: this.messages.reducer,
       dateTimeFormat: this.dateTimeFormat.reducer,
       conference: this.conference.reducer,
+      webphone: this.webphone.reducer,
       callLogger: this.callLogger.reducer,
       lastAction: (state = null, action) => {
         console.log(action);

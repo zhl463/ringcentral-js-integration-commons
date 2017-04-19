@@ -1,9 +1,8 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
-import callingOptions from './callingOptions';
 
 export function getCallWithReducer(types) {
-  return (state = callingOptions.softphone, { type, callWith = state }) => {
+  return (state = null, { type, callWith = state }) => {
     if (type === types.setData) return callWith;
     return state;
   };

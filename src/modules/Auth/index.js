@@ -209,6 +209,10 @@ export default class Auth extends RcModule {
     return this.state.ownerId;
   }
 
+  get endpointId() {
+    return this.state.endpointId;
+  }
+
   get status() {
     return this.state.status;
   }

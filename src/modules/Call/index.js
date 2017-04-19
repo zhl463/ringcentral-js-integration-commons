@@ -5,6 +5,7 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import callActionTypes from './actionTypes';
 import getCallReducer, {
   getLastCallNumberReducer,
+  getFromNumberReducer,
 } from './getCallReducer';
 
 import callStatus from './callStatus';
@@ -20,7 +21,10 @@ export default class Call extends RcModule {
     callingSettings,
     softphone,
     ringout,
+    webphone,
+    extensionPhoneNumber,
     numberValidate,
+    regionSettings,
     ...options
   }) {
     super({
@@ -32,26 +36,64 @@ export default class Call extends RcModule {
     this._client = client;
     this._storage = storage;
     this._storageKey = 'lastCallNumber';
+    this._fromNumberStorageKey = 'fromCallIdNumber';
     this._reducer = getCallReducer(this.actionTypes);
     this._callingSettings = callingSettings;
     this._ringout = ringout;
     this._softphone = softphone;
+    this._webphone = webphone;
     this._numberValidate = numberValidate;
+    this._extensionPhoneNumber = extensionPhoneNumber;
+    this._regionSettings = regionSettings;
+    this._callSettingMode = null;
 
     this._storage.registerReducer({
       key: this._storageKey,
       reducer: getLastCallNumberReducer(this.actionTypes),
     });
+
+    this._storage.registerReducer({
+      key: this._fromNumberStorageKey,
+      reducer: getFromNumberReducer(this.actionTypes),
+    });
+
+    this.addSelector(
+      'fromNumbers',
+      () => this._extensionPhoneNumber.callerIdNumbers,
+      phoneNumbers => phoneNumbers.sort((firstItem, lastItem) => {
+        if (firstItem.usageType === 'DirectNumber') return -1;
+        else if (lastItem.usageType === 'DirectNumber') return 1;
+        else if (firstItem.usageType === 'MainCompanyNumber') return -1;
+        else if (lastItem.usageType === 'MainCompanyNumber') return 1;
+        else if (firstItem.usageType < lastItem.usageType) return -1;
+        else if (firstItem.usageType > lastItem.usageType) return 1;
+        return 0;
+      }),
+    );
   }
 
   initialize() {
-    this.store.subscribe(() => {
+    this.store.subscribe(async () => {
       if (
         this._numberValidate.ready &&
         this._callingSettings.ready &&
         this._storage.ready &&
+        this._extensionPhoneNumber.ready &&
+        this._regionSettings.ready &&
+        (!this._webphone || this._webphone.ready) &&
+        this._ringout.ready &&
+        this._softphone.ready &&
         this.status === moduleStatuses.pending
       ) {
+        this.store.dispatch({
+          type: this.actionTypes.init,
+        });
+        this._initFromNumber();
+        // init webphone
+        this._callSettingMode = this._callingSettings.callingMode;
+        if (this._callSettingMode === callingModes.webphone) {
+          await this._webphone.connect(this.fromNumbers.length > 0);
+        }
         this.store.dispatch({
           type: this.actionTypes.initSuccess,
         });
@@ -59,14 +101,48 @@ export default class Call extends RcModule {
         (
           !this._numberValidate.ready ||
           !this._callingSettings.ready ||
+          !this._extensionPhoneNumber.ready ||
+          !this._regionSettings.ready ||
+          (!!this._webphone && !this._webphone.ready) ||
+          !this._ringout.ready ||
+          !this._softphone.ready ||
           !this._storage.ready
         ) &&
-        this.status === moduleStatuses.ready
+        this.ready
       ) {
         this.store.dispatch({
           type: this.actionTypes.resetSuccess,
         });
+        this._callSettingMode = this._callingSettings.callingMode;
+        if (this._callSettingMode === callingModes.webphone && this._webphone) {
+          await this._webphone.disconnect();
+        }
+      } else if (this.ready) {
+        const oldCallSettingMode = this._callSettingMode;
+        if (this._callingSettings.callingMode !== oldCallSettingMode && this._webphone) {
+          this._callSettingMode = this._callingSettings.callingMode;
+          if (oldCallSettingMode === callingModes.webphone) {
+            await this._webphone.disconnect();
+          } else if (this._callSettingMode === callingModes.webphone) {
+            await this._webphone.connect(this.fromNumbers);
+          }
+        }
       }
+    });
+  }
+
+  _initFromNumber() {
+    const fromNumber = this.fromNumber;
+    if (!fromNumber) {
+      const fromNumberList = this.fromNumbers;
+      this.updateFromNumber(fromNumberList[0]);
+    }
+  }
+
+  updateFromNumber(number) {
+    this.store.dispatch({
+      type: this.actionTypes.updateFromNumber,
+      number: number && number.phoneNumber,
     });
   }
 
@@ -131,9 +207,22 @@ export default class Call extends RcModule {
   }
 
   async _getValidatedNumbers() {
-    const fromNumber = this._callingSettings.myLocation;
+    let fromNumber;
+    const isWebphone = (this._callingSettings.callingMode === callingModes.webphone);
+    if (isWebphone) {
+      fromNumber = this.fromNumber;
+      if (fromNumber === null || fromNumber === '') {
+        return null;
+      }
+    } else {
+      fromNumber = this._callingSettings.myLocation;
+    }
     const waitingValidateNumbers = [this.toNumber];
-    if (fromNumber && fromNumber.length > 0) {
+    if (
+      fromNumber &&
+      fromNumber.length > 0 &&
+      !(isWebphone && fromNumber === 'anonymous')
+    ) {
       waitingValidateNumbers.push(fromNumber);
     }
     const validatedResult
@@ -164,6 +253,11 @@ export default class Call extends RcModule {
 
   async _makeCall({ toNumber, fromNumber }) {
     const callingMode = this._callingSettings.callingMode;
+    const countryCode = this._regionSettings.countryCode;
+    const homeCountry = this._regionSettings.availableCountries.find(
+      country => country.isoCode === countryCode
+    );
+    const homeCountryId = (homeCountry && homeCountry.callingCode) || '1';
     switch (callingMode) {
       case callingModes.softphone:
         this._softphone.makeCall(toNumber);
@@ -175,6 +269,15 @@ export default class Call extends RcModule {
           prompt: this._callingSettings.ringoutPrompt,
         });
         break;
+      case callingModes.webphone:
+        if (this._webphone) {
+          await this._webphone.makeCall({
+            fromNumber,
+            toNumber,
+            homeCountryId,
+          });
+        }
+        break;
       default:
         break;
     }
@@ -182,6 +285,10 @@ export default class Call extends RcModule {
 
   get status() {
     return this.state.status;
+  }
+
+  get ready() {
+    return this.state.status === moduleStatuses.ready;
   }
 
   get callStatus() {
@@ -198,5 +305,13 @@ export default class Call extends RcModule {
 
   get toNumber() {
     return this.state.toNumber;
+  }
+
+  get fromNumber() {
+    return this._storage.getItem(this._fromNumberStorageKey);
+  }
+
+  get fromNumbers() {
+    return this._selectors.fromNumbers();
   }
 }

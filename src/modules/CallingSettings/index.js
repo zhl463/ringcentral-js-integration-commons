@@ -22,6 +22,7 @@ export default class CallingSettings extends RcModule {
     rolesAndPermissions,
     tabManager,
     onFirstLogin,
+    addWebphone,
     ...options
   }) {
     super({
@@ -96,9 +97,14 @@ export default class CallingSettings extends RcModule {
 
     this.addSelector('callWithOptions',
       () => this._rolesAndPermissions.ringoutEnabled,
+      () => this._rolesAndPermissions.webphoneEnabled,
       () => this.otherPhoneNumbers.length > 0,
-      (ringoutEnabled, hasOtherPhone) => {
-        const callWithOptions = [callingOptions.softphone];
+      (ringoutEnabled, webphoneEnabled, hasOtherPhone) => {
+        const callWithOptions = [];
+        if (addWebphone && webphoneEnabled) {
+          callWithOptions.push(callingOptions.browser);
+        }
+        callWithOptions.push(callingOptions.softphone);
         if (ringoutEnabled) {
           callWithOptions.push(callingOptions.myphone);
           if (hasOtherPhone) {
@@ -132,13 +138,16 @@ export default class CallingSettings extends RcModule {
         this._myPhoneNumbers = this.myPhoneNumbers;
         this._otherPhoneNumbers = this.otherPhoneNumbers;
         this._ringoutEnabled = this._rolesAndPermissions.ringoutEnabled;
+        this._webphoneEnabled = this._rolesAndPermissions.webphoneEnabled;
         this.store.dispatch({
           type: this.actionTypes.init,
         });
         if (!this.timestamp) {
           // first time login
+          const defaultCallWith = this.callWithOptions && this.callWithOptions[0];
           this.store.dispatch({
             type: this.actionTypes.setData,
+            callWith: defaultCallWith,
             timestamp: Date.now(),
           });
           this._alert.warning({
@@ -168,26 +177,46 @@ export default class CallingSettings extends RcModule {
       } else if (
         this.ready &&
         (this._ringoutEnabled !== this._rolesAndPermissions.ringoutEnabled ||
+          this._webphoneEnabled !== this._rolesAndPermissions.webphoneEnabled ||
           this._myPhoneNumbers !== this.myPhoneNumbers ||
           this._otherPhoneNumbers !== this.otherPhoneNumbers)
       ) {
         this._ringoutEnabled = this._rolesAndPermissions.ringoutEnabled;
+        this._webphoneEnabled = this._rolesAndPermissions.webphoneEnabled;
         this._myPhoneNumbers = this.myPhoneNumbers;
         this._otherPhoneNumbers = this.otherPhoneNumbers;
         this._validateSettings();
       }
     });
   }
+
+  _setSoftPhoneToCallWith() {
+    this.store.dispatch({
+      type: this.actionTypes.setData,
+      callWith: callingOptions.softphone,
+      timestamp: Date.now(),
+    });
+  }
+
   _validateSettings() {
     if (
-      !this._ringoutEnabled &&
-      this.callWith !== callingOptions.softphone
+      !this._webphoneEnabled &&
+      this.callWith === callingOptions.browser
     ) {
-      this.store.dispatch({
-        type: this.actionTypes.setData,
-        callWith: callingOptions.softphone,
-        timestamp: Date.now(),
+      this._setSoftPhoneToCallWith();
+      this._alert.danger({
+        message: callingSettingsMessages.webphonePermissionRemoved,
+        ttl: 0,
       });
+    } else if (
+      !this._ringoutEnabled &&
+      (
+        this.callWith === callingOptions.myphone ||
+        this.callWith === callingOptions.otherphone ||
+        this.callWith === callingOptions.customphone
+      )
+    ) {
+      this._setSoftPhoneToCallWith();
       this._alert.danger({
         message: callingSettingsMessages.permissionChanged,
         ttl: 0,

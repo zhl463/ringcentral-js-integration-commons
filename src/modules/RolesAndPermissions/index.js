@@ -45,9 +45,18 @@ export default class RolesAndPermissions extends DataFetcher {
   }
 
   get ringoutEnabled() {
-    return this._extensionInfo.serviceFeatures &&
-    this._extensionInfo.serviceFeatures.RingOut &&
-    this._extensionInfo.serviceFeatures.RingOut.enabled;
+    return !!(
+      this._extensionInfo.serviceFeatures &&
+      this._extensionInfo.serviceFeatures.RingOut &&
+      this._extensionInfo.serviceFeatures.RingOut.enabled
+    );
   }
 
+  get webphoneEnabled() {
+    return !!(
+      this._extensionInfo.serviceFeatures &&
+      this._extensionInfo.serviceFeatures.WebPhone &&
+      this._extensionInfo.serviceFeatures.WebPhone.enabled
+    );
+  }
 }

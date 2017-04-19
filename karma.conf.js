@@ -10,12 +10,12 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['browserify', 'mocha', 'chai', 'expect'],
+    frameworks: ['mocha', 'chai', 'expect'],
 
 
     // list of files / patterns to load in the browser
     files: [
-      'src/modules/**/*.js',
+      // 'src/modules/**/*.js',
       'src/integration-test/**/*spec.js',
     ],
 
@@ -28,29 +28,46 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'src/modules/**/*.js': ['browserify'],
-      'src/integration-test/**/*.js': ['browserify'],
+      // 'src/modules/**/*.js': ['webpack'],
+      'src/integration-test/**/*.js': ['webpack'],
     },
 
-    // plugins:[
-    //   'karma-browserify',
+    // plugins: [
+    //   'karma-webpack',
     //   'karma-mocha',
     //   'karma-chai',
     //   'karma-expect',
     //   'karma-mocha-reporter',
     //   'karma-commonjs',
-    //   'karma-babel-preprocessor',
     //   'karma-chrome-launcher'
     // ],
 
-    browserify: {
-      debug: true,
-      transform: [
-        ['babelify', { presets: ['es2015', 'stage-0'] }]
-      ]
+    webpack: {
+      module: {
+        loaders: [
+          {
+            test: /\.js$/,
+            loaders: ['babel'],
+            exclude: /node_modules/,
+          },
+          {
+            test: /\.json$/i,
+            loader: 'json',
+          },
+          {
+            test: /\.ogg$/,
+            loader: 'url?publicPath=./&name=audio/[name]_[hash].[ext]',
+          },
+        ],
+      },
     },
 
-
+    webpackMiddleware: {
+      noInfo: true,
+      stats: {
+        chunks: false,
+      },
+    },
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter

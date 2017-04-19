@@ -7,4 +7,5 @@ export default new Enum([
   'firstLoginOther',
   'permissionChanged',
   'phoneNumberChanged',
+  'webphonePermissionRemoved',
 ], 'callingSettingsMessages');

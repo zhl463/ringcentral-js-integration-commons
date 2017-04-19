@@ -63,6 +63,32 @@ export function getOwnerIdReducer(types) {
   };
 }
 
+export function getEndpointIdReducer(types) {
+  return (state = null, { type, token, refreshTokenValid }) => {
+    switch (type) {
+
+      case types.loginSuccess:
+      case types.refreshSuccess:
+        return token.endpoint_id;
+
+      case types.loginError:
+      case types.logoutSuccess:
+      case types.logoutError:
+        return null;
+
+      case types.refreshError:
+        return refreshTokenValid ? state : null;
+
+      case types.initSuccess:
+      case types.tabSync:
+        return (token && token.endpoint_id) || null;
+
+      default:
+        return state;
+    }
+  };
+}
+
 export function getFreshLoginReducer(types) {
   return (state = null, { type, loggedIn }) => {
     switch (type) {
@@ -120,6 +146,7 @@ export default function getAuthReducer(types) {
     loginStatus: getLoginStatusReducer(types),
     freshLogin: getFreshLoginReducer(types),
     ownerId: getOwnerIdReducer(types),
+    endpointId: getEndpointIdReducer(types),
     proxyLoaded: getProxyLoadedReducer(types),
     proxyRetryCount: getProxyRetryCountReducer(types),
   });
