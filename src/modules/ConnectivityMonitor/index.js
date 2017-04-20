@@ -88,14 +88,10 @@ export default class ConnectivityMonitor extends RcModule {
       });
     }
   }
-  _requestErrorHandler(apiResponse) {
+  _requestErrorHandler(error) {
     if (
-      apiResponse instanceof Error &&
-      (
-        !apiResponse.apiResponse ||
-        typeof apiResponse.apiResponse.response !== 'function' ||
-        !apiResponse.apiResponse.response()
-      )
+      !error.apiResponse ||
+      error.apiResponse._response
     ) {
       if (this.connectivity) {
         this.store.dispatch({

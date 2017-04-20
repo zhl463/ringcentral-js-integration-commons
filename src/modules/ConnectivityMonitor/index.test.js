@@ -412,7 +412,7 @@ describe('ConnectivityMonitor', async () => {
     );
   });
   describe('_requestErrorHandler', () => {
-    it(`should call _retry if apiResponse is a fetch error
+    it(`should call _retry if error has no response object
     and this.conectvity === true`,
       () => {
         const instance = new ConnectivityMonitor({
@@ -428,7 +428,7 @@ describe('ConnectivityMonitor', async () => {
           dispatch: sinon.stub(),
         };
         sinon.stub(instance, 'showAlert');
-        instance._requestErrorHandler(new Error('Failed to fetch'));
+        instance._requestErrorHandler(new Error());
         sinon.assert.calledOnce(instance._retry);
       },
     );
@@ -448,7 +448,7 @@ describe('ConnectivityMonitor', async () => {
           dispatch: sinon.stub(),
         };
         sinon.stub(instance, 'showAlert');
-        instance._requestErrorHandler(new Error('Failed to fetch'));
+        instance._requestErrorHandler(new Error());
         sinon.assert.calledOnce(instance._retry);
       },
     );
@@ -469,29 +469,11 @@ describe('ConnectivityMonitor', async () => {
           dispatch: sinon.stub(),
         };
         sinon.stub(instance, 'showAlert');
-        instance._requestErrorHandler(new Error('Failed to fetch'));
+        instance._requestErrorHandler(new Error());
         sinon.assert.calledOnce(instance._store.dispatch);
         expect(instance._store.dispatch.args[0][0].type === actionTypes.connectFail);
         sinon.assert.calledOnce(instance.showAlert);
       },
     );
-    it('should do nothing if apiResponse is not an error', () => {
-      const instance = new ConnectivityMonitor({
-        client: {},
-      });
-      sinon.stub(instance, '_retry');
-      sinon.stub(instance, 'connectivity', {
-        get() {
-          return true;
-        },
-      });
-      instance._store = {
-        dispatch: sinon.stub(),
-      };
-      sinon.stub(instance, 'showAlert');
-      instance._requestErrorHandler({});
-      sinon.assert.notCalled(instance._store.dispatch);
-      sinon.assert.notCalled(instance.showAlert);
-    });
   });
 });
