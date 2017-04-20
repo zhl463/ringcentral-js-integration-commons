@@ -91,7 +91,7 @@ export default class ConnectivityMonitor extends RcModule {
   _requestErrorHandler(error) {
     if (
       !error.apiResponse ||
-      error.apiResponse._response
+      !error.apiResponse._response
     ) {
       if (this.connectivity) {
         this.store.dispatch({
