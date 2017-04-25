@@ -6,6 +6,7 @@ import getCallMonitorReducer from './getCallMonitorReducer';
 import normalizeNumber from '../../lib/normalizeNumber';
 import {
   isRinging,
+  hasRingingCalls,
   sortByStartTime,
 } from '../../lib/callLogHelpers';
 import ensureExist from '../../lib/ensureExist';
@@ -231,6 +232,10 @@ export default class CallMonitor extends RcModule {
   }
   initialize() {
     this.store.subscribe(this._onStateChange);
+  }
+
+  get hasRingingCalls() {
+    return hasRingingCalls(this.calls);
   }
 
   get status() {
