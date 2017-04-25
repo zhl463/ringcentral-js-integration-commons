@@ -104,19 +104,10 @@ export default class CallLogger extends LoggerBase {
     contact,
     ...options,
   }) {
-    await this._contactMatcher.triggerMatch();
-    const fromMatches = (call.from && call.from.phoneNumber &&
-      this._contactMatcher.dataMapping[call.from.phoneNumber]) || [];
-
-    const toMatches = (call.to && call.to.phoneNumber &&
-      this._contactMatcher.dataMapping[call.to.phoneNumber]) || [];
-
     const inbound = isInbound(call);
     const fromEntity = (inbound && contact) ||
-      (fromMatches.length === 1 && fromMatches[0]) ||
       null;
     const toEntity = (!inbound && contact) ||
-      (toMatches.length === 1 && toMatches[0]) ||
       null;
     await this.log({
       ...options,
@@ -132,23 +123,7 @@ export default class CallLogger extends LoggerBase {
       toEntity,
     });
   }
-  async _autoLogCall(call) {
-    await this._contactMatcher.triggerMatch();
-    const fromMatches = (call.from && call.from.phoneNumber &&
-      this._contactMatcher.dataMapping[call.from.phoneNumber]) || [];
-
-    const toMatches = (call.to && call.to.phoneNumber &&
-      this._contactMatcher.dataMapping[call.to.phoneNumber]) || [];
-
-    const fromEntity = (fromMatches &&
-      fromMatches.length === 1 &&
-      fromMatches[0]) ||
-      null;
-    const toEntity = (toMatches &&
-      toMatches.length === 1 &&
-      toMatches[0]) ||
-      null;
-
+  async _autoLogCall({ call, fromEntity, toEntity }) {
     await Promise.all(
       [...this._logProviders.keys()].filter((name) => {
         const provider = this._logProviders.get(name);
@@ -170,7 +145,37 @@ export default class CallLogger extends LoggerBase {
   }
   async _onNewCall(call) {
     if (this._shouldLogNewCall(call)) {
-      await this._autoLogCall(call);
+      // RCINT-3857 check activity in case instance was reloaded when call is still active
+      await this._activityMatcher.triggerMatch();
+      if (
+        !this._activityMatcher.dataMapping[call.sessionId] ||
+        !this._activityMatcher.dataMapping[call.sessionId].length
+      ) {
+        // is completely new, need entity information
+        await this._contactMatcher.triggerMatch();
+        const fromMatches = (call.from && call.from.phoneNumber &&
+          this._contactMatcher.dataMapping[call.from.phoneNumber]) || [];
+
+        const toMatches = (call.to && call.to.phoneNumber &&
+          this._contactMatcher.dataMapping[call.to.phoneNumber]) || [];
+
+        const fromEntity = (fromMatches &&
+          fromMatches.length === 1 &&
+          fromMatches[0]) ||
+          null;
+        const toEntity = (toMatches &&
+          toMatches.length === 1 &&
+          toMatches[0]) ||
+          null;
+        await this._autoLogCall({
+          call,
+          fromEntity,
+          toEntity,
+        });
+      } else {
+        // only update call information if call has been logged
+        await this._autoLogCall({ call });
+      }
     }
   }
   async _shouldLogUpdatedCall(call) {
@@ -184,7 +189,7 @@ export default class CallLogger extends LoggerBase {
   }
   async _onCallUpdated(call) {
     if (await this._shouldLogUpdatedCall(call)) {
-      await this._autoLogCall(call);
+      await this._autoLogCall({ call });
     }
   }
   _processCalls() {

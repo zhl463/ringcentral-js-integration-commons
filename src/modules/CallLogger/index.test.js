@@ -764,8 +764,14 @@ describe('CallLogger', () => {
           registerReducer: sinon.stub()
         };
         const callMonitor = {};
-        const contactMatcher = {};
-        const activityMatcher = {};
+        const contactMatcher = {
+          triggerMatch: async () => { },
+          dataMapping: {},
+        };
+        const activityMatcher = {
+          triggerMatch: async () => { },
+          dataMapping: {},
+        };
         const instance = new CallLogger({
           storage,
           callMonitor,
@@ -777,7 +783,7 @@ describe('CallLogger', () => {
         sinon.stub(instance, '_autoLogCall');
         await instance._onNewCall(call);
         sinon.assert.calledOnce(instance._autoLogCall);
-        expect(instance._autoLogCall.args[0][0]).to.equal(call);
+        expect(instance._autoLogCall.args[0][0].call).to.equal(call);
       },
     );
     it('should not call _autoLogCall if _shouldLogNewCall() === false',
@@ -801,6 +807,80 @@ describe('CallLogger', () => {
         sinon.assert.notCalled(instance._autoLogCall);
       },
     );
+    it('should call _autoLogCall with entities if call has not been logged',
+      async () => {
+        const sessionId = 'rogue';
+        const fromEntity = { phoneNumber: 'foo' };
+        const toEntity = { phoneNumber: 'bar' };
+        const storage = {
+          registerReducer: sinon.stub()
+        };
+        const callMonitor = {};
+        const contactMatcher = {
+          triggerMatch: async () => { },
+          dataMapping: {
+            [fromEntity.phoneNumber]: [fromEntity],
+            [toEntity.phoneNumber]: [toEntity],
+          },
+        };
+        const activityMatcher = {
+          triggerMatch: async () => { },
+          dataMapping: {},
+        };
+        const instance = new CallLogger({
+          storage,
+          callMonitor,
+          contactMatcher,
+          activityMatcher,
+        });
+        const call = { sessionId, from: fromEntity, to: toEntity };
+        sinon.stub(instance, '_shouldLogNewCall').callsFake(() => true);
+        sinon.stub(instance, '_autoLogCall');
+        await instance._onNewCall(call);
+        sinon.assert.calledOnce(instance._autoLogCall);
+        expect(instance._autoLogCall.args[0][0].call).to.equal(call);
+        expect(instance._autoLogCall.args[0][0].fromEntity).to.equal(fromEntity);
+        expect(instance._autoLogCall.args[0][0].toEntity).to.equal(toEntity);
+      },
+    );
+    it('should call _autoLogCall without entities if call has been logged',
+      async () => {
+        const sessionId = 'rogue';
+        const fromEntity = { phoneNumber: 'foo' };
+        const toEntity = { phoneNumber: 'bar' };
+        const storage = {
+          registerReducer: sinon.stub()
+        };
+        const callMonitor = {};
+        const contactMatcher = {
+          triggerMatch: async () => { },
+          dataMapping: {
+            [fromEntity.phoneNumber]: [fromEntity],
+            [toEntity.phoneNumber]: [toEntity],
+          },
+        };
+        const activityMatcher = {
+          triggerMatch: async () => { },
+          dataMapping: {
+            [sessionId]: [{ sessionId }],
+          },
+        };
+        const instance = new CallLogger({
+          storage,
+          callMonitor,
+          contactMatcher,
+          activityMatcher,
+        });
+        const call = { sessionId, from: fromEntity, to: toEntity };
+        sinon.stub(instance, '_shouldLogNewCall').callsFake(() => true);
+        sinon.stub(instance, '_autoLogCall');
+        await instance._onNewCall(call);
+        sinon.assert.calledOnce(instance._autoLogCall);
+        expect(instance._autoLogCall.args[0][0].call).to.equal(call);
+        expect(instance._autoLogCall.args[0][0].fromEntity).to.be.undefined();
+        expect(instance._autoLogCall.args[0][0].toEntity).to.be.undefined();
+      },
+    );
   });
   describe('_onCallUpdated', () => {
     it('should call _autoLogCall if _shouldLogUpdatedCall() === true',
@@ -810,7 +890,9 @@ describe('CallLogger', () => {
         };
         const callMonitor = {};
         const contactMatcher = {};
-        const activityMatcher = {};
+        const activityMatcher = {
+          triggerMatch: async () => { },
+        };
         const instance = new CallLogger({
           storage,
           callMonitor,
@@ -822,7 +904,7 @@ describe('CallLogger', () => {
         sinon.stub(instance, '_autoLogCall');
         await instance._onCallUpdated(call);
         sinon.assert.calledOnce(instance._autoLogCall);
-        expect(instance._autoLogCall.args[0][0]).to.equal(call);
+        expect(instance._autoLogCall.args[0][0].call).to.equal(call);
       },
     );
     it('should not call _autoLogCall if _shouldLogUpdatedCall() === false',
