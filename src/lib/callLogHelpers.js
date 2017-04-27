@@ -31,7 +31,7 @@ const callResultsToMissedMap = HashMap.fromSet({
       callResults.missed,
       callResults.hangUp,
       callResults.busy,
-      callResults.voiceMail,
+      callResults.voicemail,
       callResults.rejected,
     ].indexOf(result) > -1
   ),
