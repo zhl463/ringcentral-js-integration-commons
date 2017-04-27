@@ -113,7 +113,7 @@ Here we extend the RcModule class to create the DialingPlan module. There are so
 
 ```javascript
 import SymbolMap from 'data-types/symbol-map';
-import KeyValueMap from 'data-types/key-value-map';
+import HashMap from '../../lib/HashMap';
 import RcModule, { initFunction } from '../../lib/RcModule';
 import { proxify } from '../../lib/proxy';
 import fetchList from '../../lib/fetchList';
@@ -122,7 +122,7 @@ import dialingPlanActions from './dialingPlanActions';
 import getDialingPlanReducer from './getDialingPlanReducer';
 import dialingPlanEvents from './dialingPlanEvents';
 
-const keys = new KeyValueMap({
+const keys = new HashMap({
   storage: 'dialing-plan-data',
 });
 

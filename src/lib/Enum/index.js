@@ -1,15 +1,15 @@
-import KeyValueMap from 'data-types/key-value-map';
+import HashMap from '../HashMap';
 
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 /**
  * @class
  * @description helper class for creating redux action definition maps
  */
-export default class Enum extends KeyValueMap {
+export default class Enum extends HashMap {
   /**
    * @constructor
    * @param {String[]} actions - list of action strings
-   * @extends KeyValueMap
+   * @extends HashMap
    */
   constructor(values = [], prefix = '') {
     const definition = {};
@@ -19,7 +19,6 @@ export default class Enum extends KeyValueMap {
     super(definition);
   }
 }
-
 const prefixCache = new Map();
 
 /**
@@ -43,7 +42,7 @@ export function prefixEnum({ enumMap, prefix, base = enumMap }) {
         definition[type] = `${prefix}-${base[type]}`;
       }
     }
-    cache.set(base, new KeyValueMap(definition));
+    cache.set(base, new HashMap(definition));
   }
   return cache.get(base);
 }

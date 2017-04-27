@@ -2,8 +2,10 @@ import 'core-js/fn/array/find';
 import {
   isValidNumber,
 } from 'phoneformat.js';
+import HashMap from './HashMap';
 import callActions from '../enums/callActions';
 import callDirections from '../enums/callDirections';
+import callResults from '../enums/callResults';
 import telephonyStatuses from '../enums/telephonyStatuses';
 import terminationTypes from '../enums/terminationTypes';
 import isSameLocalNumber from './isSameLocalNumber';
@@ -20,6 +22,22 @@ export function isOutbound(call = {}) {
 /* status helpers */
 export function isRinging(call = {}) {
   return call.telephonyStatus === telephonyStatuses.ringing;
+}
+
+const callResultsToMissedMap = HashMap.fromSet({
+  set: Object.keys(callResults).map(key => callResults[key]),
+  getValue: result => (
+    [
+      callResults.missed,
+      callResults.hangUp,
+      callResults.busy,
+      callResults.voiceMail,
+      callResults.rejected,
+    ].indexOf(result) > -1
+  ),
+});
+export function isMissed(call = {}) {
+  return !!callResultsToMissedMap[call.result];
 }
 
 export function hasRingingCalls(calls = []) {
@@ -121,14 +139,6 @@ export function areTwoLegs(inbound, outbound) {
     }
   }
   return false;
-
-  // return isInbound(inbound)
-  //   && isOutbound(outbound)
-  //   && [1000, 2000, 3000, 4000].indexOf(Math.abs(inbound.sessionId - outbound.sessionId)) > -1
-  //   && ((inbound.from === outbound.to && outbound.from === inbound.to) ||
-  //     (inbound.from === outbound.to && isSameLocalNumber(inbound.to, outbound.from)) ||
-  //     (inbound.to === outbound.from && isSameLocalNumber(inbound.from, outbound.to)) ||
-  //     (inbound.to.name && inbound.to.name === outbound.from.name));
 }
 
 export function removeInboundRingOutLegs(calls) {

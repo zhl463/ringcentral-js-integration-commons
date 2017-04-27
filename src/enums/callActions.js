@@ -1,6 +1,6 @@
-import KeyValueMap from 'data-types/key-value-map';
+import HashMap from '../lib/HashMap';
 
-export default new KeyValueMap({
+export default new HashMap({
   '411Info': '411 Info',
   acceptCall: 'Accept Call',
   callReturn: 'Call Return',
