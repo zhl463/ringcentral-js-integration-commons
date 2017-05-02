@@ -627,11 +627,11 @@ describe('NumberValidate Unit Test', () => {
       expect(result).to.equal(false);
     });
 
-    it('should return false if extensionNumber length is more than 5', () => {
+    it('should return false if extensionNumber length is more than 6', () => {
       numberValidate._accountExtension = {
         isAvailableExtension: () => false,
       };
-      const result = numberValidate.isNotAnExtension('123456');
+      const result = numberValidate.isNotAnExtension('1234567');
       expect(result).to.equal(false);
     });
 

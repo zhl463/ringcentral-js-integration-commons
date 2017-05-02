@@ -114,7 +114,7 @@ export default class NumberValidate extends RcModule {
   isNotAnExtension(extensionNumber) {
     if (
       extensionNumber &&
-      extensionNumber.length <= 5 &&
+      extensionNumber.length <= 6 &&
       !this._accountExtension.isAvailableExtension(extensionNumber)
     ) {
       return true;

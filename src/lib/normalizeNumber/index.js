@@ -26,7 +26,7 @@ export default function normalizeNumber({
   // service number
   if (isServiceNumber) return `*${number}`;
   // extension or special number or empty string
-  if (number === '' || number.length <= 5) return number;
+  if (number === '' || number.length <= 6) return number;
 
   let normalizedNumber;
   if (

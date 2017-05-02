@@ -689,7 +689,7 @@ export default (auth, client, account, alert, regionSettings, composeText, messa
 
       conditionalDescribe('Validate after Send Api', () => {
         it('Should Alert of recipientNumberInvalids - toNumber is invalid', async () => {
-          composeText.addToNumber({ phoneNumber: '199999' });
+          composeText.addToNumber({ phoneNumber: '19999999' });
           composeText.updateMessageText('test sender');
           try {
             await composeText.send();

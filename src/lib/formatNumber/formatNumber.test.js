@@ -19,14 +19,15 @@ describe('formatNumber', () => {
     expect(formatNumber({ phoneNumber }))
       .to.equal(formatNumber({ phoneNumber, countryCode: 'US' }));
   });
-  it('should return number as extension if number is shorter than 6 digits', () => {
+  it('should return number as extension if number is shorter than 7 digits', () => {
     [
       '1',
       '12',
       '123',
       '12345',
-      '12345*12345'
-    ].forEach(phoneNumber => {
+      '12345*12345',
+      '123456',
+    ].forEach((phoneNumber) => {
       expect(formatNumber({
         phoneNumber,
       })).to.equal(phoneNumber.split('*').pop());
@@ -96,7 +97,7 @@ describe('formatNumber', () => {
       '+1-202-555-0187',
       '+1-202-555-0177',
     ];
-    ca.forEach(n => {
+    ca.forEach((n) => {
       expect(formatNumber({
         phoneNumber: n,
         countryCode: 'US'
@@ -105,7 +106,7 @@ describe('formatNumber', () => {
         countryCode: 'CA',
       }));
     });
-    us.forEach(n => {
+    us.forEach((n) => {
       expect(formatNumber({
         phoneNumber: n,
         countryCode: 'US'

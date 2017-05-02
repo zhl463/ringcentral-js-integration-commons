@@ -30,7 +30,7 @@ export default function formatNumber({
 
   if (isServiceNumber) return `*${number}`;
   // extension or special number
-  if (number === '' || number.length <= 5) return number;
+  if (number === '' || number.length <= 6) return number;
 
   let formattedNumber;
   if (countryCode === 'CA' || countryCode === 'US') {

@@ -183,8 +183,8 @@ export default class MessageSender extends RcModule {
       }
       const recipientNumbers = validateToNumberResult.numbers;
 
-      const extensionNumbers = recipientNumbers.filter(number => (number.length <= 5));
-      const phoneNumbers = recipientNumbers.filter(number => (number.length > 5));
+      const extensionNumbers = recipientNumbers.filter(number => (number.length <= 6));
+      const phoneNumbers = recipientNumbers.filter(number => (number.length > 6));
 
       // not validate sender number if recipient is only extension number
       if (phoneNumbers.length > 0) {
