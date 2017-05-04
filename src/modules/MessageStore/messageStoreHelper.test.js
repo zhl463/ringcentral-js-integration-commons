@@ -290,7 +290,7 @@ describe('MessageStore:: Helper :: findIndexOfConversations', () => {
       unreadMessages: {},
     };
     const record = {
-      conversation: { id: '123456' },
+      conversationId: '123456',
     };
     const result = messageStoreHelper.findIndexOfConversations(conversationMap, record);
     expect(result).to.equal(1);
@@ -299,7 +299,7 @@ describe('MessageStore:: Helper :: findIndexOfConversations', () => {
   it('should return -1 if record is not found', () => {
     const conversationMap = {};
     const record = {
-      conversation: { id: '123456' },
+      conversationId: '123456',
     };
     const result = messageStoreHelper.findIndexOfConversations(conversationMap, record);
     expect(result).to.equal(-1);
@@ -415,6 +415,7 @@ describe('MessageStore:: Helper :: pushRecordsToMessageData', () => {
       conversation: {
         id: '1234567890'
       },
+      conversationId: '1234567890',
       type: 'SMS',
       subject: 'test1',
       availability: 'Alive',

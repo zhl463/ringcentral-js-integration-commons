@@ -11,12 +11,23 @@ export function messageIsDeleted(message) {
   return message.availability === 'Deleted';
 }
 
-export function messaageIsTextMessage(message) {
+export function messageIsTextMessage(message) {
   return (message.type !== 'Fax' && message.type !== 'VoiceMail');
 }
 
+export function messageIsFax(message) {
+  return (message.type === 'Fax');
+}
+
+export function messageIsVoicemail(message) {
+  return (message.type === 'VoiceMail');
+}
+
 export function messageIsAcceptable(message) {
-  return messaageIsTextMessage(message) && (!messageIsDeleted(message));
+  // do not show outbound faxes
+  // do not show deleted messages
+  return (message.type !== 'Fax' || message.direction === 'Inbound') &&
+    (!messageIsDeleted(message));
 }
 
 export function getMyNumberFromMessage({ message, myExtensionNumber }) {

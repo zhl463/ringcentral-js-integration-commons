@@ -735,7 +735,7 @@ describe('Conversation Unit Test', () => {
         messages: [{
           id: 12345,
         }],
-        conversations: [{
+        allConversations: [{
           id: 12345,
         }],
       };
@@ -757,7 +757,7 @@ describe('Conversation Unit Test', () => {
         messages: [{
           id: 12345,
         }],
-        conversations: [{
+        allConversations: [{
           id: 12345,
           recipients: ['123'],
         }],

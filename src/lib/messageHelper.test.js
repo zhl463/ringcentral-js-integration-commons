@@ -47,28 +47,56 @@ describe('messageIsDeleted', () => {
   });
 });
 
-describe('messaageIsTextMessage', () => {
+describe('messageIsTextMessage', () => {
   it('should return true when message type is SMS', () => {
     const message = { type: 'SMS' };
-    const result = messageHelper.messaageIsTextMessage(message);
+    const result = messageHelper.messageIsTextMessage(message);
     expect(result).to.equal(true);
   });
 
   it('should return true when message type is Pager', () => {
     const message = { type: 'Pager' };
-    const result = messageHelper.messaageIsTextMessage(message);
+    const result = messageHelper.messageIsTextMessage(message);
     expect(result).to.equal(true);
   });
 
   it('should return false when message type is Fax', () => {
     const message = { type: 'Fax' };
-    const result = messageHelper.messaageIsTextMessage(message);
+    const result = messageHelper.messageIsTextMessage(message);
     expect(result).to.equal(false);
   });
 
   it('should return false when message type is VoiceMail', () => {
     const message = { type: 'VoiceMail' };
-    const result = messageHelper.messaageIsTextMessage(message);
+    const result = messageHelper.messageIsTextMessage(message);
+    expect(result).to.equal(false);
+  });
+});
+
+describe('messageIsFax', () => {
+  it('should return true when message type is Fax', () => {
+    const message = { type: 'Fax', availability: 'Alive' };
+    const result = messageHelper.messageIsFax(message);
+    expect(result).to.equal(true);
+  });
+
+  it('should return false when message type is SMS', () => {
+    const message = { type: 'SMS', availability: 'Alive' };
+    const result = messageHelper.messageIsFax(message);
+    expect(result).to.equal(false);
+  });
+});
+
+describe('messageIsVoicemail', () => {
+  it('should return true when message type is VoiceMail', () => {
+    const message = { type: 'VoiceMail', availability: 'Alive' };
+    const result = messageHelper.messageIsVoicemail(message);
+    expect(result).to.equal(true);
+  });
+
+  it('should return false when message type is SMS', () => {
+    const message = { type: 'SMS', availability: 'Alive' };
+    const result = messageHelper.messageIsVoicemail(message);
     expect(result).to.equal(false);
   });
 });
@@ -92,10 +120,10 @@ describe('messageIsAcceptable', () => {
     expect(result).to.equal(false);
   });
 
-  it('should return false when message type is VoiceMail and Alive', () => {
+  it('should return true when message type is VoiceMail and Alive', () => {
     const message = { type: 'VoiceMail', availability: 'Alive' };
     const result = messageHelper.messageIsAcceptable(message);
-    expect(result).to.equal(false);
+    expect(result).to.equal(true);
   });
 
   it('should return true when message type is SMS and Deleted', () => {
@@ -112,6 +140,18 @@ describe('messageIsAcceptable', () => {
 
   it('should return false when message type is Fax and Deleted', () => {
     const message = { type: 'Fax', availability: 'Deleted' };
+    const result = messageHelper.messageIsAcceptable(message);
+    expect(result).to.equal(false);
+  });
+
+  it('should return true when message type is Fax and Inbound', () => {
+    const message = { type: 'Fax', availability: 'Alive', direction: 'Inbound' };
+    const result = messageHelper.messageIsAcceptable(message);
+    expect(result).to.equal(true);
+  });
+
+  it('should return false when message type is Fax and Outbound', () => {
+    const message = { type: 'Fax', availability: 'Alive', direction: 'Outbound' };
     const result = messageHelper.messageIsAcceptable(message);
     expect(result).to.equal(false);
   });

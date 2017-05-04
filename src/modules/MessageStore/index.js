@@ -3,6 +3,7 @@ import moduleStatuses from '../../enums/moduleStatuses';
 
 import { batchPutApi } from '../../lib/batchApiHelper';
 
+import * as messageHelper from '../../lib/messageHelper';
 import * as messageStoreHelper from './messageStoreHelper';
 
 import actionTypes from './actionTypes';
@@ -51,9 +52,43 @@ export default class MessageStore extends RcModule {
 
     this.addSelector(
       'unreadCounts',
-      () => this.conversations,
+      () => this.allConversations,
+      (conversations) => {
+        let unreadCounts = 0;
+        conversations.forEach((conversation) => {
+          if (messageHelper.messageIsTextMessage(conversation)) {
+            unreadCounts += conversation.unreadCounts;
+          }
+        });
+        return unreadCounts;
+      }
+    );
+
+    this.addSelector(
+      'textConversations',
+      () => this.allConversations,
       conversations =>
-        conversations.reduce((pre, cur) => (pre + cur.unreadCounts), 0),
+        conversations.filter(
+          conversation => messageHelper.messageIsTextMessage(conversation)
+        )
+    );
+
+    this.addSelector(
+      'faxMessages',
+      () => this.allConversations,
+      conversations =>
+        conversations.filter(
+          conversation => messageHelper.messageIsFax(conversation)
+        )
+    );
+
+    this.addSelector(
+      'voicemailMessages',
+      () => this.allConversations,
+      conversations =>
+        conversations.filter(
+          conversation => messageHelper.messageIsVoicemail(conversation)
+        )
     );
 
     this.syncConversation = this.syncConversation.bind(this);
@@ -395,8 +430,20 @@ export default class MessageStore extends RcModule {
     return this.cache.data.messages;
   }
 
-  get conversations() {
+  get allConversations() {
     return this.cache.data.conversations;
+  }
+
+  get voicemailMessages() {
+    return this._selectors.voicemailMessages();
+  }
+
+  get faxMessages() {
+    return this._selectors.faxMessages();
+  }
+
+  get conversations() {
+    return this._selectors.textConversations();
   }
 
   get conversationMap() {

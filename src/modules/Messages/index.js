@@ -241,8 +241,4 @@ export default class Messages extends RcModule {
   get searchingResults() {
     return this.state.searchingResults;
   }
-
-  get normalizedMessages() {
-    return this._selectors.normalizedMessages();
-  }
 }

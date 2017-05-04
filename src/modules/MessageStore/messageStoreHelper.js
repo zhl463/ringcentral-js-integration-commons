@@ -5,7 +5,7 @@ import syncTypes from '../../enums/syncTypes';
 export function normalizeRecord(record) {
   return {
     ...record,
-    conversationId: record.conversation.id,
+    conversationId: (record.conversation && record.conversation.id) || record.id,
   };
 }
 
@@ -105,8 +105,11 @@ export function filterNullFromConversations({
   };
 }
 
-export function findIndexOfConversations(newConversationMap, record) {
-  const conversationId = record.conversation && record.conversation.id;
+export function findIndexOfConversations(newConversationMap, message) {
+  const conversationId = message.conversationId;
+  if (!conversationId) {
+    return -1;
+  }
   const existedIndex =
     newConversationMap[conversationId] &&
     newConversationMap[conversationId].index;
@@ -116,9 +119,9 @@ export function findIndexOfConversations(newConversationMap, record) {
   return -1;
 }
 
-export function findIndexOfMessages(messageMap, record) {
-  if (messageMap[record.id] !== undefined) {
-    return messageMap[record.id];
+export function findIndexOfMessages(messageMap, message) {
+  if (messageMap[message.id] !== undefined) {
+    return messageMap[message.id];
   }
   return -1;
 }
@@ -174,22 +177,22 @@ export function pushRecordsToMessageData({
     }
     newConversationMap[conversationId] = conversation;
   };
-  const pushMessageToConversations = (record) => {
-    const message = normalizeRecord(removeUri(record));
+  const pushMessageToConversations = (message) => {
+    const newConversation = { ...message };
     const index = newConversations.length;
-    addMessageToConversationMap(message, index);
-    const conversation = newConversationMap[message.conversationId];
+    addMessageToConversationMap(newConversation, index);
+    const conversation = newConversationMap[newConversation.conversationId];
     if (conversation) {
-      message.unreadCounts = calcUnreadCount(conversation);
+      newConversation.unreadCounts = calcUnreadCount(conversation);
     } else {
-      message.unreadCounts = 0;
+      newConversation.unreadCounts = 0;
     }
-    newConversations.push(message);
+    newConversations.push(newConversation);
   };
-  const pushMessageToMessages = (record) => {
-    const message = normalizeRecord(removeUri(record));
-    newMessages.push(message);
-    addMessageToMessageMap(message, newMessages.length - 1);
+  const pushMessageToMessages = (message) => {
+    const newMessage = { ...message };
+    newMessages.push(newMessage);
+    addMessageToMessageMap(newMessage, newMessages.length - 1);
   };
   // TODO: delete message or conversation?
   const deleteMessageFromConversations = (index, record) => {
@@ -201,28 +204,28 @@ export function pushRecordsToMessageData({
       ));
       if (conversationMessages.length === 0) {
         newConversations[index] = null;
-        delete newConversationMap[record.conversation.id];
+        delete newConversationMap[record.conversationId];
         return;
       }
       newConversations[index] = conversationMessages[conversationMessages.length - 1];
     }
-    const conversation = newConversationMap[record.conversation.id];
+    const conversation = newConversationMap[record.conversationId];
     setSyncTokenToConversation(conversation);
     delete conversation.unreadMessages[record.id];
     message.unreadCounts = calcUnreadCount(conversation);
   };
-  const deleteMessageFromMessages = (index, record) => {
+  const deleteMessageFromMessages = (index, message) => {
     newMessages[index] = null;
-    delete messageMap[record.id];
+    delete messageMap[message.id];
   };
-  const replaceMessageInConversations = (index, record) => {
+  const replaceMessageInConversations = (index, message) => {
     const oldConversation = newConversations[index];
     const newMessage = {
       ...oldConversation,
-      ...normalizeRecord(removeUri(record)),
+      ...message,
     };
     const oldCreated = new Date(oldConversation.creationTime);
-    const newCreated = new Date(record.creationTime);
+    const newCreated = new Date(message.creationTime);
     if (newCreated >= oldCreated) {
       // move the message to the top of new Messages
       newConversations[index] = null;
@@ -234,34 +237,36 @@ export function pushRecordsToMessageData({
     const conversation = newConversationMap[newMessage.conversationId];
     newMessage.unreadCounts = calcUnreadCount(conversation);
   };
-  const replaceMessageInMessages = (index, record) => {
-    newMessages[index] = normalizeRecord(removeUri(record));
+  const replaceMessageInMessages = (index, message) => {
+    newMessages[index] = { ...message };
   };
   records.forEach((record) => {
-    if (!record || !record.conversation) {
+    if (!record) {
       return;
     }
-    const existedIndexofMessages = findIndexOfMessages(messageMap, record);
-    const existedIndexofConversations = findIndexOfConversations(newConversationMap, record);
-    const isDeleted = messageHelper.messageIsDeleted(record);
-    const isAcceptable = messageHelper.messageIsAcceptable(record);
+    const message = normalizeRecord(removeUri(record));
+    const existedIndexofMessages = findIndexOfMessages(messageMap, message);
+    const existedIndexofConversations = findIndexOfConversations(newConversationMap, message);
+    const isDeleted = messageHelper.messageIsDeleted(message);
+    const isTextMessage = messageHelper.messageIsTextMessage(message);
+    const isAcceptable = messageHelper.messageIsAcceptable(message);
     if (existedIndexofMessages > -1) {
       if (isDeleted) {
-        deleteMessageFromMessages(existedIndexofMessages, record);
+        deleteMessageFromMessages(existedIndexofMessages, message);
       } else {
-        replaceMessageInMessages(existedIndexofMessages, record);
+        replaceMessageInMessages(existedIndexofMessages, message);
       }
-    } else if (isAcceptable) {
-      pushMessageToMessages(record);
+    } else if (isAcceptable && isTextMessage) {
+      pushMessageToMessages(message);
     }
     if (existedIndexofConversations > -1) {
       if (isDeleted) {
-        deleteMessageFromConversations(existedIndexofConversations, record);
+        deleteMessageFromConversations(existedIndexofConversations, message);
       } else {
-        replaceMessageInConversations(existedIndexofConversations, record);
+        replaceMessageInConversations(existedIndexofConversations, message);
       }
     } else if (isAcceptable) {
-      pushMessageToConversations(record);
+      pushMessageToConversations(message);
     }
   });
   const filteredConversation = filterNullFromConversations({

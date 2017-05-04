@@ -151,7 +151,7 @@ export default class Conversation extends RcModule {
     const messages = this._messageStore.messages.filter(message => (
       message.conversationId === conversationId
     ));
-    const lastMessage = this._messageStore.conversations[conversation.index];
+    const lastMessage = this._messageStore.allConversations[conversation.index];
     const senderNumber = this._getCurrentSenderNumber(lastMessage);
     let recipients = lastMessage && lastMessage.recipients;
     if (!recipients || recipients.length === 0) {
