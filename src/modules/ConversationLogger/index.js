@@ -17,6 +17,7 @@ export default class ConversationLogger extends LoggerBase {
   constructor({
     contactMatcher,
     conversationMatcher,
+    isLoggedContact = () => false,
     extensionInfo,
     messageStore,
     dateTimeFormat,
@@ -31,7 +32,7 @@ export default class ConversationLogger extends LoggerBase {
       actionTypes,
       identityFunction: conversationLogIdentityFunction,
     });
-
+    this._isLoggedContact = isLoggedContact;
     this._contactMatcher = this::ensureExist(contactMatcher, 'contactMatcher');
     this._conversationMatcher = this::ensureExist(conversationMatcher, 'conversationMatcher');
     this._extensionInfo = this::ensureExist(extensionInfo, 'extensionInfo');
@@ -65,6 +66,7 @@ export default class ConversationLogger extends LoggerBase {
               mapping[conversationId][date] = {
                 conversationLogId: getLogId({ conversationId, date }),
                 conversationId,
+                creationTime: message.createTime, // for sorting
                 date,
                 type: message.type,
                 messages: [],
@@ -191,12 +193,26 @@ export default class ConversationLogger extends LoggerBase {
         selfMatches[0]) ||
         null;
 
-      // TODO: check older dates for existing selected entity match
-
-
-      const correspondentEntity = (correspondentMatches &&
-        correspondentMatches.length === 1 &&
-        correspondentMatches[0]) ||
+      // check older dates for existing selected entity match
+      const lastRecord = Object.keys(this.conversationLogMap[conversation.conversationId])
+        .map(date => (
+          this.conversationLogMap[conversation.conversationId][date]
+        )).sort(sortByDate)[1];
+      let correspondentEntity;
+      if (
+        lastRecord &&
+        this._conversationMatcher.dataMapping[lastRecord.conversationLogId] &&
+        this._conversationMatcher.dataMapping[lastRecord.conversationLogId].length
+      ) {
+        const lastActivity = this._conversationMatcher.dataMapping[lastRecord.conversationLogId][0];
+        correspondentEntity = correspondentMatches.find(item => (
+          this._isLoggedContact(conversation, lastActivity, item)
+        ));
+      }
+      correspondentEntity = correspondentEntity ||
+        (correspondentMatches &&
+          correspondentMatches.length === 1 &&
+          correspondentMatches[0]) ||
         null;
       await this._autoLogConversation({
         conversation,
