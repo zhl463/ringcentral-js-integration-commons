@@ -1,5 +1,6 @@
 import DataFetcher from '../../lib/DataFetcher';
-import moduleStatuses from '../../enums/moduleStatuses';
+import permissionsMessages from './permissionsMessages';
+import loginStatus from '../Auth/loginStatus';
 
 const DEFAULT_TTL = 24 * 60 * 60 * 1000;
 
@@ -13,7 +14,10 @@ function extractData(permissions) {
 
 export default class RolesAndPermissions extends DataFetcher {
   constructor({
+    isCRM,
+    flag,
     client,
+    alert,
     extensionInfo,
     ttl = DEFAULT_TTL,
     ...options
@@ -28,12 +32,30 @@ export default class RolesAndPermissions extends DataFetcher {
       ),
       readyCheckFn: () => this._extensionInfo.ready,
     });
+    this._isCRM = !!isCRM;
+    this._flag = flag || 'SalesForce';
+    this._alert = alert;
     this._extensionInfo = extensionInfo;
     this.addSelector(
       'permissions',
       () => this.data,
       data => data || {},
     );
+  }
+
+  async _onStateChange() {
+    await super._onStateChange();
+    if (this.ready &&
+      this._auth.loginStatus === loginStatus.loggedIn &&
+      this._isCRM &&
+      !this.tierEnabled
+      ) {
+      await this._auth.logout();
+      this._alert.danger({
+        message: permissionsMessages.invalidTier,
+        ttl: 0,
+      });
+    }
   }
 
   get serviceFeatures() {
@@ -57,6 +79,14 @@ export default class RolesAndPermissions extends DataFetcher {
       this._extensionInfo.serviceFeatures &&
       this._extensionInfo.serviceFeatures.WebPhone &&
       this._extensionInfo.serviceFeatures.WebPhone.enabled
+    );
+  }
+
+  get tierEnabled() {
+    return !!(
+      this._extensionInfo.serviceFeatures &&
+      this._extensionInfo.serviceFeatures[this._flag] &&
+       this._extensionInfo.serviceFeatures[this._flag].enabled
     );
   }
 }

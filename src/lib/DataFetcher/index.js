@@ -80,7 +80,7 @@ export default class DataFetcher extends Pollable {
     this._promise = null;
     this._lastMessage = null;
   }
-  _onStateChange = async () => {
+  async _onStateChange() {
     if (
       this._auth.loggedIn &&
       (!this._storage || this._storage.ready) &&
@@ -142,7 +142,7 @@ export default class DataFetcher extends Pollable {
     }
   }
   initialize() {
-    this.store.subscribe(this._onStateChange);
+    this.store.subscribe(() => this._onStateChange());
   }
 
   get data() {
