@@ -24,14 +24,8 @@ export function defaultIdentityFunction(item) {
  */
 export function convertListToMap(loggingList) {
   const mapping = {};
-  loggingList.forEach((item) => {
-    if (!mapping[item.id]) {
-      mapping[item.id] = {
-        [item.name]: true,
-      };
-    } else {
-      mapping[item.id][item.name] = true;
-    }
+  loggingList.forEach((id) => {
+    mapping[id] = true;
   });
   return mapping;
 }
@@ -54,6 +48,8 @@ export default class LoggerBase extends RcModule {
     actionTypes = prefixEnum({ base: baseActionTypes, prefix: name }),
     getReducer = getDefaultReducer,
     identityFunction = defaultIdentityFunction,
+    logFunction,
+    readyCheckFunction,
     ...options,
   }) {
     super({
@@ -62,54 +58,17 @@ export default class LoggerBase extends RcModule {
     });
     this._name = this::ensureExist(name, 'name');
     this._identityFunction = this::ensureExist(identityFunction, 'identityFunction');
+    this._logFunction = this::ensureExist(logFunction, 'logFunction');
+    this._readyCheckFunction = this::ensureExist(readyCheckFunction, 'readyCheckFunction');
 
     this._reducer = getReducer(this.actionTypes);
 
     this._logPromises = new Map();
-    this._logProviders = new Map();
 
     this.addSelector('loggingMap',
       () => this.loggingList,
       convertListToMap,
     );
-  }
-
-  addLogProvider({
-    name,
-    logFn,
-    readyCheckFn,
-    ...options,
-  } = {}) {
-    if (!name) {
-      throw new Error(
-        `${this.constructor.name}: "name" is required.`
-      );
-    }
-    if (this._logProviders.has(name)) {
-      throw new Error(
-        `${this.constructor.name}: A provider named "${name}" already exists.`
-      );
-    }
-    if (typeof logFn !== 'function') {
-      throw new Error(
-        `${this.constructor.name}: "logFn" must be a function.`
-      );
-    }
-    if (typeof readyCheckFn !== 'function') {
-      throw new Error(
-        `${this.constructor.name}: "readyCheckFn" must be a function.`
-      );
-    }
-    this._logProviders.set(name, {
-      logFn,
-      readyCheckFn,
-      ...options,
-    });
-  }
-
-  get logProvidersReady() {
-    return [...this._logProviders.values()]
-      .every(provider => provider.readyCheckFn());
   }
 
   initialize() {
@@ -118,11 +77,11 @@ export default class LoggerBase extends RcModule {
 
   _shouldInit() {
     return this.pending &&
-      this.logProvidersReady;
+      this._readyCheckFunction();
   }
   _shouldReset() {
     return this.ready &&
-      !this.logProvidersReady;
+      !this._readyCheckFunction();
   }
 
   async _onStateChange() {
@@ -149,72 +108,51 @@ export default class LoggerBase extends RcModule {
     }
   }
 
-  async _log({ item, name, ...options } = {}) {
+  async _log({ item, ...options } = {}) {
     if (!this.ready) {
       throw new Error(`${this.constructor.name}._log: module is not ready.`);
     }
     if (!item) {
       throw new Error(`${this.constructor.name}._log: options.item is undefined.`);
     }
-    if (!name) {
-      throw new Error(`${this.constructor.name}._log: options.name is undefined.`);
-    }
-    if (!this._logProviders.has(name)) {
-      throw new Error(`${this.constructor.name}._log: provider '${name}' does not exist.`);
-    }
 
     const id = this._identityFunction(item);
-    const key = `${name}-${id}`;
     // wait for the previous log action to finish
-    if (this._logPromises.has(key)) {
-      await this._logPromises.get(key);
+    if (this._logPromises.has(id)) {
+      await this._logPromises.get(id);
     }
     try {
       this.store.dispatch({
         type: this.actionTypes.log,
-        name,
         id,
       });
-      const promise = this._logProviders.get(name).logFn({ item, ...options });
-      this._logPromises.set(key, promise);
+      const promise = this._logFunction({ item, ...options });
+      this._logPromises.set(id, promise);
       await promise;
-      this._logPromises.delete(key);
+      this._logPromises.delete(id);
       this.store.dispatch({
         type: this.actionTypes.logSuccess,
-        name,
         id,
       });
     } catch (error) {
-      this._logPromises.delete(key);
+      this._logPromises.delete(id);
       this.store.dispatch({
         type: this.actionTypes.logError,
         error,
-        name,
         id,
       });
       throw error;
     }
   }
 
-  async log({ item, name, ...options }) {
+  async log({ item, ...options }) {
     if (!this.ready) {
       throw new Error(`${this.constructor.name}.log: module is not ready.`);
     }
     if (!item) {
       throw new Error(`${this.constructor.name}.log: options.item is undefined.`);
     }
-
-    if (name) {
-      if (!this._logProviders.has(name)) {
-        throw new Error(`${this.constructor.name}.log: provider '${name}' does not exist.`);
-      }
-      await this._log({ item, name, ...options });
-    } else {
-      await Promise.all(
-        [...this._logProviders.keys()]
-          .map(key => this._log({ item, name: key, ...options }))
-      );
-    }
+    await this._log({ item, ...options });
   }
 
   get status() {

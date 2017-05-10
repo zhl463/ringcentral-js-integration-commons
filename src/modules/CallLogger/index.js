@@ -45,22 +45,6 @@ export default class CallLogger extends LoggerBase {
     this._lastProcessedEndedCalls = null;
   }
 
-  addLogProvider({
-    name,
-    logFn,
-    readyCheckFn,
-    allowAutoLog = true,
-    ...options,
-  }) {
-    super.addLogProvider({
-      name,
-      logFn,
-      readyCheckFn,
-      allowAutoLog: !!allowAutoLog,
-      ...options,
-    });
-  }
-
   _onReset() {
     this._lastProcessedCalls = null;
     this._lastProcessedEndedCalls = null;
@@ -72,7 +56,7 @@ export default class CallLogger extends LoggerBase {
       (!this._callHistory || this._callHistory.ready) &&
       this._contactMatcher.ready &&
       this._activityMatcher.ready &&
-      this.logProvidersReady &&
+      this._readyCheckFunction() &&
       this._storage.ready;
   }
 
@@ -84,13 +68,13 @@ export default class CallLogger extends LoggerBase {
         (this._callHistory && !this._callHistory.ready) ||
         !this._contactMatcher.ready ||
         !this._activityMatcher.ready ||
-        !this.logProvidersReady ||
+        !this._readyCheckFunction() ||
         !this._storage.ready
       );
   }
 
-  async log({ call, name, ...options }) {
-    return super.log({ item: call, name, ...options });
+  async log({ call, ...options }) {
+    return super.log({ item: call, ...options });
   }
 
   _shouldLogNewCall(call) {
@@ -100,7 +84,6 @@ export default class CallLogger extends LoggerBase {
 
   async logCall({
     call,
-    name,
     contact,
     ...options,
   }) {
@@ -118,30 +101,22 @@ export default class CallLogger extends LoggerBase {
           Math.round((Date.now() - call.startTime) / 1000),
         result: call.result || call.telephonyStatus,
       },
-      name,
       fromEntity,
       toEntity,
     });
   }
   async _autoLogCall({ call, fromEntity, toEntity }) {
-    await Promise.all(
-      [...this._logProviders.keys()].filter((name) => {
-        const provider = this._logProviders.get(name);
-        return provider.allowAutoLog &&
-          provider.readyCheckFn();
-      }).map(name => this.log({
-        call: {
-          ...call,
-          duration: call::Object.prototype.hasOwnProperty('duration') ?
-            call.duration :
-            Math.round((Date.now() - call.startTime) / 1000),
-          result: call.result || call.telephonyStatus,
-        },
-        name,
-        fromEntity,
-        toEntity,
-      })),
-    );
+    await this.log({
+      call: {
+        ...call,
+        duration: call::Object.prototype.hasOwnProperty('duration') ?
+          call.duration :
+          Math.round((Date.now() - call.startTime) / 1000),
+        result: call.result || call.telephonyStatus,
+      },
+      fromEntity,
+      toEntity,
+    });
   }
   async _onNewCall(call) {
     if (this._shouldLogNewCall(call)) {

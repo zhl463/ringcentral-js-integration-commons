@@ -2,21 +2,20 @@ import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../getModuleStatusReducer';
 
 export function getLoggingListReducer(types) {
-  return (state = [], { type, name, id }) => {
+  return (state = [], { type, id }) => {
     switch (type) {
       case types.log: {
-        if (state.find(item => item.name === name && item.id === id)) {
+        if (state.indexOf(id) > -1) {
           return state;
         }
-        return state.concat({
-          name,
-          id,
-        });
+        return [...state, id];
       }
       case types.logSuccess:
       case types.logError: {
-        return state.filter(item => !(item.id === id && item.name === name));
+        return state.filter(item => item !== id);
       }
+      case types.resetSuccess:
+        return [];
       default:
         return state;
     }

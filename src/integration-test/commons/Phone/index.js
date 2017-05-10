@@ -41,7 +41,6 @@ import Conversation from '../../../modules/Conversation';
 
 import ContactMatcher from '../../../modules/ContactMatcher';
 import ActivityMatcher from '../../../modules/ActivityMatcher';
-import DateTimeIntl from '../../../modules/DateTimeIntl';
 
 // import DynamicsAdapter from '../../../modules/DynamicsInteraction';
 
@@ -345,14 +344,6 @@ export default class Phone extends RcModule {
     //   readyCheckFn: () => this.adapter.ready,
     // });
 
-    this.addModule('dateTimeIntl', new DateTimeIntl({
-      ...options,
-      auth: this.auth,
-      locale: this.locale,
-      storage: this.storage,
-      getState: () => this.state.dateTimeIntl,
-    }));
-
     this.addModule('contactSearch', new ContactSearch({
       ...options,
       auth: this.auth,
@@ -413,6 +404,7 @@ export default class Phone extends RcModule {
     this.addModule('messages', new Messages({
       ...options,
       messageStore: this.messageStore,
+      extensionInfo: this.extensionInfo,
       getState: () => this.state.messages,
     }));
 
@@ -427,7 +419,6 @@ export default class Phone extends RcModule {
     //   storage: this.storage,
     //   globalStorage: this.globalStorage,
     //   regionSettings: this.regionSettings,
-    //   dateTimeIntl: this.dateTimeIntl,
     //   getState: () => this.state.adapter,
     // }));
 
@@ -467,7 +458,6 @@ export default class Phone extends RcModule {
       storage: this.storage.reducer,
       // autoLogger: this.autoLogger.reducer,
       globalStorage: this.globalStorage.reducer,
-      dateTimeIntl: this.dateTimeIntl.reducer,
       contactSearch: this.contactSearch.reducer,
       numberValidate: this.numberValidate.reducer,
       messageSender: this.messageSender.reducer,

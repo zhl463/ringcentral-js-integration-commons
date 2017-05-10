@@ -1,14 +1,19 @@
 import RcModule from '../../lib/RcModule';
 import moduleStatuses from '../../enums/moduleStatuses';
-
+import ensureExist from '../../lib/ensureExist';
 import actionTypes from './actionTypes';
 import getMessagesReducer from './getMessagesReducer';
+import { getNumbersFromMessage, sortSearchResults } from '../../lib/messageHelper';
+import cleanNumber from '../../lib/cleanNumber';
 
 export default class Messages extends RcModule {
   constructor({
     messageStore,
-    perPage = 20,
+    extensionInfo,
+    defaultPerPage = 20,
     contactMatcher,
+    conversationMatcher,
+    conversationLogger,
     ...options
   }) {
     super({
@@ -16,12 +21,10 @@ export default class Messages extends RcModule {
       actionTypes,
     });
     this._contactMatcher = contactMatcher;
-    this._messageStore = messageStore;
-    this._perPage = perPage;
-    this._reducer = getMessagesReducer(this.actionTypes);
-    this.loadNextPageMessages = this.loadNextPageMessages.bind(this);
-    this.updateSearchingString = this.updateSearchingString.bind(this);
-    this.updateSearchResults = this.updateSearchResults.bind(this);
+    this._conversationLogger = conversationLogger;
+    this._messageStore = this::ensureExist(messageStore, 'messageStore');
+    this._extensionInfo = this::ensureExist(extensionInfo, 'extensionInfo');
+    this._reducer = getMessagesReducer(this.actionTypes, defaultPerPage);
 
     this.addSelector('uniqueNumbers',
       () => this._messageStore.conversations,
@@ -53,6 +56,125 @@ export default class Messages extends RcModule {
         return output;
       },
     );
+    this.addSelector('effectiveSearchString',
+      () => this.state.searchInput,
+      (input) => {
+        if (input.length >= 3) return input;
+        return '';
+      }
+    );
+    this.addSelector('allConversations',
+      () => this._messageStore.conversations,
+      () => this._extensionInfo.extensionNumber,
+      () => this._contactMatcher && this._contactMatcher.dataMapping,
+      () => this._conversationLogger && this._conversationLogger.loggingMap,
+      () => this._conversationLogger && this._conversationLogger.dataMapping,
+      (
+        conversations,
+        extensionNumber,
+        contactMapping = {},
+        loggingMap = {},
+        conversationLogMapping = {},
+      ) => (
+          conversations.map((message) => {
+            const {
+            self,
+              correspondents,
+          } = getNumbersFromMessage({ extensionNumber, message });
+            const selfNumber = self && (self.phoneNumber || self.extensionNumber);
+            const selfMatches = (selfNumber && contactMapping[selfNumber]) || [];
+            const correspondentMatches = correspondents.reduce((matches, contact) => {
+              const number = contact && (contact.phoneNumber || contact.extensionNumber);
+              return number && contactMapping[number] && contactMapping[number].length ?
+                matches.concat(contactMapping[number]) :
+                matches;
+            }, []);
+            const conversationLogId = this._conversationLogger ?
+              this._conversationLogger.getConversationLogId(message) :
+              null;
+            const isLogging = !!(conversationLogId && loggingMap[conversationLogId]);
+            const conversationMatches = conversationLogMapping[conversationLogId] || [];
+            return {
+              ...message,
+              self,
+              selfMatches,
+              correspondents,
+              correspondentMatches,
+              conversationLogId,
+              isLogging,
+              conversationMatches,
+            };
+          })
+        ),
+    );
+    this.addSelector('filteredConversations',
+      this._selectors.allConversations,
+      () => this._selectors.effectiveSearchString(),
+      (allConversations, effectiveSearchString) => {
+        if (effectiveSearchString !== '') {
+          const searchResults = [];
+          allConversations.forEach((message) => {
+            const searchNumber = cleanNumber(effectiveSearchString, false);
+            if (searchNumber !== '' && message.correspondents.find(contact => (
+              cleanNumber(contact.phoneNumber || contact.extensionNumber || '')
+                .indexOf(searchNumber) > -1
+            ))) {
+              // match by phoneNumber or extensionNumber
+              searchResults.push({
+                ...message,
+                matchOrder: 0,
+              });
+              return;
+            }
+            if (message.correspondentMatches.length) {
+              if (
+                message.correspondentMatches.find(entity => (
+                  entity.name && entity.name.indexOf(effectiveSearchString) > -1
+                ))
+              ) {
+                // match by entity's name
+                searchResults.push({
+                  ...message,
+                  matchOrder: 0,
+                });
+                return;
+              }
+            } else if (message.correspondents.find(contact => (
+              (contact.name || '')
+                .indexOf(effectiveSearchString) > -1
+            ))) {
+              searchResults.push({
+                ...message,
+                matchOrder: 0,
+              });
+              return;
+            }
+
+            // try match messages of the same conversation
+            if (message.subject.indexOf(effectiveSearchString) > -1) {
+              searchResults.push({
+                ...message,
+                matchOrder: 1,
+              });
+              return;
+            }
+            const matchedMessage = this._messageStore.messages.find(item => (
+              item.conversationId === message.conversationId &&
+              item.subject.indexOf(effectiveSearchString) > -1
+            ));
+            if (matchedMessage) {
+              searchResults.push({
+                ...message,
+                matchedMessage,
+                matchOrders: 1,
+              });
+            }
+          });
+          return searchResults.sort(sortSearchResults);
+        }
+        return allConversations;
+      },
+    );
 
     if (this._contactMatcher) {
       this._contactMatcher.addQuerySource({
@@ -70,134 +192,72 @@ export default class Messages extends RcModule {
     this.store.subscribe(() => this._onStateChange());
   }
 
-  _onStateChange() {
+  async _onStateChange() {
     if (this._shouldInit()) {
       this.store.dispatch({
         type: this.actionTypes.init,
       });
-      this._initMessages();
+      if (this._contactMatcher) {
+        await this._contactMatcher.triggerMatch();
+      }
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
     } else if (this._shouldReset()) {
-      this._resetModuleStatus();
-    } else if (this._shouldReload()) {
-      this._reloadMessages();
-      this._triggerMatch();
+      this.store.dispatch({
+        type: this.actionTypes.reset,
+      });
+      this._lastProcessedNumbers = null;
+      this.store.dispatch({
+        type: this.actionTypes.resetSuccess,
+      });
+    } else if (this._lastProcessedNumbers !== this.uniqueNumbers) {
+      this._lastProcessedNumbers = this.uniqueNumbers;
+      if (this._contactMatcher) {
+        this._contactMatcher.triggerMatch();
+      }
     }
   }
 
   _shouldInit() {
     return (
       this._messageStore.ready &&
+      this._extensionInfo.ready &&
+      (!this._contactMatcher || this._contactMatcher.ready) &&
+      (!this._conversationLogger || this._conversationLogger.ready) &&
       this.pending
     );
   }
 
   _shouldReset() {
     return (
-      (!this._messageStore.ready) &&
+      (
+        !this._messageStore.ready ||
+        !this._extensionInfo.ready ||
+        (this._contactMatcher && !this._contactMatcher.ready) ||
+        (this._conversationLogger && !this._conversationLogger.ready)
+      ) &&
       this.ready
     );
   }
 
-  _shouldReload() {
-    return (
-      this.ready &&
-      this.messageStoreUpdatedAt !== this._messageStore.updatedTimestamp
-    );
-  }
-
-  _initMessages() {
-    const messages = this._getCurrnetPageMessages(1);
-    this.store.dispatch({
-      type: this.actionTypes.resetPage,
-    });
-    this._updateMessages(messages);
-  }
-
-  _resetModuleStatus() {
-    this.store.dispatch({
-      type: this.actionTypes.resetSuccess,
-    });
-  }
-
-  _reloadMessages() {
-    const page = this.currentPage;
-    const allMessages = this._messageStore.conversations;
-    let bottomIndex = allMessages.length - (this._perPage * page);
-    if (bottomIndex < 0) {
-      bottomIndex = 0;
-    }
-    const newMessages = allMessages.slice(bottomIndex, allMessages.length).reverse();
-    this._updateMessages(newMessages);
-  }
-
-  _updateMessages(messages) {
-    this.store.dispatch({
-      type: this.actionTypes.updateMessages,
-      messagesTimestamp: this._messageStore.updatedTimestamp,
-      messages,
-    });
-  }
-
-  _triggerMatch() {
-    const uniqueNumbers = this._selectors.uniqueNumbers();
-    if (this._lastProcessedNumbers !== uniqueNumbers) {
-      this._lastProcessedNumbers = uniqueNumbers;
-      if (this._contactMatcher && this._contactMatcher.ready) {
-        this._contactMatcher.triggerMatch();
-      }
-    }
-  }
-
   _getCurrnetPageMessages(page) {
-    const allMessages = this._messageStore.conversations;
-    const maxIndex = allMessages.length - 1;
-    if (maxIndex < 0) {
-      return [];
-    }
-    if (page < 1) {
-      page = 1;
-    }
-    const topIndex = maxIndex - (this._perPage * (page - 1));
-    if (topIndex < 0) {
-      return [];
-    }
-    let bottomIndex = (topIndex - this._perPage) + 1;
-    if (bottomIndex < 0) {
-      bottomIndex = 0;
-    }
-    return allMessages.slice(bottomIndex, topIndex + 1).reverse();
+    this.store.dispatch({
+      type: this.actionTypes.setPage,
+      page,
+    });
   }
 
   loadNextPageMessages() {
-    const page = this.currentPage + 1;
-    const messages = this._getCurrnetPageMessages(page);
-    if (messages.length === 0) {
-      return;
-    }
-    this.store.dispatch({
-      type: this.actionTypes.pushMessages,
-      messagesTimestamp: this._messageStore.updatedTimestamp,
-      messages,
-    });
     this.store.dispatch({
       type: this.actionTypes.nextPage,
     });
   }
 
-  updateSearchingString(searchingString) {
+  updateSearchInput(input) {
     this.store.dispatch({
-      type: this.actionTypes.updateSearchingString,
-      searchingString,
-    });
-  }
-
-  updateSearchResults(searchResults) {
-    this.store.dispatch({
-      type: this.actionTypes.updateSearchResults,
-      searchResults,
+      type: this.actionTypes.updateSearchInput,
+      input,
     });
   }
 
@@ -213,32 +273,15 @@ export default class Messages extends RcModule {
     return this.status === moduleStatuses.pending;
   }
 
-  get messages() {
-    return this.state.messages;
+  get searchInput() {
+    return this.state.searchInput;
   }
 
-  get currentPage() {
-    return this.state.currentPage;
+  get allConversations() {
+    return this._selectors.allConversations();
   }
 
-  get loading() {
-    const allMessages = this._messageStore.conversations;
-    return this.messages.length < allMessages.length;
-  }
-
-  get lastUpdatedAt() {
-    return this.state.lastUpdatedAt;
-  }
-
-  get messageStoreUpdatedAt() {
-    return this.state.messageStoreUpdatedAt;
-  }
-
-  get searchingString() {
-    return this.state.searchingString;
-  }
-
-  get searchingResults() {
-    return this.state.searchingResults;
+  get filteredConversations() {
+    return this._selectors.filteredConversations();
   }
 }

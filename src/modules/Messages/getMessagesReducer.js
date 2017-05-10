@@ -1,62 +1,30 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
-export function getCurrentMessagesReducer(types) {
-  return (state = [], { type, messages }) => {
-    switch (type) {
-      case types.updateMessages:
-        return messages;
-      case types.pushMessages:
-        return state.concat(messages);
-      default:
-        return state;
-    }
-  };
-}
-
 export function getCurrentPageReducer(types) {
-  return (state = 1, { type }) => {
+  return (state = 0, { type, page = state }) => {
     switch (type) {
+      case types.previousPage:
+        return Math.max(state - 1, 0);
       case types.nextPage:
         return state + 1;
-      case types.resetPage:
-        return 1;
+      case types.setPage:
+        return page;
+      case types.resetSuccess:
+        return 0;
       default:
         return state;
     }
   };
 }
 
-export function getLastUpdatedAtReducer(types) {
-  return (state = null, { type }) => {
-    switch (type) {
-      case types.pushMessages:
-      case types.updateMessages:
-        return Date.now();
-      default:
-        return state;
-    }
-  };
-}
 
-export function getMessageStoreUpdatedAt(types) {
-  return (state = null, { type, messagesTimestamp }) => {
+export function getSearchInputReducer(types) {
+  return (state = '', { type, input = '' }) => {
     switch (type) {
-      case types.pushMessages:
-      case types.updateMessages:
-        return messagesTimestamp;
-      default:
-        return state;
-    }
-  };
-}
-
-export function getSearingStringReducer(types) {
-  return (state = '', { type, searchingString }) => {
-    switch (type) {
-      case types.updateSearchingString:
-        return searchingString;
-      case types.cleanSearchingString:
+      case types.updateSearchInput:
+        return input;
+      case types.resetSuccess:
         return '';
       default:
         return state;
@@ -64,25 +32,24 @@ export function getSearingStringReducer(types) {
   };
 }
 
-export function getSearchingResultsReducer(types) {
-  return (state = [], { type, searchResults }) => {
+export function getPerPageReducer(types, defaultPerPage) {
+  return (state = defaultPerPage, { type, perPage = defaultPerPage }) => {
     switch (type) {
-      case types.updateSearchResults:
-        return searchResults;
+      case types.setPerPage:
+        return perPage;
+      case types.resetSuccess:
+        return defaultPerPage;
       default:
         return state;
     }
   };
 }
 
-export default function getMessagesReducer(types) {
+export default function getMessagesReducer(types, defaultPerPage) {
   return combineReducers({
     status: getModuleStatusReducer(types),
-    messages: getCurrentMessagesReducer(types),
     currentPage: getCurrentPageReducer(types),
-    lastUpdatedAt: getLastUpdatedAtReducer(types),
-    messageStoreUpdatedAt: getMessageStoreUpdatedAt(types),
-    searchingString: getSearingStringReducer(types),
-    searchingResults: getSearchingResultsReducer(types),
+    perPage: getPerPageReducer(types, defaultPerPage),
+    searchInput: getSearchInputReducer(types),
   });
 }
