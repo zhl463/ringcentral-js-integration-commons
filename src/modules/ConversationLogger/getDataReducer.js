@@ -1,7 +1,7 @@
 import { combineReducers } from 'redux';
 
 export function getAutoLogReducer(types) {
-  return (state = true, { type, autoLog }) => {
+  return (state = false, { type, autoLog }) => {
     if (type === types.setAutoLog) return !!autoLog;
     return state;
   };
