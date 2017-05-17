@@ -39,7 +39,7 @@ describe('getCurrentLocaleReducer', () => {
         'en',
         'zh',
         'fr',
-      ].forEach(locale => {
+      ].forEach((locale) => {
         expect(reducer('foo', {
           type: actionTypes.setLocale,
           locale,
@@ -50,11 +50,11 @@ describe('getCurrentLocaleReducer', () => {
         'bar',
         'baz',
         'zh_TW',
-      ].forEach(locale => {
+      ].forEach((locale) => {
         expect(reducer(originalState, {
           type: actionTypes.setLocale,
           locale,
-        })).to.equal(originalState);
+        })).to.equal(locale);
       });
     });
   });
