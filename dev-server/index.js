@@ -371,7 +371,7 @@ class DemoPhone extends RcModule {
       callMonitor: this.callMonitor,
       activityMatcher: this.activityMatcher,
       contactMatcher: this.contactMatcher,
-      logFunction: async () => {},
+      logFunction: async () => { },
       readyCheckFunction: () => true,
       getState: () => this.state.callLogger,
     }));
@@ -395,14 +395,15 @@ class DemoPhone extends RcModule {
       getState: () => this.state.contacts,
     }));
     this.addModule('conversationLogger', new ConversationLogger({
-      storage: this.storage,
-      messageStore: this.messageStore,
       contactMatcher: this.contactMatcher,
       conversationMatcher: this.conversationMatcher,
       dateTimeFormat: this.dateTimeFormat,
       extensionInfo: this.extensionInfo,
+      messageStore: this.messageStore,
+      rolesAndPermissions: this.rolesAndPermissions,
+      storage: this.storage,
       tabManager: this.tabManager,
-      logFunction: async () => {},
+      logFunction: async () => { },
       readyCheckFunction: () => true,
       getState: () => this.state.conversationLogger,
     }));

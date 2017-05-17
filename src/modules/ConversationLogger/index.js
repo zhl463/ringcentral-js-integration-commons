@@ -17,13 +17,14 @@ export default class ConversationLogger extends LoggerBase {
   constructor({
     contactMatcher,
     conversationMatcher,
-    isLoggedContact = () => false,
+    dateTimeFormat,
     extensionInfo,
     messageStore,
-    dateTimeFormat,
-    formatDateTime = (...args) => dateTimeFormat.formatDateTime(...args),
+    rolesAndPermissions,
     storage,
     tabManager,
+    isLoggedContact = () => false,
+    formatDateTime = (...args) => dateTimeFormat.formatDateTime(...args),
     ...options,
   }) {
     super({
@@ -32,15 +33,16 @@ export default class ConversationLogger extends LoggerBase {
       actionTypes,
       identityFunction: conversationLogIdentityFunction,
     });
-    this._isLoggedContact = isLoggedContact;
     this._contactMatcher = this::ensureExist(contactMatcher, 'contactMatcher');
     this._conversationMatcher = this::ensureExist(conversationMatcher, 'conversationMatcher');
-    this._extensionInfo = this::ensureExist(extensionInfo, 'extensionInfo');
     this._dateTimeFormat = this::ensureExist(dateTimeFormat, 'dateTimeFormat');
-    this._formatDateTime = formatDateTime;
+    this._extensionInfo = this::ensureExist(extensionInfo, 'extensionInfo');
     this._messageStore = this::ensureExist(messageStore, 'messageStore');
+    this._rolesAndPermissions = this::ensureExist(rolesAndPermissions, 'rolesAndPermissions');
     this._storage = this::ensureExist(storage, 'storage');
     this._tabManager = this::ensureExist(tabManager, 'tabManager');
+    this._isLoggedContact = isLoggedContact;
+    this._formatDateTime = formatDateTime;
     this._storageKey = `${this._name}Data`;
     this._storage.registerReducer({
       key: this._storageKey,
@@ -134,11 +136,12 @@ export default class ConversationLogger extends LoggerBase {
 
   _shouldInit() {
     return this.pending &&
-      this._messageStore.ready &&
       this._contactMatcher.ready &&
       this._conversationMatcher.ready &&
       this._dateTimeFormat.ready &&
       this._extensionInfo.ready &&
+      this._messageStore.ready &&
+      this._rolesAndPermissions.ready &&
       this._storage.ready &&
       this._tabManager.ready &&
       this._readyCheckFunction();
@@ -146,11 +149,12 @@ export default class ConversationLogger extends LoggerBase {
   _shouldReset() {
     return this.ready &&
       (
-        !this._messageStore.ready ||
         !this._contactMatcher.ready ||
         !this._conversationMatcher.ready ||
         !this._dateTimeFormat.ready ||
         !this._extensionInfo.ready ||
+        !this._messageStore.ready ||
+        !this._rolesAndPermissions.ready ||
         !this._storage.ready ||
         !this._tabManager.ready ||
         !this._readyCheckFunction()
@@ -282,6 +286,17 @@ export default class ConversationLogger extends LoggerBase {
           redirect: redirect && idx === 0, // on issue one with redirect
         })));
     }
+  }
+
+  get available() {
+    const {
+      SMSReceiving,
+      PagerReceiving,
+    } = this._rolesAndPermissions.serviceFeatures;
+    return !!(
+      (SMSReceiving && SMSReceiving.enabled) ||
+      (PagerReceiving && PagerReceiving.enabled)
+    );
   }
 
   get autoLog() {
