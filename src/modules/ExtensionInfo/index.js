@@ -51,10 +51,13 @@ export default class ExtensionInfo extends DataFetcher {
       fetchFunction: async () => extractData(await this._client.account().extension().get()),
       ...options
     });
-    this.addSelector(
-      'info',
+    this.addSelector('info',
       () => this.data,
-      data => data || {},
+      data => (data || {}),
+    );
+    this.addSelector('serviceFeatures',
+      this._selectors.info,
+      info => (info.serviceFeatures || {}),
     );
   }
 
@@ -72,7 +75,7 @@ export default class ExtensionInfo extends DataFetcher {
   }
 
   get serviceFeatures() {
-    return this.info.serviceFeatures;
+    return this._selectors.serviceFeatures();
   }
 
   get country() {
