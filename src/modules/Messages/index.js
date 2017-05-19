@@ -78,7 +78,7 @@ export default class Messages extends RcModule {
       ) => (
           conversations.map((message) => {
             const {
-            self,
+              self,
               correspondents,
           } = getNumbersFromMessage({ extensionNumber, message });
             const selfNumber = self && (self.phoneNumber || self.extensionNumber);
@@ -172,7 +172,7 @@ export default class Messages extends RcModule {
           });
           return searchResults.sort(sortSearchResults);
         }
-        return allConversations;
+        return allConversations.sort(sortSearchResults);
       },
     );
 

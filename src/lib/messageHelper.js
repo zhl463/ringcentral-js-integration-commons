@@ -132,7 +132,7 @@ export function sortByDate(a, b) {
   const ta = new Date(a.creationTime).getTime();
   const tb = new Date(b.creationTime).getTime();
   if (ta === tb) return 0;
-  return ta < tb ? 1 : -1;
+  return ta > tb ? -1 : 1;
 }
 
 export function sortSearchResults(a, b) {
