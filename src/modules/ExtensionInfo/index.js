@@ -10,6 +10,7 @@ const DEFAULT_MASK = [
   'status',
   'permissions',
   'profileImage',
+  'departments',
   `regionalSettings(${[
     'timezone(id,name,bias)',
     'homeCountry(id,isoCode,callingCode)',
@@ -81,5 +82,13 @@ export default class ExtensionInfo extends DataFetcher {
   get country() {
     return (this.info.regionalSettings && this.info.regionalSettings.homeCountry) ||
       DEFAULT_COUNTRY;
+  }
+
+  get departments() {
+    return this.info.departments;
+  }
+
+  get isCallQueueMember() {
+    return !!this.departments;
   }
 }
