@@ -8,4 +8,5 @@ export default new Enum([
   'permissionChanged',
   'phoneNumberChanged',
   'webphonePermissionRemoved',
+  'emergencyCallingNotAvailable',
 ], 'callingSettingsMessages');

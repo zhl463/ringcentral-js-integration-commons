@@ -6,4 +6,4 @@ export default new Enum([
   'webphoneCountOverLimit',
   'notOutboundCallWithoutDL',
   'getSipProvisionError',
-]);
+], 'webphone');

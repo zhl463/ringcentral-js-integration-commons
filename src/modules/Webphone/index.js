@@ -6,10 +6,16 @@ import RcModule from '../../lib/RcModule';
 import sleep from '../../lib/sleep';
 import moduleStatus from '../../enums/moduleStatus';
 import connectionStatus from './connectionStatus';
+import sessionStatus from './sessionStatus';
 import actionTypes from './actionTypes';
+import callDirections from '../../enums/callDirections';
 import webphoneErrors from './webphoneErrors';
 
-import { isBrowerSupport } from './webphoneHelper';
+import {
+  isBrowerSupport,
+  patchUserAgent,
+  patchIncomingSession,
+} from './webphoneHelper';
 import getWebphoneReducer, { getWebphoneCountsReducer } from './getWebphoneReducer';
 
 const FIRST_THREE_RETRIES_DELAY = 10 * 1000;
@@ -57,6 +63,12 @@ export default class Webphone extends RcModule {
       key: this._storageWebphoneCountsKey,
       reducer: getWebphoneCountsReducer(this.actionTypes),
     });
+
+    this.toggleMinimized = this.toggleMinimized.bind(this);
+    this.answer = this.answer.bind(this);
+    this.reject = this.reject.bind(this);
+    this.resume = this.resume.bind(this);
+    this.hangup = this.hangup.bind(this);
   }
 
   initialize() {
@@ -71,10 +83,8 @@ export default class Webphone extends RcModule {
       this._localVideo.setAttribute('muted', 'muted');
       document.body.appendChild(this._remoteVideo);
       document.body.appendChild(this._localVideo);
-      window.onbeforeunload = () => {
-        this.disconnect().then(() => {
-          console.log('closed webrtc');
-        });
+      window.unload = () => {
+        this.disconnect();
       };
       this.store.dispatch({
         type: this.actionTypes.init,
@@ -165,6 +175,13 @@ export default class Webphone extends RcModule {
         error,
       });
       this._webphone.userAgent.removeAllListeners();
+      this._webphone = null;
+      if (error && error.reason_phrase && error.reason_phrase.indexOf('Too Many Contacts') > -1) {
+        this._alert.warning({
+          message: webphoneErrors.webphoneCountOverLimit,
+        });
+        return;
+      }
       this._connect(true);
     };
     this._webphone.userAgent.audioHelper.setVolume(0.3);
@@ -175,6 +192,7 @@ export default class Webphone extends RcModule {
       console.log('UA invite');
       this._onInvite(session);
     });
+    patchUserAgent(this._webphone.userAgent);
   }
 
   async _connect(reconnect = false) {
@@ -237,12 +255,6 @@ export default class Webphone extends RcModule {
         });
         return;
       }
-      if (this.webphoneCounts >= 5) {
-        this._alert.warning({
-          message: webphoneErrors.webphoneCountOverLimit,
-        });
-        return;
-      }
       if (!hasFromNumber) {
         this._alert.warning({
           message: webphoneErrors.notOutboundCallWithoutDL,
@@ -253,7 +265,7 @@ export default class Webphone extends RcModule {
     }
   }
 
-  async disconnect() {
+  disconnect() {
     if (
       this.connectionStatus === connectionStatus.connected ||
       this.connectionStatus === connectionStatus.connecting ||
@@ -275,55 +287,77 @@ export default class Webphone extends RcModule {
   _onAccepted(session) {
     session.on('accepted', () => {
       console.log('accepted');
+      session.callStatus = sessionStatus.connected;
+      this._updateCurrentSessionAndSessions(session);
     });
     session.on('progress', () => {
       console.log('progress...');
+      session.callStatus = sessionStatus.connecting;
+      this._updateCurrentSessionAndSessions(session);
     });
     session.on('rejected', () => {
       console.log('rejected');
+      session.callStatus = sessionStatus.finished;
       this._removeSession(session);
     });
     session.on('failed', (response, cause) => {
       console.log('Event: Failed');
       console.log(cause);
+      session.callStatus = sessionStatus.finished;
       this._removeSession(session);
     });
     session.on('terminated', () => {
-      console.log('Event: Failed');
+      console.log('Event: Terminated');
+      session.callStatus = sessionStatus.finished;
       this._removeSession(session);
     });
     session.on('cancel', () => {
       console.log('Event: Cancel');
+      session.callStatus = sessionStatus.finished;
       this._removeSession(session);
     });
     session.on('refer', () => {
       console.log('Event: Refer');
     });
     session.on('replaced', (newSession) => {
+      session.callStatus = sessionStatus.replaced;
+      newSession.callStatus = sessionStatus.connected;
+      newSession.direction = callDirections.inbound;
+      this._addSession(newSession);
       this.onAccepted(newSession);
     });
     session.on('muted', () => {
       console.log('Event: Muted');
+      session.isOnMute = true;
+      session.callStatus = sessionStatus.onMute;
     });
     session.on('unmuted', () => {
       console.log('Event: Unmuted');
+      session.isOnMute = false;
+      session.callStatus = sessionStatus.connected;
     });
     session.on('hold', () => {
       console.log('Event: hold');
+      session.callStatus = sessionStatus.onHold;
     });
     session.on('unhold', () => {
       console.log('Event: unhold');
+      session.callStatus = sessionStatus.connected;
     });
   }
 
   _onInvite(session) {
+    session.creationTime = Date.now();
+    session.direction = callDirections.inbound;
+    session.callStatus = sessionStatus.connecting;
     if (!this._activeSession) {
       this._activeSession = session;
       this.store.dispatch({
-        type: this.actionTypes.updateSession,
+        type: this.actionTypes.updateCurrentSession,
+        session,
       });
     }
-
+    patchIncomingSession(session);
     this._addSession(session);
     session.on('rejected', () => {
       console.log('Event: Rejected');
@@ -331,14 +365,22 @@ export default class Webphone extends RcModule {
     });
   }
 
-  async answer(session) {
+  async answer(sessionId) {
+    const session = this._sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
     try {
-      if (this._activeSession && !this._activeSession.isOnHold().local) {
+      if (
+        this._activeSession && !this._activeSession.isOnHold().local &&
+        this._activeSession !== session
+      ) {
         this._activeSession.hold();
       }
       this._setActiveSession(session);
       this._onAccepted(session, 'inbound');
       await session.accept(this.acceptOptions);
+      this._resetMinimized();
     } catch (e) {
       console.log('Accept failed');
       this._removeSession(session);
@@ -346,11 +388,22 @@ export default class Webphone extends RcModule {
     }
   }
 
-  reject(session) {
-    session.reject();
+  reject(sessionId) {
+    this._sessionHandleWithId(sessionId, (session) => {
+      session.reject();
+    });
   }
 
-  async forward(forwardNumber, session) {
+  resume(sessionId) {
+    this.unhold(sessionId);
+    this._resetMinimized();
+  }
+
+  async forward(forwardNumber, sessionId) {
+    const session = this._sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
     try {
       await session.forward(forwardNumber, this.acceptOptions);
       console.log('Forwarded');
@@ -359,46 +412,69 @@ export default class Webphone extends RcModule {
     }
   }
 
-  increaseVolume(session) {
-    session.ua.audioHelper.setVolume(
-      (session.ua.audioHelper.volume != null ? session.ua.audioHelper.volume : 0.5) + 0.1
-    );
+  increaseVolume(sessionId) {
+    this._sessionHandleWithId(sessionId, (session) => {
+      session.ua.audioHelper.setVolume(
+        (session.ua.audioHelper.volume != null ? session.ua.audioHelper.volume : 0.5) + 0.1
+      );
+    });
   }
 
-  decreaseVolume(session) {
-    session.ua.audioHelper.setVolume(
-      (session.ua.audioHelper.volume != null ? session.ua.audioHelper.volume : 0.5) - 0.1
-    );
+  decreaseVolume(sessionId) {
+    this._sessionHandleWithId(sessionId, (session) => {
+      session.ua.audioHelper.setVolume(
+        (session.ua.audioHelper.volume != null ? session.ua.audioHelper.volume : 0.5) - 0.1
+      );
+    });
   }
 
-  mute(session) {
-    session.isOnMute = true;
-    session.mute();
+  mute(sessionId) {
+    this._sessionHandleWithId(sessionId, (session) => {
+      session.isOnMute = true;
+      session.mute();
+      this._updateCurrentSessionAndSessions(session);
+    });
   }
 
-  unmute(session) {
-    session.isOnMute = false;
-    session.unmute();
+  unmute(sessionId) {
+    this._sessionHandleWithId(sessionId, (session) => {
+      session.isOnMute = false;
+      session.unmute();
+      this._updateCurrentSessionAndSessions(session);
+    });
   }
 
-  hold(session) {
-    session.hold();
-    this._cleanActiveSession(session);
+  hold(sessionId) {
+    this._sessionHandleWithId(sessionId, (session) => {
+      session.hold();
+      this._updateCurrentSessionAndSessions(session);
+    });
   }
 
-  unhold(session) {
-    session.unhold();
-    this.sessions.forEach((sessionItem, sessionId) => {
-      if (session.id !== sessionId) {
-        if (!session.isOnHold().local) {
+  unhold(sessionId) {
+    const session = this._sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
+    if (session.isOnHold().local) {
+      session.unhold();
+    }
+    this._sessions.forEach((sessionItem, sessionItemId) => {
+      if (session.id !== sessionItemId) {
+        if (!sessionItem.isOnHold().local) {
           sessionItem.hold();
         }
       }
     });
     this._setActiveSession(session);
+    this._updateCurrentSessionAndSessions(session);
   }
 
-  async startRecord(session) {
+  async startRecord(sessionId) {
+    const session = this._sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
     try {
       await session.startRecord();
       session.isOnRecord = true;
@@ -407,9 +483,14 @@ export default class Webphone extends RcModule {
       session.isOnRecord = false;
       console.error(e);
     }
+    this._updateCurrentSessionAndSessions(session);
   }
 
-  async stopRecord(session) {
+  async stopRecord(sessionId) {
+    const session = this._sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
     try {
       await session.stopRecord();
       session.isOnRecord = false;
@@ -418,9 +499,14 @@ export default class Webphone extends RcModule {
       session.isOnRecord = true;
       console.error(e);
     }
+    this._updateCurrentSessionAndSessions(session);
   }
 
-  async park(session) {
+  async park(sessionId) {
+    const session = this._sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
     try {
       await session.park();
       console.log('Parked');
@@ -429,7 +515,11 @@ export default class Webphone extends RcModule {
     }
   }
 
-  async transfer(transferNumber, session) {
+  async transfer(transferNumber, sessionId) {
+    const session = this._sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
     try {
       await session.transfer(transferNumber);
       console.log('Transferred');
@@ -438,7 +528,11 @@ export default class Webphone extends RcModule {
     }
   }
 
-  async transferWarm(transferNumber, session) {
+  async transferWarm(transferNumber, sessionId) {
+    const session = this._sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
     try {
       await session.hold();
       const newSession = session.ua.invite(transferNumber, {
@@ -457,7 +551,11 @@ export default class Webphone extends RcModule {
     }
   }
 
-  async flip(flipValue, session) {
+  async flip(flipValue, sessionId) {
+    const session = this._sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
     try {
       await session.flip(flipValue);
       console.log('Flipped');
@@ -466,17 +564,55 @@ export default class Webphone extends RcModule {
     }
   }
 
-  sendDTMF(dtmfValue, session) {
-    session.dtmf(dtmfValue);
+  sendDTMF(dtmfValue, sessionId) {
+    this._sessionHandleWithId(sessionId, (session) => {
+      try {
+        session.dtmf(dtmfValue);
+      } catch (e) {
+        console.error(e);
+      }
+    });
   }
 
-  hangup(session) {
-    try {
-      session.terminate();
-    } catch (e) {
-      console.log(e);
+  hangup(sessionId) {
+    this._sessionHandleWithId(sessionId, (session) => {
+      try {
+        session.terminate();
+      } catch (e) {
+        console.error(e);
+        this._removeSession(session);
+      }
+    });
+  }
+
+  toVoiceMail(sessionId) {
+    this._sessionHandleWithId(sessionId, (session) => {
+      try {
+        session.toVoiceMail();
+      } catch (e) {
+        console.error(e);
+        this._removeSession(session);
+      }
+    });
+  }
+
+  replyWithMessage(sessionId, replyOptions) {
+    this._sessionHandleWithId(sessionId, (session) => {
+      try {
+        session.replyWithMessage(replyOptions);
+      } catch (e) {
+        console.error(e);
+        this._removeSession(session);
+      }
+    });
+  }
+
+  _sessionHandleWithId(sessionId, func) {
+    const session = this._sessions.get(sessionId);
+    if (!session) {
+      return null;
     }
-    this._removeSession(session);
+    return func(session);
   }
 
   makeCall({ toNumber, fromNumber, homeCountryId }) {
@@ -485,35 +621,48 @@ export default class Webphone extends RcModule {
       fromNumber,
       homeCountryId,
     });
+    session.direction = callDirections.outbound;
+    session.callStatus = sessionStatus.connecting;
+    session.creationTime = Date.now();
     this._onAccepted(session);
     if (this._activeSession && !this._activeSession.isOnHold().local) {
       this._activeSession.hold();
     }
     this._addSession(session);
     this._setActiveSession(session);
+    this._resetMinimized();
     return session;
   }
 
   _addSession(session) {
     this._sessions.set(session.id, session);
+    this.store.dispatch({
+      type: this.actionTypes.updateSessions,
+      sessions: this._sessions,
+    });
   }
 
   _removeSession(session) {
     this._cleanActiveSession(session);
     this._sessions.delete(session.id);
+    this.store.dispatch({
+      type: this.actionTypes.updateSessions,
+      sessions: this._sessions,
+    });
   }
 
   _setActiveSession(session) {
     this._activeSession = session;
     this.store.dispatch({
-      type: this.actionTypes.updateSession,
+      type: this.actionTypes.updateCurrentSession,
+      session,
     });
   }
 
   _removeActiveSession() {
     this._activeSession = null;
     this.store.dispatch({
-      type: this.actionTypes.destroySession,
+      type: this.actionTypes.destroyCurrentSession,
     });
   }
 
@@ -522,6 +671,39 @@ export default class Webphone extends RcModule {
       return;
     }
     this._removeActiveSession();
+  }
+
+  _updateCurrentSessionAndSessions(session) {
+    if (session === this._activeSession) {
+      this._updateCurrentSession(session);
+    }
+    this._updateSessions();
+  }
+
+  _updateCurrentSession(session) {
+    this.store.dispatch({
+      type: this.actionTypes.updateCurrentSession,
+      session,
+    });
+  }
+
+  _updateSessions() {
+    this.store.dispatch({
+      type: this.actionTypes.updateSessions,
+      sessions: this._sessions,
+    });
+  }
+
+  toggleMinimized() {
+    this.store.dispatch({
+      type: this.actionTypes.toggleMinimized,
+    });
+  }
+
+  _resetMinimized() {
+    this.store.dispatch({
+      type: this.actionTypes.resetMinimized,
+    });
   }
 
   async _retrySleep() {
@@ -547,8 +729,24 @@ export default class Webphone extends RcModule {
     return this._activeSession;
   }
 
+  get originalSessions() {
+    return this._sessions;
+  }
+
   get ready() {
     return this.state.status === moduleStatus.ready;
+  }
+
+  get minimized() {
+    return this.state.minimized;
+  }
+
+  get currentSession() {
+    return this.state.currentSession;
+  }
+
+  get sessions() {
+    return this.state.sessions;
   }
 
   get videoElementPrepared() {

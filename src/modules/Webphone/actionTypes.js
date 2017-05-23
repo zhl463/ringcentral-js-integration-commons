@@ -12,6 +12,10 @@ export default new Enum([
   'unregistered',
   'reconnect',
   'resetRetryCounts',
-  'updateSession',
-  'destroySession',
+  'updateCurrentSession',
+  'destroyCurrentSession',
+  'updateSessions',
+  'destroySessions',
+  'toggleMinimized',
+  'resetMinimized',
 ], 'webphone');

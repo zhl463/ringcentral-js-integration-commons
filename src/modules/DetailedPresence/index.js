@@ -76,7 +76,7 @@ export default class DetailedPresence extends Presence {
         this._connectivity = this._connectivityMonitor.connectivity;
       }
       await this.fetch();
-      this._subscription.subscribe(subscriptionFilters.detailedPresence);
+      this._subscription.subscribe(subscriptionFilters.detailedPresenceWithSip);
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
@@ -143,7 +143,7 @@ export default class DetailedPresence extends Presence {
         dndStatus,
         telephonyStatus,
       } = (await this._client.service.platform()
-        .get(subscriptionFilters.detailedPresence)).json();
+        .get(subscriptionFilters.detailedPresenceWithSip)).json();
       if (this._auth.ownerId === ownerId) {
         this.store.dispatch({
           type: this.actionTypes.fetchSuccess,

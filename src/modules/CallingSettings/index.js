@@ -4,6 +4,7 @@ import getCallingSettingsReducer, {
   getRingoutPromptReducer,
   getMyLocationReducer,
   getTimestampReducer,
+  getFromNumberReducer,
 } from './getCallingSettingsReducer';
 import moduleStatuses from '../../enums/moduleStatuses';
 import mapOptionToMode from './mapOptionToMode';
@@ -42,6 +43,7 @@ export default class CallingSettings extends RcModule {
     this._ringoutPromptStorageKey = 'callingSettingsRingoutPrompt';
     this._myLocationStorageKey = 'callingSettingsMyLocation';
     this._timestampStorageKey = 'callingSettingsTimestamp';
+    this._fromNumberStorageKey = 'fromCallIdNumber';
 
     this._onFirstLogin = onFirstLogin;
 
@@ -60,6 +62,10 @@ export default class CallingSettings extends RcModule {
     this._storage.registerReducer({
       key: this._timestampStorageKey,
       reducer: getTimestampReducer(this.actionTypes),
+    });
+    this._storage.registerReducer({
+      key: this._fromNumberStorageKey,
+      reducer: getFromNumberReducer(this.actionTypes),
     });
     this._reducer = getCallingSettingsReducer(this.actionTypes);
 
@@ -95,6 +101,20 @@ export default class CallingSettings extends RcModule {
       }
     );
 
+    this.addSelector(
+      'fromNumbers',
+      () => this._extensionPhoneNumber.callerIdNumbers,
+      phoneNumbers => phoneNumbers.sort((firstItem, lastItem) => {
+        if (firstItem.usageType === 'DirectNumber') return -1;
+        else if (lastItem.usageType === 'DirectNumber') return 1;
+        else if (firstItem.usageType === 'MainCompanyNumber') return -1;
+        else if (lastItem.usageType === 'MainCompanyNumber') return 1;
+        else if (firstItem.usageType < lastItem.usageType) return -1;
+        else if (firstItem.usageType > lastItem.usageType) return 1;
+        return 0;
+      }),
+    );
+
     this.addSelector('callWithOptions',
       () => this._rolesAndPermissions.ringoutEnabled,
       () => this._rolesAndPermissions.webphoneEnabled,
@@ -123,6 +143,7 @@ export default class CallingSettings extends RcModule {
         [callingOptions.otherphone]: otherPhoneNumbers,
       }),
     );
+    this.updateFromNumber = this.updateFromNumber.bind(this);
   }
 
   initialize() {
@@ -160,6 +181,7 @@ export default class CallingSettings extends RcModule {
           }
         }
         this._validateSettings();
+        this._initFromNumber();
         this.store.dispatch({
           type: this.actionTypes.initSuccess,
         });
@@ -187,6 +209,21 @@ export default class CallingSettings extends RcModule {
         this._otherPhoneNumbers = this.otherPhoneNumbers;
         this._validateSettings();
       }
+    });
+  }
+
+  _initFromNumber() {
+    const fromNumber = this.fromNumber;
+    if (!fromNumber) {
+      const fromNumberList = this.fromNumbers;
+      this.updateFromNumber(fromNumberList[0]);
+    }
+  }
+
+  updateFromNumber(number) {
+    this.store.dispatch({
+      type: this.actionTypes.updateFromNumber,
+      number: number && number.phoneNumber,
     });
   }
 
@@ -240,6 +277,14 @@ export default class CallingSettings extends RcModule {
     }
   }
 
+  _warningEmergencyCallingNotAvailable() {
+    if (this.callWith === callingOptions.browser) {
+      this._alert.info({
+        message: callingSettingsMessages.emergencyCallingNotAvailable,
+      });
+    }
+  }
+
   get status() {
     return this.state.status;
   }
@@ -284,6 +329,14 @@ export default class CallingSettings extends RcModule {
     return this._selectors.availableNumbers();
   }
 
+  get fromNumber() {
+    return this._storage.getItem(this._fromNumberStorageKey);
+  }
+
+  get fromNumbers() {
+    return this._selectors.fromNumbers();
+  }
+
   setData({ callWith, myLocation, ringoutPrompt }, withPrompt) {
     // TODO validate myLocation
     this.store.dispatch({
@@ -302,6 +355,7 @@ export default class CallingSettings extends RcModule {
         this._alert.info({
           message: callingSettingsMessages.saveSuccess,
         });
+        this._warningEmergencyCallingNotAvailable();
       }
     }
   }

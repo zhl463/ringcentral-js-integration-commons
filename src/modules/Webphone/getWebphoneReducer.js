@@ -1,6 +1,7 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
+import { normalizeSession } from './webphoneHelper';
 import connectionStatus from './connectionStatus';
 
 export function getVideoElementPreparedReducer(types) {
@@ -31,19 +32,6 @@ export function getConnectionStatusReducer(types) {
   };
 }
 
-export function getSessionStatusReducer(types) {
-  return (state = connectionStatus.idle, { type }) => {
-    switch (type) {
-      case types.updateSession:
-        return connectionStatus.active;
-      case types.destroySession:
-        return connectionStatus.idle;
-      default:
-        return state;
-    }
-  };
-}
-
 export function getConnectRetryCountsReducer(types) {
   return (state = 0, { type }) => {
     switch (type) {
@@ -61,10 +49,56 @@ export function getConnectRetryCountsReducer(types) {
 export function getWebphoneCountsReducer(types) {
   return (state = 0, { type }) => {
     switch (type) {
+      case types.reconnect:
       case types.connect:
         return state + 1;
+      case types.connectError:
       case types.disconnect:
+      case types.registrationFailed:
         return state - 1;
+      default:
+        return state;
+    }
+  };
+}
+
+export function getCurrentSessionReducer(types) {
+  return (state = null, { type, session }) => {
+    switch (type) {
+      case types.updateCurrentSession:
+        return normalizeSession(session);
+      case types.destroyCurrentSession:
+        return null;
+      default:
+        return state;
+    }
+  };
+}
+
+export function getSessionsReducer(types) {
+  return (state = [], { type, sessions }) => {
+    const newSessions = [];
+    switch (type) {
+      case types.updateSessions:
+        sessions.forEach((session) => {
+          newSessions.push(normalizeSession(session));
+        });
+        return newSessions;
+      case types.destroySessions:
+        return [];
+      default:
+        return state;
+    }
+  };
+}
+
+export function getMinimizedReducer(types) {
+  return (state = false, { type }) => {
+    switch (type) {
+      case types.toggleMinimized:
+        return !state;
+      case types.resetMinimized:
+        return false;
       default:
         return state;
     }
@@ -76,8 +110,10 @@ export default function getWebphoneReducer(types) {
     status: getModuleStatusReducer(types),
     videoElementPrepared: getVideoElementPreparedReducer(types),
     connectionStatus: getConnectionStatusReducer(types),
-    sessionStatus: getSessionStatusReducer(types),
     connectRetryCounts: getConnectRetryCountsReducer(types),
     webphoneCounts: getWebphoneCountsReducer(types),
+    currentSession: getCurrentSessionReducer(types),
+    sessions: getSessionsReducer(types),
+    minimized: getMinimizedReducer(types),
   });
 }

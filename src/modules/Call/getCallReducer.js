@@ -45,17 +45,6 @@ export function getLastCallNumberReducer(types) {
   };
 }
 
-export function getFromNumberReducer(types) {
-  return (state = null, { type, number }) => {
-    switch (type) {
-      case types.updateFromNumber:
-        return number;
-      default:
-        return state;
-    }
-  };
-}
-
 export default function getCallReducer(types) {
   return combineReducers({
     status: getModuleStatusReducer(types),

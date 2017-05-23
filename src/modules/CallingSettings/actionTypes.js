@@ -5,5 +5,6 @@ export default new Enum([
   'initSuccess',
   'resetSuccess',
   'setData',
+  'updateFromNumber',
 ], 'callingSettings');
 
