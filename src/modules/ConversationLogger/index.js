@@ -279,11 +279,12 @@ export default class ConversationLogger extends LoggerBase {
       await Promise.all(Object.keys(this.conversationLogMap[conversationId])
         .map(date => this.conversationLogMap[conversationId][date])
         .sort(sortByDate)
+        .reverse() // reverse to get the last items first
         .map((conversation, idx) => this.log({
           ...options,
           conversation,
           correspondentEntity,
-          redirect: redirect && idx === 0, // on issue one with redirect
+          redirect: redirect && idx === 0, // only direct on the first item
         })));
     }
   }
