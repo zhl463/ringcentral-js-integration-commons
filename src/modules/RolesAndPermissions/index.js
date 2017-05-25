@@ -58,6 +58,12 @@ export default class RolesAndPermissions extends DataFetcher {
     }
   }
 
+  refreshServiceFeatures() {
+    if (this._extensionInfo.ready) {
+      this._extensionInfo.fetchData();
+    }
+  }
+
   get serviceFeatures() {
     return this._extensionInfo.serviceFeatures;
   }

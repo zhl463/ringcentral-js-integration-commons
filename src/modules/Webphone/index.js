@@ -131,16 +131,11 @@ export default class Webphone extends RcModule {
   }
 
   async _sipProvision() {
-    try {
-      const response = await this._client.service.platform()
-        .post('/client-info/sip-provision', {
-          sipInfo: [{ transport: 'WSS' }]
-        });
-      return response.json();
-    } catch (error) {
-      console.error(error);
-      throw new Error(webphoneErrors.getSipProvisionError);
-    }
+    const response = await this._client.service.platform()
+      .post('/client-info/sip-provision', {
+        sipInfo: [{ transport: 'WSS' }]
+      });
+    return response.json();
   }
 
   _createWebphone(provisionData) {
@@ -238,6 +233,13 @@ export default class Webphone extends RcModule {
         ttl: 0,
         allowDuplicates: false,
       });
+      if (
+        error && error.message &&
+        (error.message.indexOf('Feature [WebPhone] is not available') > -1)
+      ) {
+        this._rolesAndPermissions.refreshServiceFeatures();
+        return;
+      }
       await this._connect(true);
     }
   }
