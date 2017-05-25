@@ -4,6 +4,7 @@ import actionTypes from './actionTypes';
 import getDataReducer from './getDataReducer';
 import messageTypes from '../../enums/messageTypes';
 import { getNumbersFromMessage, sortByDate } from '../../lib/messageHelper';
+import sleep from '../../lib/sleep';
 
 export function getLogId({ conversationId, date }) {
   return `${conversationId}/${date}`;
@@ -15,6 +16,7 @@ export function conversationLogIdentityFunction(conversation) {
 
 export default class ConversationLogger extends LoggerBase {
   constructor({
+    auth,
     contactMatcher,
     conversationMatcher,
     dateTimeFormat,
@@ -33,6 +35,7 @@ export default class ConversationLogger extends LoggerBase {
       actionTypes,
       identityFunction: conversationLogIdentityFunction,
     });
+    this._auth = this::ensureExist(auth, 'auth');
     this._contactMatcher = this::ensureExist(contactMatcher, 'contactMatcher');
     this._conversationMatcher = this::ensureExist(conversationMatcher, 'conversationMatcher');
     this._dateTimeFormat = this::ensureExist(dateTimeFormat, 'dateTimeFormat');
@@ -132,6 +135,8 @@ export default class ConversationLogger extends LoggerBase {
     });
 
     this._lastProcessedConversationLogMap = null;
+    this._autoLogQueue = [];
+    this._autoLogPromise = null;
   }
 
   _shouldInit() {
@@ -163,23 +168,63 @@ export default class ConversationLogger extends LoggerBase {
   _onReset() {
     this._lastProcessedConversations = null;
     this._lastAutoLog = null;
+    this._autoLogPromise = null;
+    this._autoLogQueue = [];
+  }
+
+  async _processQueue() {
+    const ownerId = this._auth.ownerId;
+    await sleep(300);
+    if (ownerId !== this._auth.ownerId) return;
+    await Promise.all(
+      this._autoLogQueue.splice(0, 10)
+        .map(conversation => this._processConversationLog({ conversation }))
+    );
+    if (
+      ownerId === this._auth.ownerId &&
+      this._autoLogQueue.length > 0
+    ) {
+      this._autoLogPromise = this._processQueue();
+    } else {
+      this._authLogPromise = null;
+    }
+  }
+  _queueAutoLogConversation({
+    conversation,
+  }) {
+    this._autoLogQueue.push(conversation);
+    if (!this._autoLogPromise) {
+      this._autoLogPromise = this._processQueue();
+    }
   }
 
   async _processConversationLog({
     conversation,
   }) {
-    await this._conversationMatcher.triggerMatch();
+    // await this._conversationMatcher.triggerMatch();
+    await this._conversationMatcher.match({ queries: [conversation.conversationLogId] });
     if (
       this._conversationMatcher.dataMapping[conversation.conversationLogId] &&
       this._conversationMatcher.dataMapping[conversation.conversationLogId].length
     ) {
       // update conversation
-      this._autoLogConversation({
+      await this._autoLogConversation({
         conversation,
       });
     } else if (this.autoLog && conversation.type === messageTypes.sms) {
       // new entry
-      await this._contactMatcher.triggerMatch();
+      const numbers = [];
+      const numberMap = {};
+      function addIfNotExist(contact) {
+        const number = contact.phoneNumber || contact.extensionNumber;
+        if (number && !numberMap[number]) {
+          numbers.push(number);
+          numberMap[number] = true;
+        }
+      }
+      addIfNotExist(conversation.self);
+      conversation.correspondents.forEach(addIfNotExist);
+      await this._contactMatcher.match({ queries: numbers });
       const selfNumber = conversation.self &&
         (conversation.self.phoneNumber || conversation.self.extensionNumber);
       const selfMatches = (selfNumber &&
@@ -248,7 +293,7 @@ export default class ConversationLogger extends LoggerBase {
               !oldMap[conversationId][date] ||
               conversation.messages[0].id !== oldMap[conversationId][date].messages[0].id
             ) {
-              this._processConversationLog({
+              this._queueAutoLogConversation({
                 conversation,
               });
             }
@@ -280,12 +325,19 @@ export default class ConversationLogger extends LoggerBase {
         .map(date => this.conversationLogMap[conversationId][date])
         .sort(sortByDate)
         .reverse() // reverse to get the last items first
-        .map((conversation, idx) => this.log({
-          ...options,
-          conversation,
-          correspondentEntity,
-          redirect: redirect && idx === 0, // only direct on the first item
-        })));
+        .map((conversation, idx) => {
+          const queueIndex = this._autoLogQueue
+            .find(item => item.conversationLogId === conversation.conversationLogId);
+          if (queueIndex > -1) {
+            this._autoLogQueue.splice(queueIndex, 1);
+          }
+          return this.log({
+            ...options,
+            conversation,
+            correspondentEntity,
+            redirect: redirect && idx === 0, // only direct on the first item
+          });
+        }));
     }
   }
 

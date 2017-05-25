@@ -89,7 +89,7 @@ export default class DataMatcher extends RcModule {
         return dataMap;
       }
     );
-    this._requestCounter = 0;
+    this._lastCleanUp = 0;
   }
 
   initialize() {
@@ -107,12 +107,17 @@ export default class DataMatcher extends RcModule {
     return [...output];
   }
   _cleanUp() {
-    this.store.dispatch({
-      type: this.actionTypes.cleanUp,
-      queries: this._getQueries(),
-      timestamp: Date.now(),
-      ttl: this._ttl,
-    });
+    // throttle clean up to only run once every 100ms
+    const now = Date.now();
+    if (now - this._lastCleanUp > 100) {
+      this._lastCleanUp = now;
+      this.store.dispatch({
+        type: this.actionTypes.cleanUp,
+        queries: this._getQueries(),
+        timestamp: Date.now(),
+        ttl: this._ttl,
+      });
+    }
   }
   _onStateChange() {
     if (this._shouldInit()) {
@@ -127,6 +132,7 @@ export default class DataMatcher extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.reset,
       });
+      this._lastCleanUp = 0;
       this.store.dispatch({
         type: this.actionTypes.resetSuccess,
       });
@@ -227,8 +233,6 @@ export default class DataMatcher extends RcModule {
     name,
     queries,
   }) {
-    const requestId = this._requestCounter;
-    this._requestCounter += 1;
     try {
       this.store.dispatch({
         type: this.actionTypes.match,

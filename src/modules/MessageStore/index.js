@@ -197,7 +197,7 @@ export default class MessageStore extends RcModule {
     syncToken,
     recordsLength = 0,
   }) {
-    const MAX_MSG_LENGTH = 1000;
+    const MAX_MSG_LENGTH = 500;
     const params = messageStoreHelper.getMessageSyncParams({
       dateFrom,
       dateTo,

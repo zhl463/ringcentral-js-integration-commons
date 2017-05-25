@@ -198,7 +198,7 @@ export default class Messages extends RcModule {
         type: this.actionTypes.init,
       });
       if (this._contactMatcher) {
-        await this._contactMatcher.triggerMatch();
+        this._contactMatcher.triggerMatch();
       }
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
