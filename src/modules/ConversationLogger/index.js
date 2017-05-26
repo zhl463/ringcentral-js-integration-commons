@@ -186,7 +186,7 @@ export default class ConversationLogger extends LoggerBase {
     ) {
       this._autoLogPromise = this._processQueue();
     } else {
-      this._authLogPromise = null;
+      this._autoLogPromise = null;
     }
   }
   _queueAutoLogConversation({
