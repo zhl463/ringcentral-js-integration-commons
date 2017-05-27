@@ -7,39 +7,14 @@ import {
   getDataReducer,
   getTimestampReducer,
 } from './getAccountExtensionReducer';
+import {
+  isEssential,
+  simplifyExtensionData,
+} from './accountExtensionHelper';
 import subscriptionFilters from '../../enums/subscriptionFilters';
 
 const extensionRegExp = /.*\/extension$/;
 const DEFAULT_TTL = 24 * 60 * 60 * 1000;
-
-/**
- * @function
- * @description Determines whether an extension data is worth caching
- * @param {Object} ext - extension data
- * @return {Boolean}
- */
-function isEssential(ext) {
-  return ext.extensionNumber &&
-    ext.extensionNumber !== '' &&
-    ext.status === 'Enabled' &&
-    (ext.type === 'DigitalUser' || ext.type === 'User');
-}
-/**
- * @function
- * @description Returns a simplified extension data for caching to reducer storage use
- * @param {Object} ext - extension data
- * @return {Object}
- */
-function simplifyExtensionData(ext) {
-  return {
-    ext: ext.extensionNumber,
-    name: ext.name,
-    id: ext.id,
-    status: ext.status,
-    type: ext.type,
-    contact: ext.contact,
-  };
-}
 
 export default class AccountExtension extends DataFetcher {
   constructor({
@@ -57,48 +32,7 @@ export default class AccountExtension extends DataFetcher {
       getTimestampReducer,
       subscriptionFilters: [subscriptionFilters.accountExtension],
       subscriptionHandler: async (message) => {
-        if (
-          message &&
-          extensionRegExp.test(message.event) &&
-          message.body &&
-          message.body.extensions
-        ) {
-          for (const item of message.body.extensions) {
-            const { id, eventType } = item;
-            if (eventType === 'Delete') {
-              this.store.dispatch({
-                type: this.actionTypes.delete,
-                id,
-                timestamp: Date.now(),
-              });
-            } else if (eventType === 'Create' || eventType === 'Update') {
-              try {
-                const extensionData = await this._client.account().extension(id).get();
-                if (isEssential(extensionData)) {
-                  if (this.isAvailableExtension(extensionData.extensionNumber)) {
-                    this.store.dispatch({
-                      type: this.actionTypes.add,
-                      data: simplifyExtensionData(extensionData),
-                      timestamp: Date.now(),
-                    });
-                  }
-                } else {
-                  // if an extension was updated to be not essential anymore
-                  // eg. not assigned an extension number
-                  this.store.dispatch({
-                    type: this.actionTypes.delete,
-                    id,
-                    timestamp: Date.now(),
-                  });
-                }
-              } catch (error) {
-                /* falls through */
-              }
-            } else {
-              // console.warn('unexpect notification eventType:', eventType);
-            }
-          }
-        }
+        this._subscriptionHandleFn(message);
       },
       fetchFunction: async () => (await fetchList(params => (
         this._client.account().extension().list(params)
@@ -110,6 +44,65 @@ export default class AccountExtension extends DataFetcher {
       () => this.data,
       data => data || [],
     );
+  }
+
+  async _subscriptionHandleFn(message) {
+    if (
+      message &&
+      extensionRegExp.test(message.event) &&
+      message.body &&
+      message.body.extensions
+    ) {
+      for (const item of message.body.extensions) {
+        await this.processExtension(item);
+      }
+    }
+  }
+
+  async processExtension(item) {
+    const { extensionId, eventType } = item;
+    const id = parseInt(extensionId, 10);
+    if (eventType === 'Delete') {
+      this.deleteExtension(id);
+    } else if (eventType === 'Create' || eventType === 'Update') {
+      try {
+        const extensionData = await this.fetchExtensionData(id);
+        const essential = isEssential(extensionData);
+        const isAvailableExtension = this.isAvailableExtension(extensionData.extensionNumber);
+
+        if (essential && !isAvailableExtension) { // && !isAvailableExtension
+          this.addExtension(extensionData);
+        } else if (!essential && isAvailableExtension) {
+          // if an extension was updated to be not essential anymore
+          // eg. not assigned an extension number
+          this.deleteExtension(id);
+        }
+      } catch (error) {
+        /* falls through */
+      }
+    } else {
+      // console.warn('unexpect notification eventType:', eventType);
+    }
+  }
+
+  addExtension(data) {
+    this.store.dispatch({
+      type: this.actionTypes.add,
+      data: simplifyExtensionData(data),
+      timestamp: Date.now(),
+    });
+  }
+
+  deleteExtension(id) {
+    this.store.dispatch({
+      type: this.actionTypes.delete,
+      id,
+      timestamp: Date.now(),
+    });
+  }
+
+  async fetchExtensionData(id) {
+    return this._client.account().extension(id).get();
   }
 
   get availableExtensions() {
