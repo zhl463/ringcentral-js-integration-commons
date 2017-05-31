@@ -103,6 +103,10 @@ export default class Messages extends RcModule {
               conversationLogId,
               isLogging,
               conversationMatches,
+              lastMatchedCorrespondentEntity: (
+                this._conversationLogger &&
+                this._conversationLogger.getLastMatchedCorrespondentEntity(message)
+              ) || null,
             };
           })
         ),

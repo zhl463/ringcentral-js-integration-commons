@@ -55,7 +55,8 @@ export default class ConversationLogger extends LoggerBase {
     this.addSelector('conversationLogMap',
       () => this._messageStore.messages,
       () => this._extensionInfo.extensionNumber,
-      (messages, extensionNumber) => {
+      () => this._conversationMatcher.dataMapping,
+      (messages, extensionNumber, conversationLogMapping = {}) => {
         const mapping = {};
         messages.slice().sort(sortByDate)
           .forEach((message) => {
@@ -68,13 +69,15 @@ export default class ConversationLogger extends LoggerBase {
               mapping[conversationId] = {};
             }
             if (!mapping[conversationId][date]) {
+              const conversationLogId = getLogId({ conversationId, date });
               mapping[conversationId][date] = {
-                conversationLogId: getLogId({ conversationId, date }),
+                conversationLogId,
                 conversationId,
                 creationTime: message.createTime, // for sorting
                 date,
                 type: message.type,
                 messages: [],
+                conversationLogMatches: conversationLogMapping[conversationLogId],
                 ...getNumbersFromMessage({ extensionNumber, message }),
               };
             }
@@ -198,6 +201,35 @@ export default class ConversationLogger extends LoggerBase {
     }
   }
 
+  _getCorrespondentMatches(conversation) {
+    return (conversation.correspondents &&
+      conversation.correspondents.reduce((result, contact) => {
+        const number = contact.phoneNumber || contact.extensionNumber;
+        return number && this._contactMatcher.dataMapping[number] ?
+          result.concat(this._contactMatcher.dataMapping[number]) :
+          result;
+      }, [])) || [];
+  }
+  getLastMatchedCorrespondentEntity(conversation) {
+    const lastRecord = Object.keys(this.conversationLogMap[conversation.conversationId])
+      .map(date => (
+        this.conversationLogMap[conversation.conversationId][date]
+      )).sort(sortByDate).find(item => (
+        item.conversationLogMatches.length > 0
+      ));
+    if (
+      lastRecord &&
+      this._conversationMatcher.dataMapping[lastRecord.conversationLogId] &&
+      this._conversationMatcher.dataMapping[lastRecord.conversationLogId].length
+    ) {
+      const lastActivity = this._conversationMatcher.dataMapping[lastRecord.conversationLogId][0];
+      const correspondentMatches = this._getCorrespondentMatches(lastRecord);
+      return correspondentMatches.find(item => (
+        this._isLoggedContact(conversation, lastActivity, item)
+      ));
+    }
+    return null;
+  }
   async _processConversationLog({
     conversation,
   }) {
@@ -229,35 +261,15 @@ export default class ConversationLogger extends LoggerBase {
         (conversation.self.phoneNumber || conversation.self.extensionNumber);
       const selfMatches = (selfNumber &&
         this._contactMatcher.dataMapping[conversation.self]) || [];
-      const correspondentMatches = (conversation.correspondents &&
-        conversation.correspondents.reduce((result, contact) => {
-          const number = contact.phoneNumber || contact.extensionNumber;
-          return number && this._contactMatcher.dataMapping[number] ?
-            result.concat(this._contactMatcher.dataMapping[number]) :
-            result;
-        }, [])) || [];
+      const correspondentMatches = this._getCorrespondentMatches(conversation);
 
       const selfEntity = (selfMatches &&
         selfMatches.length === 1 &&
         selfMatches[0]) ||
         null;
 
-      // check older dates for existing selected entity match
-      const lastRecord = Object.keys(this.conversationLogMap[conversation.conversationId])
-        .map(date => (
-          this.conversationLogMap[conversation.conversationId][date]
-        )).sort(sortByDate)[1];
-      let correspondentEntity;
-      if (
-        lastRecord &&
-        this._conversationMatcher.dataMapping[lastRecord.conversationLogId] &&
-        this._conversationMatcher.dataMapping[lastRecord.conversationLogId].length
-      ) {
-        const lastActivity = this._conversationMatcher.dataMapping[lastRecord.conversationLogId][0];
-        correspondentEntity = correspondentMatches.find(item => (
-          this._isLoggedContact(conversation, lastActivity, item)
-        ));
-      }
+      let correspondentEntity = this.getLastMatchedCorrespondentEntity(conversation);
+
       correspondentEntity = correspondentEntity ||
         (correspondentMatches &&
           correspondentMatches.length === 1 &&
