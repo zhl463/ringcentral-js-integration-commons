@@ -77,7 +77,7 @@ export default class ConversationLogger extends LoggerBase {
                 date,
                 type: message.type,
                 messages: [],
-                conversationLogMatches: conversationLogMapping[conversationLogId],
+                conversationLogMatches: conversationLogMapping[conversationLogId] || [],
                 ...getNumbersFromMessage({ extensionNumber, message }),
               };
             }
