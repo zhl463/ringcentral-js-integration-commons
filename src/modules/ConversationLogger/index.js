@@ -288,7 +288,7 @@ export default class ConversationLogger extends LoggerBase {
       this._lastAutoLog = this.autoLog;
       if (this.autoLog) {
         // force conversation log checking when switch auto log to on
-        this._lastProcessedConversationLogMap = null;
+        this._lastProcessedConversations = null;
       }
     }
     if (this.ready && this._lastProcessedConversations !== this.conversationLogMap) {
