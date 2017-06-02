@@ -19,11 +19,12 @@ describe('AccountExtension Unit Test', () => {
     accountExtension._actionTypes = actionTypes;
     [
       'isAvailableExtension',
-      'processExtension',
-      'addExtension',
-      'deleteExtension',
-      'fetchExtensionData',
-      '_subscriptionHandleFn'
+      '_processExtension',
+      '_addExtension',
+      '_deleteExtension',
+      '_fetchExtensionData',
+      '_subscriptionHandleFn',
+      '_addOrDeleteExtension'
     ].forEach((key) => {
       accountExtension[key].restore();
     });
@@ -54,18 +55,18 @@ describe('AccountExtension Unit Test', () => {
           extensions: [{}, {}]
         }
       };
-      sinon.stub(accountExtension, 'processExtension');
+      sinon.stub(accountExtension, '_processExtension');
       await accountExtension._subscriptionHandleFn(message);
-      sinon.assert.notCalled(accountExtension.processExtension);
+      sinon.assert.notCalled(accountExtension._processExtension);
     });
     it('proccssExtension should not be called when got no extensions', async () => {
       const message = {
         event: 'abc',
         body: {}
       };
-      sinon.stub(accountExtension, 'processExtension');
+      sinon.stub(accountExtension, '_processExtension');
       await accountExtension._subscriptionHandleFn(message);
-      sinon.assert.notCalled(accountExtension.processExtension);
+      sinon.assert.notCalled(accountExtension._processExtension);
     });
     it('proccssExtension should be called twice when got two extensions', async () => {
       const message = {
@@ -74,77 +75,81 @@ describe('AccountExtension Unit Test', () => {
           extensions: [{}, {}]
         }
       };
-      sinon.stub(accountExtension, 'processExtension');
+      sinon.stub(accountExtension, '_processExtension');
       await accountExtension._subscriptionHandleFn(message);
-      sinon.assert.calledTwice(accountExtension.processExtension);
+      sinon.assert.calledTwice(accountExtension._processExtension);
     });
   });
 
-  describe('processExtension', () => {
-    let isEssential;
+  describe('_processExtension', () => {
     beforeEach(() => {
-      isEssential = sinon.stub(accountExtensionHelper, 'isEssential');
-      sinon.stub(accountExtension, 'fetchExtensionData').callsFake(() => []);
-    });
-    afterEach(() => {
-      sinon.restore(isEssential);
+      sinon.stub(accountExtension, 'isAvailableExtension');
+      sinon.stub(accountExtension, '_addOrDeleteExtension');
+      sinon.stub(accountExtension, '_fetchExtensionData').callsFake(() => []);
     });
     it('deleteExtension should be called when eventType is Delete', () => {
       const item = {
         id: 1,
         eventType: 'Delete',
       };
-      sinon.stub(accountExtension, 'deleteExtension');
-      accountExtension.processExtension(item);
-      sinon.assert.calledOnce(accountExtension.deleteExtension);
+      sinon.stub(accountExtension, '_deleteExtension');
+      accountExtension._processExtension(item);
+      sinon.assert.calledOnce(accountExtension._deleteExtension);
     });
-    it('deleteExtension should be called when eventType is Create but the extension is not essential', async () => {
+    it('_addOrDeleteExtension should be called when eventType is Create', async () => {
       const item = {
         id: 1,
         eventType: 'Create',
       };
-      isEssential.callsFake(() => false);
-      sinon.stub(accountExtension, 'isAvailableExtension').callsFake(() => true);
-
-      sinon.stub(accountExtension, 'deleteExtension');
-      await accountExtension.processExtension(item);
-      sinon.assert.called(accountExtension.deleteExtension);
+      await accountExtension._processExtension(item);
+      sinon.assert.called(accountExtension._addOrDeleteExtension);
     });
-    it('deleteExtension should be called when eventType is Update but the extension is not essential', async () => {
+    it('_addOrDeleteExtension should be called when eventType is Update', async () => {
       const item = {
         id: 1,
         eventType: 'Update',
       };
-      isEssential.callsFake(() => false);
-      sinon.stub(accountExtension, 'isAvailableExtension').callsFake(() => true);
-
-      sinon.stub(accountExtension, 'deleteExtension');
-      await accountExtension.processExtension(item);
-      sinon.assert.called(accountExtension.deleteExtension);
+      await accountExtension._processExtension(item);
+      sinon.assert.called(accountExtension._addOrDeleteExtension);
     });
-    it('addExtension should be called when eventType is Create but the extension is not essential', async () => {
-      const item = {
-        id: 1,
-        eventType: 'Create',
-      };
-      isEssential.callsFake(() => true);
-      sinon.stub(accountExtension, 'isAvailableExtension').callsFake(() => false);
+  });
 
-      sinon.stub(accountExtension, 'addExtension');
-      await accountExtension.processExtension(item);
-      sinon.assert.called(accountExtension.addExtension);
+  describe('_addOrDeleteExtension', () => {
+    beforeEach(() => {
+      sinon.stub(accountExtension, '_addExtension');
+      sinon.stub(accountExtension, '_deleteExtension');
     });
-    it('addExtension should be called when eventType is Update but the extension is not essential', async () => {
-      const item = {
-        id: 1,
-        eventType: 'Update',
-      };
-      isEssential.callsFake(() => true);
-      sinon.stub(accountExtension, 'isAvailableExtension').callsFake(() => false);
-
-      sinon.stub(accountExtension, 'addExtension');
-      await accountExtension.processExtension(item);
-      sinon.assert.called(accountExtension.addExtension);
+    it('_deleteExtension should be called when extension is not essential and extension is available', () => {
+      accountExtension._addOrDeleteExtension(false, true);
+      sinon.assert.called(accountExtension._deleteExtension);
+    });
+    it('_deleteExtension should not be called when extension is essential and extension is available', async () => {
+      accountExtension._addOrDeleteExtension(true, true);
+      sinon.assert.notCalled(accountExtension._deleteExtension);
+    });
+    it('_deleteExtension should not be called when extension is essential and extension is not available', async () => {
+      accountExtension._addOrDeleteExtension(true, false);
+      sinon.assert.notCalled(accountExtension._deleteExtension);
+    });
+    it('_deleteExtension should not be called when extension is not essential and extension is not available', async () => {
+      accountExtension._addOrDeleteExtension(false, false);
+      sinon.assert.notCalled(accountExtension._deleteExtension);
+    });
+    it('_addExtension should be called when extension is essential and extension is not available', async () => {
+      accountExtension._addOrDeleteExtension(true, false);
+      sinon.assert.called(accountExtension._addExtension);
+    });
+    it('_addExtension should not be called when extension is essential and extension is available', async () => {
+      accountExtension._addOrDeleteExtension(true, true);
+      sinon.assert.notCalled(accountExtension._addExtension);
+    });
+    it('_addExtension should not be called when extension is not essential and extension is available', async () => {
+      accountExtension._addOrDeleteExtension(false, true);
+      sinon.assert.notCalled(accountExtension._addExtension);
+    });
+    it('_addExtension should not be called when extension is not essential and extension is not available', async () => {
+      accountExtension._addOrDeleteExtension(false, false);
+      sinon.assert.notCalled(accountExtension._addExtension);
     });
   });
 });

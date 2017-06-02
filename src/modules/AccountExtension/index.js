@@ -54,29 +54,21 @@ export default class AccountExtension extends DataFetcher {
       message.body.extensions
     ) {
       for (const item of message.body.extensions) {
-        await this.processExtension(item);
+        await this._processExtension(item);
       }
     }
   }
 
-  async processExtension(item) {
+  async _processExtension(item) {
     const { extensionId, eventType } = item;
     const id = parseInt(extensionId, 10);
     if (eventType === 'Delete') {
-      this.deleteExtension(id);
+      this._deleteExtension(id);
     } else if (eventType === 'Create' || eventType === 'Update') {
       try {
-        const extensionData = await this.fetchExtensionData(id);
-        const essential = isEssential(extensionData);
-        const isAvailableExtension = this.isAvailableExtension(extensionData.extensionNumber);
-
-        if (essential && !isAvailableExtension) { // && !isAvailableExtension
-          this.addExtension(extensionData);
-        } else if (!essential && isAvailableExtension) {
-          // if an extension was updated to be not essential anymore
-          // eg. not assigned an extension number
-          this.deleteExtension(id);
-        }
+        const extensionData = await this._fetchExtensionData(id);
+        this._addOrDeleteExtension(isEssential(extensionData),
+          this.isAvailableExtension(extensionData.extensionNumber), extensionData, id);
       } catch (error) {
         /* falls through */
       }
@@ -85,7 +77,17 @@ export default class AccountExtension extends DataFetcher {
     }
   }
 
-  addExtension(data) {
+  _addOrDeleteExtension(essential, isAvailableExtension, extensionData, extensionId) {
+    if (essential && !isAvailableExtension) { // && !isAvailableExtension
+      this._addExtension(extensionData);
+    } else if (!essential && isAvailableExtension) {
+      // if an extension was updated to be not essential anymore
+      // eg. not assigned an extension number
+      this._deleteExtension(extensionId);
+    }
+  }
+
+  _addExtension(data) {
     this.store.dispatch({
       type: this.actionTypes.add,
       data: simplifyExtensionData(data),
@@ -93,7 +95,7 @@ export default class AccountExtension extends DataFetcher {
     });
   }
 
-  deleteExtension(id) {
+  _deleteExtension(id) {
     this.store.dispatch({
       type: this.actionTypes.delete,
       id,
@@ -101,7 +103,7 @@ export default class AccountExtension extends DataFetcher {
     });
   }
 
-  async fetchExtensionData(id) {
+  async _fetchExtensionData(id) {
     return this._client.account().extension(id).get();
   }
 
