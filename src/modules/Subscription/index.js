@@ -5,6 +5,7 @@ import getSubscriptionReducer, {
   getCachedSubscriptionReducer,
 } from './getSubscriptionReducer';
 import actionTypes from './actionTypes';
+import proxify from '../../lib/proxy/proxify';
 
 const DEFAULT_TIME_TO_RETRY = 60 * 1000;
 
@@ -84,7 +85,8 @@ export default class Subscription extends RcModule {
     return this._storage.getItem(this._cacheStorageKey);
   }
 
-  _createSubscription() {
+  @proxify
+  async _createSubscription() {
     this._subscription = this._client.service.createSubscription();
     if (this.cachedSubscription) {
       try {
@@ -152,9 +154,11 @@ export default class Subscription extends RcModule {
       }
     });
   }
+
+  @proxify
   async _subscribe() {
     if (!this._subscription) {
-      this._createSubscription();
+      await this._createSubscription();
     }
     this._subscription.setEventFilters(this.filters);
     try {
@@ -166,7 +170,9 @@ export default class Subscription extends RcModule {
       /* falls through */
     }
   }
-  subscribe(events) {
+
+  @proxify
+  async subscribe(events) {
     if (this.ready) {
       const oldFilters = this.filters;
       this.store.dispatch({
@@ -174,11 +180,12 @@ export default class Subscription extends RcModule {
         filters: [].concat(events),
       });
       if (oldFilters.length !== this.filters.length) {
-        this._subscribe();
+        await this._subscribe();
       }
     }
   }
-  unsubscribe(events) {
+  @proxify
+  async unsubscribe(events) {
     if (this.ready) {
       const oldFilters = this.filters;
       this.store.dispatch({
@@ -192,13 +199,15 @@ export default class Subscription extends RcModule {
       }
     }
   }
-  _stopRetry() {
+  @proxify
+  async _stopRetry() {
     if (this._retryTimeoutId) {
       clearTimeout(this._retryTimeoutId);
       this._retryTimeoutId = null;
     }
   }
-  _retry(t = this._timeToRetry) {
+  @proxify
+  async _retry(t = this._timeToRetry) {
     this._stopRetry();
     this._retryTimeoutId = setTimeout(() => {
       if (this.ready) {
@@ -206,7 +215,7 @@ export default class Subscription extends RcModule {
       }
     }, t);
   }
-
+  @proxify
   async _remove() {
     if (this._subscription) {
       try {
@@ -224,13 +233,15 @@ export default class Subscription extends RcModule {
       this._removePromise = null;
     }
   }
-  remove() {
+  @proxify
+  async remove() {
     if (!this._removePromise) {
       this._removePromise = this._remove();
     }
     return this._removePromise;
   }
 
+  @proxify
   async _reset() {
     this.store.dispatch({
       type: this.actionTypes.reset,
@@ -253,7 +264,8 @@ export default class Subscription extends RcModule {
       type: this.actionTypes.resetSuccess,
     });
   }
-  reset() {
+  @proxify
+  async reset() {
     if (!this._resetPromise) {
       this._resetPromise = this._reset();
     }

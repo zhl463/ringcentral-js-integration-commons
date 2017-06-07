@@ -1,8 +1,8 @@
 import Enum from '../../lib/Enum';
+import moduleActionTypes from '../../enums/moduleActionTypes';
 
 export default new Enum([
-  'init',
-  'initSuccess',
+  ...Object.keys(moduleActionTypes),
   'fetch',
   'fetchSuccess',
   'fetchError',
@@ -12,7 +12,5 @@ export default new Enum([
   'iSync',
   'iSyncSuccess',
   'iSyncError',
-  'reset',
-  'resetSuccess',
   'clearToken',
 ], 'callLogActionTypes');

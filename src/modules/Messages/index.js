@@ -5,6 +5,7 @@ import actionTypes from './actionTypes';
 import getMessagesReducer from './getMessagesReducer';
 import { getNumbersFromMessage, sortSearchResults } from '../../lib/messageHelper';
 import cleanNumber from '../../lib/cleanNumber';
+import proxify from '../../lib/proxy/proxify';
 
 export default class Messages extends RcModule {
   constructor({
@@ -245,20 +246,23 @@ export default class Messages extends RcModule {
     );
   }
 
-  _getCurrnetPageMessages(page) {
+  @proxify
+  async _getCurrentPageMessages(page) {
     this.store.dispatch({
       type: this.actionTypes.setPage,
       page,
     });
   }
 
-  loadNextPageMessages() {
+  @proxify
+  async loadNextPageMessages() {
     this.store.dispatch({
       type: this.actionTypes.nextPage,
     });
   }
 
-  updateSearchInput(input) {
+  @proxify
+  async updateSearchInput(input) {
     this.store.dispatch({
       type: this.actionTypes.updateSearchInput,
       input,

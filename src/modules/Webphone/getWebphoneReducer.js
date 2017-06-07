@@ -1,12 +1,10 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
-
-import { normalizeSession } from './webphoneHelper';
 import connectionStatus from './connectionStatus';
 
 export function getVideoElementPreparedReducer(types) {
-  return (state = false, { type, videoElementPrepared = state }) => {
-    if (type === types.init) return videoElementPrepared;
+  return (state = false, { type }) => {
+    if (type === types.videoElementPrepared) return true;
     return state;
   };
 }
@@ -66,7 +64,7 @@ export function getCurrentSessionReducer(types) {
   return (state = null, { type, session }) => {
     switch (type) {
       case types.updateCurrentSession:
-        return normalizeSession(session);
+        return session;
       case types.destroyCurrentSession:
         return null;
       default:
@@ -77,13 +75,9 @@ export function getCurrentSessionReducer(types) {
 
 export function getSessionsReducer(types) {
   return (state = [], { type, sessions }) => {
-    const newSessions = [];
     switch (type) {
       case types.updateSessions:
-        sessions.forEach((session) => {
-          newSessions.push(normalizeSession(session));
-        });
-        return newSessions;
+        return sessions;
       case types.destroySessions:
         return [];
       default:

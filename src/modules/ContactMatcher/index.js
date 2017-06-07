@@ -1,4 +1,5 @@
 import DataMatcher from '../../lib/DataMatcher';
+import proxify from '../../lib/proxy/proxify';
 
 export default class ContactMatcher extends DataMatcher {
   constructor({
@@ -10,6 +11,7 @@ export default class ContactMatcher extends DataMatcher {
     });
   }
 
+  @proxify
   async hasMatchNumber({ phoneNumber, ignoreCache = false }) {
     await this.match({
       queries: [phoneNumber],
@@ -18,6 +20,7 @@ export default class ContactMatcher extends DataMatcher {
     return !!this.dataMapping[phoneNumber] && this.dataMapping[phoneNumber].length > 0;
   }
 
+  @proxify
   async forceMatchNumber({ phoneNumber }) {
     await this.match({
       queries: [phoneNumber],

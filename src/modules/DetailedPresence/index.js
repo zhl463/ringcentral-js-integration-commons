@@ -5,7 +5,6 @@ import getDetailedPresenceReducer from './getDetailedPresenceReducer';
 import subscriptionFilters from '../../enums/subscriptionFilters';
 import {
   isEnded,
-  isRinging,
   removeInboundRingOutLegs,
 } from '../../lib/callLogHelpers';
 
@@ -131,7 +130,6 @@ export default class DetailedPresence extends Presence {
   get sessionIdList() {
     return this._selectors.sessionIdList();
   }
-
   async _fetch() {
     this.store.dispatch({
       type: this.actionTypes.fetch,

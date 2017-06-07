@@ -1,7 +1,7 @@
 import RcModule from '../../lib/RcModule';
 import callingModes from '../CallingSettings/callingModes';
 import moduleStatuses from '../../enums/moduleStatuses';
-
+import proxify from '../../lib/proxy/proxify';
 import callActionTypes from './actionTypes';
 import getCallReducer, {
   getLastCallNumberReducer,
@@ -104,15 +104,16 @@ export default class Call extends RcModule {
       }
     });
   }
-
-  onToNumberChange(value) {
+  @proxify
+  async onToNumberChange(value) {
     this.store.dispatch({
       type: this.actionTypes.toNumberChanged,
       data: value,
     });
   }
 
-  onCall = async () => {
+  @proxify
+  async onCall() {
     if (this.callStatus === callStatus.idle) {
       // last number check
       if (`${this.toNumber}`.trim().length === 0) {
@@ -164,7 +165,7 @@ export default class Call extends RcModule {
       }
     }
   }
-
+  @proxify
   async _getValidatedNumbers() {
     let fromNumber;
     const isWebphone = (this._callingSettings.callingMode === callingModes.webphone);
@@ -212,7 +213,7 @@ export default class Call extends RcModule {
       fromNumber: parsedFromNumber,
     };
   }
-
+  @proxify
   async _makeCall({ toNumber, fromNumber }) {
     const callingMode = this._callingSettings.callingMode;
     const countryCode = this._regionSettings.countryCode;

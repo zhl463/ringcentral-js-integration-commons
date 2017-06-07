@@ -8,6 +8,7 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import regionSettingsMessages from '../RegionSettings/regionSettingsMessages';
 import actionTypes from './actionTypes';
 import validateAreaCode from '../../lib/validateAreaCode';
+import proxify from '../../lib/proxy/proxify';
 
 export default class RegionSettings extends RcModule {
   constructor({
@@ -43,7 +44,7 @@ export default class RegionSettings extends RcModule {
   }
   initialize() {
     let plans;
-    this.store.subscribe(() => {
+    this.store.subscribe(async () => {
       if (
         this._storage.ready &&
         this._dialingPlan.ready &&
@@ -54,7 +55,7 @@ export default class RegionSettings extends RcModule {
           type: this.actionTypes.init,
         });
         if (!this._tabManager || this._tabManager.active) {
-          this.checkRegionSettings();
+          await this.checkRegionSettings();
         }
         plans = this._dialingPlan.plans;
         this.store.dispatch({
@@ -73,7 +74,7 @@ export default class RegionSettings extends RcModule {
       ) {
         plans = this._dialingPlan.plans;
         if (!this._tabManager || this._tabManager.active) {
-          this.checkRegionSettings();
+          await this.checkRegionSettings();
         }
       }
     });
@@ -91,7 +92,8 @@ export default class RegionSettings extends RcModule {
     return this._dialingPlan.plans;
   }
 
-  checkRegionSettings() {
+  @proxify
+  async checkRegionSettings() {
     let countryCode = this._storage.getItem(this._countryCodeKey);
     if (countryCode && !this._dialingPlan.plans.find(plan => (
       plan.isoCode === countryCode
@@ -114,7 +116,8 @@ export default class RegionSettings extends RcModule {
     }
   }
 
-  setData({
+  @proxify
+  async setData({
     areaCode,
     countryCode,
   }) {

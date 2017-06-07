@@ -1,9 +1,10 @@
 import RcModule from '../../lib/RcModule';
 import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
-import getRingoutReducer from './getRingoutReducer' ;
+import getRingoutReducer from './getRingoutReducer';
 import ringoutErrors from './ringoutErrors';
 import sleep from '../../lib/sleep';
+import proxify from '../../lib/proxy/proxify';
 
 const DEFAULT_MONITOR_INTERVAL = 2500;
 const DEFAULT_TIME_BETWEEN_CALLS = 10000;
@@ -40,7 +41,7 @@ export default class Ringout extends RcModule {
       }
     });
   }
-
+  @proxify
   async makeCall({ fromNumber, toNumber, prompt }) {
     if (this.status === moduleStatuses.ready) {
       this.store.dispatch({
@@ -70,6 +71,7 @@ export default class Ringout extends RcModule {
     }
   }
 
+  @proxify
   async _monitorRingout(ringoutId, startTime) {
     let callerStatus = await this._fetchRingoutStatus(ringoutId);
     while (callerStatus === 'InProgress') {
@@ -84,6 +86,7 @@ export default class Ringout extends RcModule {
     }
   }
 
+  @proxify
   async _fetchRingoutStatus(ringoutId) {
     try {
       const resp = await this._client.account().extension().ringout(ringoutId).get();

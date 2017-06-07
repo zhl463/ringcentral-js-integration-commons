@@ -3,6 +3,7 @@ import isBlank from '../../lib/isBlank';
 import moduleStatuses from '../../enums/moduleStatuses';
 import normalizeNumber from '../../lib/normalizeNumber';
 import parseNumber from '../../lib/parseNumber';
+import proxify from '../../lib/proxy/proxify';
 
 import numberValidateActionTypes from './numberValidateActionTypes';
 import getNumberValidateReducer from './getNumberValidateReducer';
@@ -133,6 +134,7 @@ export default class NumberValidate extends RcModule {
     return this._accountExtension.isAvailableExtension(extensionNumber);
   }
 
+  @proxify
   async validateNumbers(phoneNumbers) {
     const validateResult = this.validateFormat(phoneNumbers);
     if (!validateResult.result) {
@@ -160,6 +162,7 @@ export default class NumberValidate extends RcModule {
     };
   }
 
+  @proxify
   async validateWithNumberParser(phoneNumbers) {
     const pasedNumers = await this._numberParser(phoneNumbers);
     const errors = [];
@@ -183,6 +186,7 @@ export default class NumberValidate extends RcModule {
     };
   }
 
+  @proxify
   async _numberParser(phoneNumbers) {
     const countryCode = this._regionSettings.countryCode;
     const areaCode = this._regionSettings.areaCode;
@@ -194,6 +198,7 @@ export default class NumberValidate extends RcModule {
     return response.phoneNumbers;
   }
 
+  @proxify
   async _numberParserApi(originalStrings, homeCountry) {
     const response = await this._client.numberParser().parse().post(
       {

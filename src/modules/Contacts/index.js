@@ -141,12 +141,8 @@ export default class Contacts extends RcModule {
     });
   }
 
-  get ready() {
-    return this.status === moduleStatuses.ready;
-  }
-
-  get pending() {
-    return this.status === moduleStatuses.pending;
+  get status() {
+    return this.state.status;
   }
 
   get companyContacts() {

@@ -5,6 +5,7 @@ import loginStatus from '../Auth/loginStatus';
 import moduleStatuses from '../../enums/moduleStatuses';
 import dndStatus from './dndStatus';
 import presenceStatus from './presenceStatus';
+import proxify from '../../lib/proxy/proxify';
 
 const presenceEndPoint = /.*\/presence(\?.*)?/;
 
@@ -30,11 +31,6 @@ export default class Presence extends RcModule {
     this._reducer = getPresenceReducer(this.actionTypes);
     this._lastMessage = null;
 
-    this.setAvailable = this.setAvailable.bind(this);
-    this.setBusy = this.setBusy.bind(this);
-    this.setDoNotDisturb = this.setDoNotDisturb.bind(this);
-    this.setInvisible = this.setInvisible.bind(this);
-    this.toggleAcceptCallQueueCalls = this.toggleAcceptCallQueueCalls.bind(this);
     this._updateDelayTime = updateDelayTime;
     this._delayTimeoutId = null;
   }
@@ -82,7 +78,7 @@ export default class Presence extends RcModule {
       }
     });
   }
-
+  @proxify
   async _fetch() {
     this.store.dispatch({
       type: this.actionTypes.fetch,
@@ -106,57 +102,36 @@ export default class Presence extends RcModule {
       throw error;
     }
   }
-
-  fetch() {
+  @proxify
+  async fetch() {
     if (!this._promise) {
       this._promise = this._fetch();
     }
     return this._promise;
   }
-
+  @proxify
   async _update(params) {
-    const oldStatus = {
-      dndStatus: this.dndStatus,
-      userStatus: this.userStatus,
-    };
-    this.store.dispatch({
-      type: this.actionTypes.update,
-      ...params,
-    });
-    await this._delayUpdate(params, oldStatus);
-  }
-
-  async _delayUpdate(params, oldStatus) {
-    this._clearDelayTimeout();
-    this._delayTimeoutId = setTimeout(async () => {
-      this._delayTimeoutId = null;
-      try {
-        const ownerId = this._auth.ownerId;
-        const platform = this._client.service.platform();
-        const response = await platform.put(
-          '/account/~/extension/~/presence',
-          params
-        );
-        const data = response.json();
-        if (ownerId === this._auth.ownerId) {
-          this.store.dispatch({
-            type: this.actionTypes.updateSuccess,
-            ...data,
-          });
-        }
-      } catch (error) {
+    try {
+      const ownerId = this._auth.ownerId;
+      const platform = this._client.service.platform();
+      const response = await platform.put(
+        '/account/~/extension/~/presence',
+        params
+      );
+      const data = response.json();
+      if (ownerId === this._auth.ownerId) {
         this.store.dispatch({
-          type: this.actionTypes.updateError,
-          error,
-          ...oldStatus,
+          type: this.actionTypes.updateSuccess,
+          ...data,
         });
-        console.error(error);
       }
-    }, this._updateDelayTime);
-  }
-
-  _clearDelayTimeout() {
-    if (this._delayTimeoutId) clearTimeout(this._delayTimeoutId);
+    } catch (error) {
+      this.store.dispatch({
+        type: this.actionTypes.updateError,
+        error,
+      });
+      throw error;
+    }
   }
 
   _getUpdateStatusParams(userStatusParams) {
@@ -172,16 +147,14 @@ export default class Presence extends RcModule {
     }
     return params;
   }
-
-  setAvailable() {
+  async setAvailable() {
     if (this.presenceStatus === presenceStatus.available) {
       return;
     }
     const params = this._getUpdateStatusParams(presenceStatus.available);
-    this._update(params);
+    await this._update(params);
   }
-
-  setBusy() {
+  async setBusy() {
     if (
       this.presenceStatus === presenceStatus.busy &&
       this.dndStatus !== dndStatus.doNotAcceptAnyCalls
@@ -189,10 +162,10 @@ export default class Presence extends RcModule {
       return;
     }
     const params = this._getUpdateStatusParams(presenceStatus.busy);
-    this._update(params);
+    await this._update(params);
   }
 
-  setDoNotDisturb() {
+  async setDoNotDisturb() {
     if (
       this.presenceStatus === presenceStatus.busy &&
       this.dndStatus === dndStatus.doNotAcceptAnyCalls
@@ -203,18 +176,18 @@ export default class Presence extends RcModule {
       dndStatus: dndStatus.doNotAcceptAnyCalls,
       userStatus: presenceStatus.busy,
     };
-    this._update(params);
+    await this._update(params);
   }
 
-  setInvisible() {
+  async setInvisible() {
     if (this.presenceStatus === presenceStatus.offline) {
       return;
     }
     const params = this._getUpdateStatusParams(presenceStatus.offline);
-    this._update(params);
+    await this._update(params);
   }
 
-  toggleAcceptCallQueueCalls() {
+  async toggleAcceptCallQueueCalls() {
     const params = {
       userStatus: this.userStatus,
     };
@@ -224,7 +197,7 @@ export default class Presence extends RcModule {
       params.dndStatus = dndStatus.takeAllCalls;
     }
     if (params.dndStatus) {
-      this._update(params);
+      await this._update(params);
     }
   }
 

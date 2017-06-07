@@ -20,6 +20,7 @@ export default class Storage extends StorageBase {
   }
   initialize() {
     let storedData = null;
+    const self = this;
     this.store.subscribe(() => {
       if (
         this._auth.loginStatus === loginStatus.loggedIn &&

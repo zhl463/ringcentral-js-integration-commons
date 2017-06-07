@@ -1,13 +1,14 @@
 import formatMessage from 'format-message';
 import RcModule from '../../lib/RcModule';
+import proxify from '../../lib/proxy/proxify';
 
 import I18n, {
   DEFAULT_LOCALE,
   PSEUDO_LOCALE,
 } from '../../lib/I18n';
-import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getLocaleReducer from './getLocaleReducer';
+import getProxyReducer from './getProxyReducer';
 
 /* eslint-disable global-require */
 
@@ -54,30 +55,59 @@ export default class Locale extends RcModule {
       actionTypes,
     });
     this._reducer = getLocaleReducer({ defaultLocale, types: this.actionTypes });
+    this._proxyReducer = getProxyReducer({ defaultLocale, types: this.actionTypes });
   }
-  initialize() {
-    (async () => {
-      await checkIntl();
-      await this.setLocale(this.currentLocale);
-      this.store.dispatch({
-        type: this.actionTypes.initSuccess,
-      });
-    })();
+  async initialize() {
+    await checkIntl();
+    await this.setLocale(this.currentLocale);
+    this.store.dispatch({
+      type: this.actionTypes.initSuccess,
+    });
+  }
+  async initializeProxy() {
+    this.store.dispatch({
+      type: this.actionTypes.proxyInit,
+    });
+    await checkIntl();
+    await this._setLocale(this.state.currentLocale);
+    this.store.dispatch({
+      type: this.actionTypes.syncProxyLocale,
+      locale: this.state.currentLocale,
+    });
+    this.store.dispatch({
+      type: this.actionTypes.proxyInitSuccess,
+    });
+    this.store.subscribe(async () => {
+      if (this.state.currentLocale !== this.currentLocale) {
+        await this._setLocale(this.state.currentLocale);
+        this.store.dispatch({
+          type: this.actionTypes.syncProxyLocale,
+          locale: this.state.currentLocale,
+        });
+      }
+    });
   }
 
   /**
    * @property {String} currentLocale
    */
   get currentLocale() {
-    return this.state.currentLocale;
+    return (this.proxyState && this.proxyState.currentLocale) || this.state.currentLocale;
   }
 
   get status() {
     return this.state.status;
   }
 
-  get ready() {
-    return this.state.status === moduleStatuses.ready;
+  get proxyStatus() {
+    return this.proxyState.status;
+  }
+
+  async _setLocale(locale) {
+    await I18n.setLocale(locale);
+    formatMessage.setup({
+      locale: this.currentLocale === PSEUDO_LOCALE ? DEFAULT_LOCALE : this.currentLocale,
+    });
   }
 
   /**
@@ -88,11 +118,9 @@ export default class Locale extends RcModule {
    *  @param {String} locale
    *  @return {Promise}
    */
+  @proxify
   async setLocale(locale) {
-    await I18n.setLocale(locale);
-    formatMessage.setup({
-      locale: this.currentLocale === PSEUDO_LOCALE ? DEFAULT_LOCALE : this.currentLocale,
-    });
+    this._setLocale(locale);
     this.store.dispatch({
       type: this.actionTypes.setLocale,
       locale,

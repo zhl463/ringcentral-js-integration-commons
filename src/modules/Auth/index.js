@@ -6,6 +6,8 @@ import loginStatus from './loginStatus';
 import authMessages from './authMessages';
 import moduleStatuses from '../../enums/moduleStatuses';
 import parseCallbackUri from '../../lib/parseCallbackUri';
+import ensureExist from '../../lib/ensureExist';
+import proxify from '../../lib/proxy/proxify';
 
 const DEFAULT_PROXY_RETRY = 5000;
 
@@ -47,10 +49,10 @@ export default class Auth extends RcModule {
       ...options,
       actionTypes,
     });
-    this._client = client;
-    this._alert = alert;
-    this._brand = brand;
-    this._locale = locale;
+    this._client = ensureExist(client, 'client');
+    this._alert = ensureExist(alert, 'alert');
+    this._brand = ensureExist(brand, 'brand');
+    this._locale = ensureExist(locale, 'locale');
     this._redirectUri = redirectUri;
     this._proxyUri = proxyUri;
     this._tabManager = tabManager;
@@ -148,7 +150,7 @@ export default class Auth extends RcModule {
       if (
         this.status === moduleStatuses.pending &&
         this._locale.ready &&
-        this._tabManager.ready &&
+        (!this._tabManager || this._tabManager.ready) &&
         (!this._environment || this._environment.ready)
       ) {
         this.store.dispatch({
@@ -164,7 +166,7 @@ export default class Auth extends RcModule {
         });
       }
       if (
-        this._tabManager.ready &&
+        (this._tabManager && this._tabManager.ready) &&
         this.ready
       ) {
         if (
@@ -248,6 +250,7 @@ export default class Auth extends RcModule {
    * @return {Promise}
    * @description Login either with username/password or with authorization code
    */
+  @proxify
   async login({ username, password, extension, remember, code, redirectUri }) {
     this.store.dispatch({
       type: this.actionTypes.login,
@@ -284,6 +287,7 @@ export default class Auth extends RcModule {
    * @description Triggers the beforeLogoutHandlers to run
    *  and then proceed to logout from ringcentral.
    */
+  @proxify
   async logout() {
     this.store.dispatch({
       type: this.actionTypes.beforeLogout,
@@ -331,6 +335,7 @@ export default class Auth extends RcModule {
     this._beforeLogoutHandlers.remove(handler);
   }
 
+  @proxify
   async checkIsLoggedIn() {
     // SDK would return false when there's temporary network issues,
     // but we should not return use back to welcome string and should
@@ -357,7 +362,13 @@ export default class Auth extends RcModule {
           proxyLoaded,
           fromLocalStorage,
         } = data;
-        if (callbackUri && (fromLocalStorage !== true || this._tabManager.active)) {
+        if (
+          callbackUri &&
+          (
+            fromLocalStorage !== true ||
+            (!this._tabManager || this._tabManager.active)
+          )
+        ) {
           try {
             const code = parseCallbackUri(callbackUri);
             if (code) {
@@ -411,7 +422,8 @@ export default class Auth extends RcModule {
    * @param {Function} onLogin - Function to be called when user successfully logged in
    *  through oAuth.
    */
-  setupProxyFrame(onLogin) {
+  @proxify
+  async setupProxyFrame(onLogin) {
     if (
       typeof window !== 'undefined' &&
       typeof document !== 'undefined' &&
@@ -441,7 +453,9 @@ export default class Auth extends RcModule {
     window.removeEventListener('message', this._callbackHandler);
     this._callbackHandler = null;
   }
-  clearProxyFrame() {
+
+  @proxify
+  async clearProxyFrame() {
     if (this._proxyFrame) {
       if (this._retryTimeoutId) {
         clearTimeout(this._retryTimeoutId);
@@ -453,6 +467,8 @@ export default class Auth extends RcModule {
       });
     }
   }
+
+  @proxify
   openOAuthPage() {
     if (this.proxyLoaded) {
       this._proxyFrame.contentWindow.postMessage({

@@ -6,6 +6,8 @@ import getDataFetcherReducer, {
 } from './getDataFetcherReducer';
 import moduleStatuses from '../../enums/moduleStatuses';
 import baseActionTypes from './baseActionTypes';
+import proxify from '../proxy/proxify';
+import ensureExist from '../ensureExist';
 
 const DEFAULT_TTL = 30 * 60 * 1000;
 const DEFAULT_RETRY = 62 * 1000;
@@ -43,9 +45,9 @@ export default class DataFetcher extends Pollable {
       ...options,
       actionTypes,
     });
-    this._auth = auth;
+    this._auth = this::ensureExist(auth, 'auth');
+    this._client = this::ensureExist(client, 'client');
     this._storage = storage;
-    this._client = client;
     this._subscription = subscription;
     this._tabManager = tabManager;
     this._ttl = ttl;
@@ -173,6 +175,7 @@ export default class DataFetcher extends Pollable {
     return this._timeToRetry;
   }
 
+  @proxify
   async _fetchData() {
     this.store.dispatch({
       type: this.actionTypes.fetch,
@@ -207,7 +210,8 @@ export default class DataFetcher extends Pollable {
       }
     }
   }
-  fetchData() {
+  @proxify
+  async fetchData() {
     if (!this._promise) {
       this._promise = this._fetchData();
     }

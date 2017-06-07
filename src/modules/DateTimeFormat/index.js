@@ -3,7 +3,9 @@ import ensureExist from '../../lib/ensureExist';
 import getIntlDateTimeFormatter from '../../lib/getIntlDateTimeFormatter';
 import actionTypes from './actionTypes';
 import getDateTimeFormatReducer from './getDateTimeFormatReducer';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
+import proxify from '../../lib/proxy/proxify';
+import getProxyReducer from './getProxyReducer';
 
 /**
  * @class DateTimeFormat
@@ -21,6 +23,7 @@ export default class DateTimeFormat extends RcModule {
     this._locale = ensureExist(locale, 'locale');
 
     this._reducer = getDateTimeFormatReducer(this.actionTypes);
+    this._proxyReducer = getProxyReducer(this.actionTypes);
 
     this._formatters = {};
   }
@@ -35,7 +38,9 @@ export default class DateTimeFormat extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.init,
       });
-      this._defaultFormatter = getIntlDateTimeFormatter();
+      if (!this._defaultFormatter) {
+        this._defaultFormatter = getIntlDateTimeFormatter();
+      }
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
@@ -43,6 +48,7 @@ export default class DateTimeFormat extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.reset,
       });
+      this._formatters = {};
       this.store.dispatch({
         type: this.actionTypes.resetSuccess,
       });
@@ -50,6 +56,24 @@ export default class DateTimeFormat extends RcModule {
   }
   initialize() {
     this.store.subscribe(() => this._onStateChange());
+  }
+  initializeProxy() {
+    this.store.subscribe(() => {
+      if (
+        this.proxyPending &&
+        this._locale.proxyReady
+      ) {
+        this.store.dispatch({
+          type: this.actionTypes.proxyInit,
+        });
+        if (!this._defaultFormatter) {
+          this._defaultFormatter = getIntlDateTimeFormatter();
+        }
+        this.store.dispatch({
+          type: this.actionTypes.proxyInitSuccess,
+        });
+      }
+    });
   }
   addFormatter({
     name,
@@ -115,11 +139,7 @@ export default class DateTimeFormat extends RcModule {
     return this.state.status;
   }
 
-  get ready() {
-    return this.state.status === moduleStatus.ready;
-  }
-
-  get pending() {
-    return this.state.status === moduleStatus.pending;
+  get proxyStatus() {
+    return this.proxyState.status;
   }
 }

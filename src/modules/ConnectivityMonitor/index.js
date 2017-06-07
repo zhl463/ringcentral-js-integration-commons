@@ -4,6 +4,7 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import getConnectivityMonitorReducer from './getConnectivityMonitorReducer';
 import connectivityMonitorMessages from './connectivityMonitorMessages';
 import ensureExist from '../../lib/ensureExist';
+import proxify from '../../lib/proxy/proxify';
 
 export const DEFAULT_TIME_TO_RETRY = 5 * 1000;
 export const DEFAULT_HEART_BEAT_INTERVAL = 60 * 1000;
@@ -80,7 +81,8 @@ export default class ConnectivityMonitor extends RcModule {
     }
     this._retry();
   }
-  showAlert() {
+  @proxify
+  async showAlert() {
     if (!this.connectivity && this._alert) {
       this._alert.danger({
         message: connectivityMonitorMessages.disconnected,
@@ -115,7 +117,7 @@ export default class ConnectivityMonitor extends RcModule {
       this._unbindHandlers = null;
     };
   }
-
+  @proxify
   async _checkConnection() {
     try {
       // query api info as a test of connectivity

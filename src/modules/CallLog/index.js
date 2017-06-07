@@ -8,7 +8,6 @@ import getCallLogReducer, {
   getTimestampReducer,
   getTokenReducer,
 } from './getCallLogReducer';
-
 import sleep from '../../lib/sleep';
 import subscriptionFilters from '../../enums/subscriptionFilters';
 import syncTypes from '../../enums/syncTypes';
@@ -18,6 +17,7 @@ import {
   removeInboundRingOutLegs,
 } from '../../lib/callLogHelpers';
 import callResults from '../../enums/callResults';
+import proxify from '../../lib/proxy/proxify';
 
 const DEFAULT_TTL = 5 * 60 * 1000;
 const DEFAULT_TOKEN_EXPIRES_IN = 60 * 60 * 1000;
@@ -226,7 +226,7 @@ export default class CallLog extends Pollable {
   get canReadPresence() {
     return !!this._rolesAndPermissions.permissions.ReadPresenceStatus;
   }
-
+  @proxify
   async _fetch({ dateFrom, dateTo }) {
     return fetchList(params => (
       this._client.account().extension().callLog().list({
@@ -236,7 +236,7 @@ export default class CallLog extends Pollable {
       })
     ));
   }
-
+  @proxify
   async _iSync() {
     const ownerId = this._auth.ownerId;
     try {
@@ -263,6 +263,7 @@ export default class CallLog extends Pollable {
       }
     }
   }
+  @proxify
   async _fSync() {
     const ownerId = this._auth.ownerId;
     try {
@@ -309,6 +310,7 @@ export default class CallLog extends Pollable {
       }
     }
   }
+  @proxify
   async _sync(syncType) {
     const ownerId = this._auth.ownerId;
     try {
@@ -337,7 +339,8 @@ export default class CallLog extends Pollable {
     }
     this._promise = null;
   }
-  sync(syncType = this.token ? syncTypes.iSync : syncTypes.fSync) {
+  @proxify
+  async sync(syncType = this.token ? syncTypes.iSync : syncTypes.fSync) {
     if (!this._promise) {
       this._promise = this._sync(syncType);
       return this._promise;
@@ -355,7 +358,8 @@ export default class CallLog extends Pollable {
     }
     return this._queueSync;
   }
+  @proxify
   fetchData() {
-    this.sync();
+    return this.sync();
   }
 }

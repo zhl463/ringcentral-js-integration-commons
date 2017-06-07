@@ -1,6 +1,10 @@
 import Enum from '../../lib/Enum';
+import moduleActionTypes from '../../enums/moduleActionTypes';
+import proxyActionTypes from '../../enums/proxyActionTypes';
 
 export default new Enum([
-  'initSuccess',
+  ...Object.keys(moduleActionTypes),
+  ...Object.keys(proxyActionTypes),
   'setLocale',
+  'syncProxyLocale',
 ], 'locale');

@@ -1,6 +1,8 @@
 import Enum from '../../lib/Enum';
+import moduleActionTypes from '../../enums/moduleActionTypes';
 
 export default new Enum([
+  ...Object.keys(moduleActionTypes),
   'login',
   'loginSuccess',
   'loginError',
@@ -12,8 +14,6 @@ export default new Enum([
   'refreshError',
   'beforeLogout',
   'cancelLogout',
-  'init',
-  'initSuccess',
   'tabSync',
   'proxySetup',
   'proxyRetry',

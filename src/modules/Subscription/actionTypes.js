@@ -1,20 +1,18 @@
 import Enum from '../../lib/Enum';
+import moduleActionTypes from '../../enums/moduleActionTypes';
 
 export default new Enum([
-  'setFilters',
+  ...Object.keys(moduleActionTypes),
   'addFilters',
-  'removeFilters',
   'notification',
-  'subscribe',
-  'subscribeSuccess',
-  'subscribeError',
-  'renewSuccess',
-  'renewError',
   'remove',
-  'removeSuccess',
   'removeError',
-  'reset',
-  'resetSuccess',
-  'init',
-  'initSuccess',
+  'removeFilters',
+  'removeSuccess',
+  'renewError',
+  'renewSuccess',
+  'setFilters',
+  'subscribe',
+  'subscribeError',
+  'subscribeSuccess',
 ], 'subscription');
