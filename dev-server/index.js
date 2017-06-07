@@ -26,6 +26,7 @@ import DialingPlan from '../src/modules/DialingPlan';
 import Environment from '../src/modules/Environment';
 import ExtensionInfo from '../src/modules/ExtensionInfo';
 import ExtensionPhoneNumber from '../src/modules/ExtensionPhoneNumber';
+import ExtensionDevice from '../src/modules/ExtensionDevice';
 import ForwardingNumber from '../src/modules/ForwardingNumber';
 import GlobalStorage from '../src/modules/GlobalStorage';
 import Locale from '../src/modules/Locale';
@@ -172,6 +173,13 @@ class DemoPhone extends RcModule {
       storage: this.storage,
       tabManager: this.tabManager,
       getState: () => this.state.extensionPhoneNumber,
+    }));
+    this.addModule('extensionDevice', new ExtensionDevice({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.extensionDevice,
     }));
     this.addModule('forwardingNumber', new ForwardingNumber({
       auth: this.auth,
@@ -391,6 +399,7 @@ class DemoPhone extends RcModule {
       getState: () => this.state.contacts,
     }));
     this.addModule('conversationLogger', new ConversationLogger({
+      auth: this.auth,
       contactMatcher: this.contactMatcher,
       conversationMatcher: this.conversationMatcher,
       dateTimeFormat: this.dateTimeFormat,
@@ -426,6 +435,7 @@ class DemoPhone extends RcModule {
       environment: this.environment.reducer,
       extensionInfo: this.extensionInfo.reducer,
       extensionPhoneNumber: this.extensionPhoneNumber.reducer,
+      extensionDevice: this.extensionDevice.reducer,
       forwardingNumber: this.forwardingNumber.reducer,
       brand: this.brand.reducer,
       detailedPresence: this.detailedPresence.reducer,
