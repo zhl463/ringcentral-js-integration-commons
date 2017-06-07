@@ -149,96 +149,153 @@ export default class CallHistory extends RcModule {
       });
     }
   }
-  _onStateChange = async () => {
-    if (
+
+  initialize() {
+    this.store.subscribe(() => this._onStateChange());
+  }
+
+  async _onStateChange() {
+    if (this._shouldInit()) {
+      this._initModuleStatus();
+    } else if (this._shouldReset()) {
+      this._resetModuleStatus();
+    } else if (
+      this.ready
+    ) {
+      this._processCallHistory();
+    }
+  }
+
+  _shouldInit() {
+    return (
       this._callLog.ready &&
       (!this._callMonitor || this._callMonitor.ready) &&
       this._accountInfo.ready &&
       (!this._contactMatcher || this._contactMatcher.ready) &&
       (!this._activityMatcher || this._activityMatcher.ready) &&
       this.pending
-    ) {
-      this.store.dispatch({
-        type: this.actionTypes.init,
-      });
-      this.store.dispatch({
-        type: this.actionTypes.initSuccess,
-      });
-    } else if (
-      (
-        !this._callLog.ready ||
+    );
+  }
+
+  _shouldReset() {
+    return (
+      (!this._callLog.ready ||
         (this._callMonitor && !this._callMonitor.ready) ||
         !this._accountInfo.ready ||
         (this._contactMatcher && !this._contactMatcher.ready) ||
         (this._activityMatcher && !this._activityMatcher.ready)
       ) &&
       this.ready
-    ) {
-      this.store.dispatch({
-        type: this.actionTypes.reset,
-      });
-      this._lastProcessedCalls = null;
-      this._lastProcessedIds = null;
-      this._lastProcessedMonitorCalls = null;
-      this._lastProcessedNumbers = null;
-      this.store.dispatch({
-        type: this.actionTypes.resetSuccess,
-      });
-    } else if (
-      this.ready
-    ) {
-      const uniqueNumbers = this._selectors.uniqueNumbers();
-      if (this._lastProcessedNumbers !== uniqueNumbers) {
-        this._lastProcessedNumbers = uniqueNumbers;
-        if (this._contactMatcher && this._contactMatcher.ready) {
-          this._contactMatcher.triggerMatch();
-        }
-      }
-      const sessionIds = this._selectors.sessionIds();
-      if (this._lastProcessedIds !== sessionIds) {
-        this._lastProcessedIds = sessionIds;
-        if (this._activityMatcher && this._activityMatcher.ready) {
-          this._activityMatcher.triggerMatch();
-        }
-      }
-      if (this._callMonitor) {
-        const monitorCalls = this._callMonitor.calls;
-        if (this._lastProcessedMonitorCalls !== monitorCalls) {
-          const endedCalls = (this._lastProcessedMonitorCalls || [])
-            .filter(call => (
-              !monitorCalls.find(currentCall => call.sessionId === currentCall.sessionId)
-            ));
-          this._lastProcessedMonitorCalls = monitorCalls;
-          if (endedCalls.length) {
-            this.store.dispatch({
-              type: this.actionTypes.addEndedCalls,
-              endedCalls,
-              timestamp: Date.now(),
-            });
-            this._callLog.sync();
-          }
-        }
-      }
-      const currentCalls = this._callLog.calls;
-      if (currentCalls !== this._lastProcessedCalls) {
-        this._lastProcessedCalls = currentCalls;
-        const ids = {};
-        currentCalls.forEach((call) => {
-          ids[call.sessionId] = true;
-        });
-        const shouldRemove = this.state.endedCalls.filter(call => ids[call.sessionId]);
-        if (shouldRemove.length) {
-          this.store.dispatch({
-            type: this.actionTypes.removeEndedCalls,
-            endedCalls: shouldRemove,
-          });
-        }
+    );
+  }
+
+  _shouldTriggerContactMatch(uniqueNumbers) {
+    if (this._lastProcessedNumbers !== uniqueNumbers) {
+      this._lastProcessedNumbers = uniqueNumbers;
+      if (this._contactMatcher && this._contactMatcher.ready) {
+        return true;
       }
     }
+    return false;
   }
-  initialize() {
-    this.store.subscribe(this._onStateChange);
+
+  _shouldTriggerActivityMatch(sessionIds) {
+    if (this._lastProcessedIds !== sessionIds) {
+      this._lastProcessedIds = sessionIds;
+      if (this._activityMatcher && this._activityMatcher.ready) {
+        return true;
+      }
+    }
+    return false;
   }
+
+  _shouldAddEndedCalls() {
+    if (this._callMonitor) {
+      const monitorCalls = this._callMonitor.calls;
+      if (this._lastProcessedMonitorCalls !== monitorCalls) {
+        const endedCalls = (this._lastProcessedMonitorCalls || [])
+          .filter(call => (
+            !monitorCalls.find(currentCall => call.sessionId === currentCall.sessionId)
+          ));
+        this._lastProcessedMonitorCalls = monitorCalls;
+        return endedCalls;
+      }
+    }
+    return null;
+  }
+
+  _shouldRemoveEndedCalls() {
+    const currentCalls = this._callLog.calls;
+    if (currentCalls !== this._lastProcessedCalls) {
+      this._lastProcessedCalls = currentCalls;
+      const ids = {};
+      currentCalls.forEach((call) => {
+        ids[call.sessionId] = true;
+      });
+      return this.recentlyEndedCalls.filter(call => ids[call.sessionId]);
+    }
+    return null;
+  }
+
+  _processCallHistory() {
+    const uniqueNumbers = this.uniqueNumbers;
+    if (this._shouldTriggerContactMatch(uniqueNumbers)) {
+      this._contactMatcher.triggerMatch();
+    }
+    const sessionIds = this.sessionIds;
+    if (this._shouldTriggerActivityMatch(sessionIds)) {
+      this._activityMatcher.triggerMatch();
+    }
+
+    const endedCalls = this._shouldAddEndedCalls();
+    if (endedCalls && endedCalls.length) {
+      this._addEndedCalls(endedCalls);
+    }
+
+    const shouldRemove = this._shouldRemoveEndedCalls();
+    if (shouldRemove && shouldRemove.length) {
+      this._removeEndedCalls(shouldRemove);
+    }
+  }
+
+  _initModuleStatus() {
+    this.store.dispatch({
+      type: this.actionTypes.init,
+    });
+    this.store.dispatch({
+      type: this.actionTypes.initSuccess,
+    });
+  }
+
+  _resetModuleStatus() {
+    this.store.dispatch({
+      type: this.actionTypes.reset,
+    });
+    this._lastProcessedCalls = null;
+    this._lastProcessedIds = null;
+    this._lastProcessedMonitorCalls = null;
+    this._lastProcessedNumbers = null;
+    this.store.dispatch({
+      type: this.actionTypes.resetSuccess,
+    });
+  }
+
+  _addEndedCalls(endedCalls) {
+    this.store.dispatch({
+      type: this.actionTypes.addEndedCalls,
+      endedCalls,
+      timestamp: Date.now(),
+    });
+    this._callLog.sync();
+  }
+
+  _removeEndedCalls(endedCalls) {
+    this.store.dispatch({
+      type: this.actionTypes.removeEndedCalls,
+      endedCalls,
+    });
+  }
+
 
   get status() {
     return this.state.status;
@@ -254,6 +311,14 @@ export default class CallHistory extends RcModule {
 
   get calls() {
     return this._selectors.calls();
+  }
+
+  get uniqueNumbers() {
+    return this._selectors.uniqueNumbers();
+  }
+
+  get sessionIds() {
+    return this._selectors.sessionIds();
   }
 
   get recentlyEndedCalls() {
