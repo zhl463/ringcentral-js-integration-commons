@@ -234,7 +234,6 @@ export default class DataMatcher extends RcModule {
       )));
   }
 
-  @proxify
   async _fetchMatchResult({
     name,
     queries,
