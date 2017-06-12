@@ -3,6 +3,7 @@ import ensureExist from '../../lib/ensureExist';
 import { isRinging, isInbound } from '../../lib/callLogHelpers';
 import actionTypes from './actionTypes';
 import getDataReducer from './getDataReducer';
+import proxify from '../../lib/proxy/proxify';
 
 /**
  * @function
@@ -73,6 +74,7 @@ export default class CallLogger extends LoggerBase {
       );
   }
 
+  @proxify
   async log({ call, ...options }) {
     return super.log({ item: call, ...options });
   }
@@ -82,6 +84,7 @@ export default class CallLogger extends LoggerBase {
       (this.logOnRinging || !isRinging(call));
   }
 
+  @proxify
   async logCall({
     call,
     contact,
@@ -224,8 +227,8 @@ export default class CallLogger extends LoggerBase {
     this._processCalls();
   }
 
-
-  setAutoLog(autoLog) {
+  @proxify
+  async setAutoLog(autoLog) {
     if (this.ready && autoLog !== this.autoLog) {
       this.store.dispatch({
         type: this.actionTypes.setAutoLog,
@@ -238,7 +241,8 @@ export default class CallLogger extends LoggerBase {
     return this._storage.getItem(this._storageKey).autoLog;
   }
 
-  setLogOnRinging(logOnRinging) {
+  @proxify
+  async setLogOnRinging(logOnRinging) {
     if (this.ready && logOnRinging !== this.logOnRinging) {
       this.store.dispatch({
         type: this.actionTypes.setLogOnRinging,

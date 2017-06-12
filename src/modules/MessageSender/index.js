@@ -8,6 +8,7 @@ import getMessageSenderReducer from './getMessageSenderReducer';
 
 import messageSenderStatus from './messageSenderStatus';
 import messageSenderMessages from './messageSenderMessages';
+import proxify from '../../lib/proxy/proxify';
 
 export default class MessageSender extends RcModule {
   constructor({
@@ -29,7 +30,6 @@ export default class MessageSender extends RcModule {
     this._extensionInfo = extensionInfo;
     this._reducer = getMessageSenderReducer(this.actionTypes);
     this._numberValidate = numberValidate;
-    this.send = this.send.bind(this);
   }
 
   initialize() {
@@ -136,6 +136,7 @@ export default class MessageSender extends RcModule {
     });
   }
 
+  @proxify
   async _validateToNumbers(toNumbers) {
     const result = {
       result: false,
@@ -172,6 +173,7 @@ export default class MessageSender extends RcModule {
     return result;
   }
 
+  @proxify
   async send({ fromNumber, toNumbers, text, replyOnMessageId }) {
     if (!this._validateText(text)) {
       return null;
@@ -226,7 +228,7 @@ export default class MessageSender extends RcModule {
       throw error;
     }
   }
-
+  @proxify
   async _sendSms({ fromNumber, toNumber, text }) {
     const toUsers = [{ phoneNumber: toNumber }];
     const response = await this._client.account().extension().sms().post({
@@ -236,7 +238,7 @@ export default class MessageSender extends RcModule {
     });
     return response;
   }
-
+  @proxify
   async _sendPager({ toNumbers, text, replyOnMessageId }) {
     const from = { extensionNumber: this._extensionInfo.extensionNumber };
     const toUsers = toNumbers.map(number => ({ extensionNumber: number }));

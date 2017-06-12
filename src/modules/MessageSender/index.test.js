@@ -399,7 +399,7 @@ describe('MessageSender Unit Test', () => {
       expect(result).to.equal(false);
     });
 
-    it(`should return false and warning senderNumberInvalid 
+    it(`should return false and warning senderNumberInvalid
       when senderNumber is not included in senderNumbersList`, () => {
       const senderNumber = '123456789';
       sinon.stub(messageSender, '_alertWarning');

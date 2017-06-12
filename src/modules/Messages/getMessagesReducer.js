@@ -32,7 +32,7 @@ export function getSearchInputReducer(types) {
   };
 }
 
-export function getPerPageReducer(types, defaultPerPage) {
+export function getPerPageReducer(types, defaultPerPage = 20) {
   return (state = defaultPerPage, { type, perPage = defaultPerPage }) => {
     switch (type) {
       case types.setPerPage:

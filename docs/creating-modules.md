@@ -115,7 +115,7 @@ Here we extend the RcModule class to create the DialingPlan module. There are so
 import SymbolMap from 'data-types/symbol-map';
 import HashMap from '../../lib/HashMap';
 import RcModule, { initFunction } from '../../lib/RcModule';
-import { proxify } from '../../lib/proxy';
+import proxify from '../../lib/proxy/proxify';
 import fetchList from '../../lib/fetchList';
 import dialingPlanStatus from './dialingPlanStatus';
 import dialingPlanActions from './dialingPlanActions';

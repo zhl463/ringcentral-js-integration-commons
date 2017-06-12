@@ -10,13 +10,11 @@ import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
 import babel from 'gulp-babel';
 import sourcemaps from 'gulp-sourcemaps';
-import Loganberry from 'loganberry';
 import cp from 'child_process';
-import semver from 'semver';
+import demoExtensionConfig from './demo-extension/webpack.config';
 
 const TIMEOUT = 30000;
 const argv = yargs.argv;
-const logger = new Loganberry('gulp');
 
 function getTestSources() {
   const src = new Set();
@@ -24,13 +22,13 @@ function getTestSources() {
   // check --folder
   if (argv.folder) {
     if (Array.isArray(argv.folder)) {
-      argv.folder.forEach(str => {
-        str.split(',').forEach(f => {
+      argv.folder.forEach((str) => {
+        str.split(',').forEach((f) => {
           src.add(`${f}/**/*.test.js`);
         });
       });
     } else {
-      argv.folder.split(',').forEach(f => {
+      argv.folder.split(',').forEach((f) => {
         src.add(`${f}/**/*.test.js`);
       });
     }
@@ -39,13 +37,13 @@ function getTestSources() {
   // check --file
   if (argv.file) {
     if (Array.isArray(argv.file)) {
-      argv.file.forEach(str => {
-        str.split(',').forEach(f => {
+      argv.file.forEach((str) => {
+        str.split(',').forEach((f) => {
           src.add(f);
         });
       });
     } else {
-      argv.file.split(',').forEach(f => {
+      argv.file.split(',').forEach((f) => {
         src.add(f);
       });
     }
@@ -74,6 +72,7 @@ gulp.task('test', ['pre-coverage'], () => (
   gulp.src(getTestSources())
     .pipe(mocha({
       timeout: TIMEOUT,
+      compilers: 'js:babel-core/register'
     }))
     .pipe(istanbul.writeReports())
 ));
@@ -188,7 +187,7 @@ function splitCmd(cmd) {
     pCmd = pCmd.replace(match[0], replaceStr);
     match = quoteReg.exec(pCmd);
   }
-  return pCmd.split(' ').map(token => {
+  return pCmd.split(' ').map((token) => {
     const quoteMatch = replacementReg.exec(token);
     if (quoteMatch && quoteMatch[1]) {
       const number = parseInt(quoteMatch[1], 10);
@@ -207,7 +206,7 @@ async function spawn(cmd, opts = {}) {
       stdio: 'inherit',
     };
     Object.assign(options, opts);
-    cp.spawn(program, args, options).on('exit', code => {
+    cp.spawn(program, args, options).on('exit', (code) => {
       if (code === 0) {
         resolve();
       } else {
@@ -269,3 +268,29 @@ gulp.task('release', ['release-copy'], async () => {
   }
   await fs.writeFile('release/package.json', JSON.stringify(packageInfo, null, 2));
 });
+
+gulp.task('demo-extension-clean', async () => {
+  await rm('demo-extension-build');
+});
+gulp.task('demo-extension-webpack', ['demo-extension-clean'], () => (
+  new Promise((resolve, reject) => {
+    webpack(demoExtensionConfig, (err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve();
+    });
+  })
+));
+gulp.task('demo-extension-copy', ['demo-extension-clean'], () => (
+  gulp.src(['demo-extension/**/*', '!demo-extension/**/*.js'])
+    .pipe(gulp.dest('demo-extension-build'))
+));
+gulp.task('demo-extension',
+  [
+    'demo-extension-clean',
+    'demo-extension-webpack',
+    'demo-extension-copy',
+  ],
+);

@@ -1,8 +1,7 @@
 import Enum from '../../lib/Enum';
+import moduleActionTypes from '../../enums/moduleActionTypes';
 
 export default new Enum([
-  'init',
-  'initSuccess',
-  'resetSuccess',
+  ...Object.keys(moduleActionTypes),
   'setData',
 ], 'regionSettings');

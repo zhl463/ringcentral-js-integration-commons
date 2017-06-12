@@ -10,6 +10,7 @@ import actionTypes from './actionTypes';
 import getConversationReducer from './getConversationReducer';
 
 import conversationStatus from './conversationStatus';
+import proxify from '../../lib/proxy/proxify';
 
 export default class Conversation extends RcModule {
   constructor({
@@ -27,9 +28,6 @@ export default class Conversation extends RcModule {
     this._extensionInfo = extensionInfo;
     this._messageStore = messageStore;
     this._promise = null;
-    this.replyToReceivers = this.replyToReceivers.bind(this);
-    this.changeDefaultRecipient = this.changeDefaultRecipient.bind(this);
-    this.changeMatchedNames = this.changeMatchedNames.bind(this);
   }
 
   initialize() {
@@ -87,18 +85,25 @@ export default class Conversation extends RcModule {
     });
   }
 
-  loadConversationById(id) {
-    this._loadConversation(id);
-    this._messageStore.readMessages(id);
+  @proxify
+  async loadConversationById(id) {
+    if (this.id !== id) {
+      this._loadConversation(id);
+      this._messageStore.readMessages(id);
+    }
   }
 
-  unloadConversation() {
-    this.store.dispatch({
-      type: this.actionTypes.unload,
-    });
+  @proxify
+  async unloadConversation() {
+    if (this.id) {
+      this.store.dispatch({
+        type: this.actionTypes.unload,
+      });
+    }
   }
 
-  changeMatchedNames(matchedNames) {
+  @proxify
+  async changeMatchedNames(matchedNames) {
     const recipients = this.recipients.slice();
     if (recipients.length !== 1) {
       return;
@@ -109,7 +114,8 @@ export default class Conversation extends RcModule {
     }
   }
 
-  changeDefaultRecipient(phoneNumber) {
+  @proxify
+  async changeDefaultRecipient(phoneNumber) {
     if (this.recipients.length < 2) {
       return;
     }
@@ -189,9 +195,9 @@ export default class Conversation extends RcModule {
 
   _getReplyOnMessageId() {
     const lastMessage =
-        this.messages &&
-        (this.messages.length > 0) &&
-        this.messages[this.messages.length - 1];
+      this.messages &&
+      (this.messages.length > 0) &&
+      this.messages[this.messages.length - 1];
     if (lastMessage && lastMessage.id) {
       return lastMessage.id;
     }
@@ -211,18 +217,19 @@ export default class Conversation extends RcModule {
     );
   }
 
+  @proxify
   async replyToReceivers(text) {
     this.store.dispatch({
       type: this.actionTypes.reply,
     });
     try {
       const responses = await this._messageSender
-                                 .send({
-                                   fromNumber: this._getFromNumber(),
-                                   toNumbers: this._getToNumbers(),
-                                   text,
-                                   replyOnMessageId: this._getReplyOnMessageId(),
-                                 });
+        .send({
+          fromNumber: this._getFromNumber(),
+          toNumbers: this._getToNumbers(),
+          text,
+          replyOnMessageId: this._getReplyOnMessageId(),
+        });
       if (responses && responses[0]) {
         this._messageStore.pushMessage(responses[0]);
         this.store.dispatch({

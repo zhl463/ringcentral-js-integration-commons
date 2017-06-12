@@ -5,6 +5,7 @@ import ensureExist from '../ensureExist';
 import moduleStatuses from '../../enums/moduleStatuses';
 import baseActionTypes from './baseActionTypes';
 import getDefaultReducer from './getDefaultReducer';
+import proxify from '../proxy/proxify';
 
 /**
  * @function defaultIdentityFunction
@@ -108,6 +109,7 @@ export default class LoggerBase extends RcModule {
     }
   }
 
+  @proxify
   async _log({ item, ...options } = {}) {
     if (!this.ready) {
       throw new Error(`${this.constructor.name}._log: module is not ready.`);
@@ -145,6 +147,7 @@ export default class LoggerBase extends RcModule {
     }
   }
 
+  @proxify
   async log({ item, ...options }) {
     if (!this.ready) {
       throw new Error(`${this.constructor.name}.log: module is not ready.`);
@@ -157,14 +160,6 @@ export default class LoggerBase extends RcModule {
 
   get status() {
     return this.state.status;
-  }
-
-  get ready() {
-    return this.state.status === moduleStatuses.ready;
-  }
-
-  get pending() {
-    return this.state.status === moduleStatuses.pending;
   }
 
   get loggingList() {

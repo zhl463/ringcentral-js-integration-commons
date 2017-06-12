@@ -3,6 +3,7 @@ import sleep from '../../lib/sleep';
 import moduleStatuses from '../../enums/moduleStatuses';
 import syncTypes from '../../enums/syncTypes';
 import actionTypes from './actionTypes';
+import proxify from '../../lib/proxy/proxify';
 
 import getAddressBookReducer, {
   getSyncTokenReducer,
@@ -134,7 +135,7 @@ export default class AddressBook extends Pollable {
       type: this.actionTypes.resetSuccess,
     });
   }
-
+  @proxify
   async sync() {
     if (!this._promise) {
       this._promise = (async () => {
@@ -172,6 +173,7 @@ export default class AddressBook extends Pollable {
     });
   }
 
+  @proxify
   async _sync(syncToken, pageId) {
     const params = getSyncParams(syncToken, pageId);
     const response = await this._syncAddressBookApi(params);
@@ -185,12 +187,13 @@ export default class AddressBook extends Pollable {
       records: response.records.concat(lastResponse.records),
     };
   }
-
+  @proxify
   async _syncAddressBookApi(params) {
-    const updateRequest = await this._client.account()
-                                            .extension()
-                                            .addressBookSync()
-                                            .list(params);
+    const updateRequest = await this._client
+      .account()
+      .extension()
+      .addressBookSync()
+      .list(params);
     return updateRequest;
   }
 
@@ -199,17 +202,13 @@ export default class AddressBook extends Pollable {
       type: this.actionTypes.cleanUp,
     });
   }
-
-  fetchData() {
-    this.sync();
+  @proxify
+  async fetchData() {
+    await this.sync();
   }
 
-  get ready() {
-    return this.state.status === moduleStatuses.ready;
-  }
-
-  get pending() {
-    return this.state.status === moduleStatuses.pending;
+  get status() {
+    return this.state.status;
   }
 
   get syncToken() {

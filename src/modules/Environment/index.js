@@ -1,6 +1,7 @@
 import SDK from 'ringcentral';
 import RcModule from '../../lib/RcModule';
 import moduleStatuses from '../../enums/moduleStatuses';
+import proxify from '../../lib/proxy/proxify';
 import actionTypes from './actionTypes';
 import getEnvironmentReducer, {
   getServerReducer,
@@ -83,7 +84,8 @@ export default class Environment extends RcModule {
     this._client.service = new SDK(newConfig);
   }
 
-  setData({ server, recordingHost, enabled }) {
+  @proxify
+  async setData({ server, recordingHost, enabled }) {
     const environmentChanged =
       this.enabled !== enabled ||
       (enabled && this.server !== server);

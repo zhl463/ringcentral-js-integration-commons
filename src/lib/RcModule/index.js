@@ -1,5 +1,7 @@
 import { createSelector } from 'reselect';
 import { prefixEnum } from '../Enum';
+import moduleStatuses from '../../enums/moduleStatuses';
+import proxyStatuses from '../../enums/proxyStatuses';
 
 /**
  * @function
@@ -20,6 +22,10 @@ function defaultGetState() {
   return this.store.getState();
 }
 
+function defaultGetProxyState() {
+  return {};
+}
+
 /**
  * @class
  * @default
@@ -34,6 +40,7 @@ export default class RcModule {
    */
   constructor({
     getState = defaultGetState,
+    getProxyState = defaultGetProxyState,
     prefix,
     actionTypes,
   } = {}) {
@@ -43,17 +50,16 @@ export default class RcModule {
       );
     }
     this._getState = getState;
+    this._getProxyState = getProxyState;
     if (prefix && typeof prefix !== 'string') {
       throw new Error('The `prefix` options property must be null, undefined, or a string');
     }
     this._prefix = prefix;
     this._actionTypes = actionTypes && prefixEnum({ enumMap: actionTypes, prefix });
     this._reducer = defaultReducer;
+    this._proxyReducer = defaultReducer;
     this._modulePath = 'root';
     this._selectors = {};
-    // add state selector
-
-    this.addSelector('state', () => this::this._getState());
   }
 
   /**
@@ -62,7 +68,10 @@ export default class RcModule {
    * @description The state of the module
    */
   get state() {
-    return this.getSelector('state')();
+    return this._getState();
+  }
+  get proxyState() {
+    return this._getProxyState();
   }
 
   /**
@@ -72,6 +81,10 @@ export default class RcModule {
    */
   get reducer() {
     return this._reducer;
+  }
+
+  get proxyReducer() {
+    return this._proxyReducer;
   }
 
   /**
@@ -209,5 +222,29 @@ export default class RcModule {
         this[subModule]._initModule();
       }
     }
+  }
+
+  get status() {
+    return moduleStatuses.ready;
+  }
+
+  get ready() {
+    return this.status === moduleStatuses.ready;
+  }
+
+  get pending() {
+    return this.status === moduleStatuses.pending;
+  }
+
+  get proxyStatus() {
+    return proxyStatuses.ready;
+  }
+
+  get proxyReady() {
+    return this.proxyStatus === proxyStatuses.ready;
+  }
+
+  get proxyPending() {
+    return this.proxyStatus === proxyStatuses.pending;
   }
 }

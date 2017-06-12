@@ -4,6 +4,7 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import alertLevels from './alertLevels';
 import getAlertReducer from './getAlertReducer';
+import proxify from '../../lib/proxy/proxify';
 
 /**
  * @class
@@ -62,7 +63,8 @@ export default class Alert extends RcModule {
    * @param {alertLevels} options.level
    * @param {Number} options.ttl - optional, set ttl to 0 to disable auto dismiss
    */
-  alert({
+  @proxify
+  async alert({
     message,
     payload,
     level = alertLevels.info,
@@ -140,7 +142,8 @@ export default class Alert extends RcModule {
    * @description Dismiss the message from the state.
    * @param {Array<String>|String} ids - The id, or array of ids to be dismissed.
    */
-  dismiss(ids) {
+  @proxify
+  async dismiss(ids) {
     this.store.dispatch({
       type: this.actionTypes.dismiss,
       ids: [].concat(ids),
@@ -150,7 +153,8 @@ export default class Alert extends RcModule {
    * @function
    * @description Dismiss all messages.
    */
-  dismissAll() {
+  @proxify
+  async dismissAll() {
     this.store.dispatch({
       type: this.actionTypes.dismissAll,
     });

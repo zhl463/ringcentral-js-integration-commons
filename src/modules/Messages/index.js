@@ -5,6 +5,7 @@ import actionTypes from './actionTypes';
 import getMessagesReducer from './getMessagesReducer';
 import { getNumbersFromMessage, sortSearchResults } from '../../lib/messageHelper';
 import cleanNumber from '../../lib/cleanNumber';
+import proxify from '../../lib/proxy/proxify';
 
 export default class Messages extends RcModule {
   constructor({
@@ -198,23 +199,9 @@ export default class Messages extends RcModule {
 
   async _onStateChange() {
     if (this._shouldInit()) {
-      this.store.dispatch({
-        type: this.actionTypes.init,
-      });
-      if (this._contactMatcher) {
-        this._contactMatcher.triggerMatch();
-      }
-      this.store.dispatch({
-        type: this.actionTypes.initSuccess,
-      });
+      this._init();
     } else if (this._shouldReset()) {
-      this.store.dispatch({
-        type: this.actionTypes.reset,
-      });
-      this._lastProcessedNumbers = null;
-      this.store.dispatch({
-        type: this.actionTypes.resetSuccess,
-      });
+      this._reset();
     } else if (this._lastProcessedNumbers !== this.uniqueNumbers) {
       this._lastProcessedNumbers = this.uniqueNumbers;
       if (this._contactMatcher) {
@@ -224,7 +211,7 @@ export default class Messages extends RcModule {
   }
 
   _shouldInit() {
-    return (
+    return !!(
       this._messageStore.ready &&
       this._extensionInfo.ready &&
       (!this._contactMatcher || this._contactMatcher.ready) &&
@@ -232,9 +219,20 @@ export default class Messages extends RcModule {
       this.pending
     );
   }
+  _init() {
+    this.store.dispatch({
+      type: this.actionTypes.init,
+    });
+    if (this._contactMatcher) {
+      this._contactMatcher.triggerMatch();
+    }
+    this.store.dispatch({
+      type: this.actionTypes.initSuccess,
+    });
+  }
 
   _shouldReset() {
-    return (
+    return !!(
       (
         !this._messageStore.ready ||
         !this._extensionInfo.ready ||
@@ -244,21 +242,33 @@ export default class Messages extends RcModule {
       this.ready
     );
   }
+  _reset() {
+    this.store.dispatch({
+      type: this.actionTypes.reset,
+    });
+    this._lastProcessedNumbers = null;
+    this.store.dispatch({
+      type: this.actionTypes.resetSuccess,
+    });
+  }
 
-  _getCurrnetPageMessages(page) {
+  @proxify
+  async _getCurrentPageMessages(page) {
     this.store.dispatch({
       type: this.actionTypes.setPage,
       page,
     });
   }
 
-  loadNextPageMessages() {
+  @proxify
+  async loadNextPageMessages() {
     this.store.dispatch({
       type: this.actionTypes.nextPage,
     });
   }
 
-  updateSearchInput(input) {
+  @proxify
+  async updateSearchInput(input) {
     this.store.dispatch({
       type: this.actionTypes.updateSearchInput,
       input,

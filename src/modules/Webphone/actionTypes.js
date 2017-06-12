@@ -1,9 +1,8 @@
 import Enum from '../../lib/Enum';
+import moduleActionTypes from '../../enums/moduleActionTypes';
 
 export default new Enum([
-  'init',
-  'resetSuccess',
-  'initSuccess',
+  ...Object.keys(moduleActionTypes),
   'connect',
   'connectError',
   'registered',
@@ -18,4 +17,5 @@ export default new Enum([
   'destroySessions',
   'toggleMinimized',
   'resetMinimized',
+  'videoElementPrepared',
 ], 'webphone');

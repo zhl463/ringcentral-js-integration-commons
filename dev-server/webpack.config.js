@@ -3,27 +3,26 @@ import path from 'path';
 const base = {
   devtool: 'inline-source-map',
   module: {
-    preLoaders: [
+    rules: [
       {
-        test: /\.js$/,
-        loader: 'source-map-loader',
+        enforce: 'pre',
+        test: /node_modules\/.*\.js$/,
+        use: 'source-map-loader'
       },
-    ],
-    loaders: [
       {
         test: /\.js$/,
-        loaders: ['babel'],
+        use: ['babel-loader'],
         exclude: /node_modules/,
       },
       {
         test: /\.json$/i,
-        loader: 'json',
+        use: 'json-loader',
       },
       {
         test: /\.ogg$/,
-        loader: 'url?publicPath=./&name=audio/[name]_[hash].[ext]',
+        use: 'url-loader?publicPath=./&name=audio/[name]_[hash].[ext]',
       },
-    ],
+    ]
   },
 };
 

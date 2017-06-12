@@ -1,16 +1,19 @@
 import RcModule from '../../lib/RcModule';
 import moduleStatuses from '../../enums/moduleStatuses';
 import sleep from '../../lib/sleep';
+import proxify from '../../lib/proxy/proxify';
 
 export default class Softphone extends RcModule {
   constructor({
     brand,
+    extensionMode = false,
     ...options
   }) {
     super({
       ...options,
     });
     this._brand = brand;
+    this._extensionMode = extensionMode;
   }
   get protocol() {
     switch (this._brand.id) {
@@ -24,17 +27,24 @@ export default class Softphone extends RcModule {
         return 'rcmobile';
     }
   }
+
+  @proxify
   async makeCall(phoneNumber) {
-    const frame = document.createElement('iframe');
-    frame.style.display = 'none';
-
+    // TODO use window.open in extension background, this method will crash chrome when
+    // executed in background page.
     const uri = `${this.protocol}://call?number=${encodeURIComponent(phoneNumber)}`;
+    if (this._extensionMode) {
+      window.open(uri);
+    } else {
+      const frame = document.createElement('iframe');
+      frame.style.display = 'none';
 
-    document.body.appendChild(frame);
-    await sleep(100);
-    frame.contentWindow.location.href = uri;
-    await sleep(300);
-    document.body.removeChild(frame);
+      document.body.appendChild(frame);
+      await sleep(100);
+      frame.contentWindow.location.href = uri;
+      await sleep(300);
+      document.body.removeChild(frame);
+    }
   }
 
   // eslint-disable-next-line class-methods-use-this

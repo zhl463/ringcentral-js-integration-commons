@@ -5,6 +5,7 @@ import getRateLimiterReducer, {
   getTimestampReducer,
 } from './getRateLimiterReducer';
 import errorMessages from './errorMessages';
+import proxify from '../../lib/proxy/proxify';
 
 const DEFAULT_THROTTLE_DURATION = 61 * 1000;
 const DEFAULT_ALERT_TTL = 5 * 1000;
@@ -68,7 +69,8 @@ export default class RateLimiter extends RcModule {
       });
     }
   }
-  showAlert() {
+  @proxify
+  async showAlert() {
     if (this.throttling && this._alert) {
       this._alert.danger({
         message: errorMessages.rateLimitReached,

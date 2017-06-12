@@ -11,7 +11,7 @@ describe('getFormatter', () => {
     expect(getFormatter).to.be.a('function');
   });
   it('should return a Intl.DateTimeFormatter instance', () => {
-    expect(getFormatter('en-US')).to.exists;
+    expect(getFormatter('en-US')).to.exist;
   });
   it('should cache and reuse instance if locale and options are identical', () => {
     ['en-US', 'fr-FR', 'de-DE'].forEach((locale) => {

@@ -5,6 +5,7 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getContactSearchReducer from './getContactSearchReducer';
 import getCacheReducer from './getCacheReducer';
+import proxify from '../../lib/proxy/proxify';
 
 export default class ContactSearch extends RcModule {
   constructor({
@@ -106,6 +107,7 @@ export default class ContactSearch extends RcModule {
     this._searchSourcesCheck.set(sourceName, readyCheckFn);
   }
 
+  @proxify
   async search({ searchString }) {
     if (!this.ready || (searchString.length < 3)) {
       this.store.dispatch({
@@ -127,6 +129,7 @@ export default class ContactSearch extends RcModule {
     return null;
   }
 
+  @proxify
   async _searchSource({ sourceName, searchString }) {
     this.store.dispatch({
       type: this.actionTypes.search,

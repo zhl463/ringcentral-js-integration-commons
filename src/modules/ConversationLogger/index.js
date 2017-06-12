@@ -5,6 +5,7 @@ import getDataReducer from './getDataReducer';
 import messageTypes from '../../enums/messageTypes';
 import { getNumbersFromMessage, sortByDate } from '../../lib/messageHelper';
 import sleep from '../../lib/sleep';
+import proxify from '../../lib/proxy/proxify';
 
 export function getLogId({ conversationId, date }) {
   return `${conversationId}/${date}`;
@@ -43,7 +44,7 @@ export default class ConversationLogger extends LoggerBase {
     this._messageStore = this::ensureExist(messageStore, 'messageStore');
     this._rolesAndPermissions = this::ensureExist(rolesAndPermissions, 'rolesAndPermissions');
     this._storage = this::ensureExist(storage, 'storage');
-    this._tabManager = this::ensureExist(tabManager, 'tabManager');
+    this._tabManager = tabManager;
     this._isLoggedContact = isLoggedContact;
     this._formatDateTime = formatDateTime;
     this._storageKey = `${this._name}Data`;
@@ -151,7 +152,7 @@ export default class ConversationLogger extends LoggerBase {
       this._messageStore.ready &&
       this._rolesAndPermissions.ready &&
       this._storage.ready &&
-      this._tabManager.ready &&
+      (!this._tabManager || this._tabManager.ready) &&
       this._readyCheckFunction();
   }
   _shouldReset() {
@@ -164,7 +165,7 @@ export default class ConversationLogger extends LoggerBase {
         !this._messageStore.ready ||
         !this._rolesAndPermissions.ready ||
         !this._storage.ready ||
-        !this._tabManager.ready ||
+        (this._tabManager && !this._tabManager.ready) ||
         !this._readyCheckFunction()
       );
   }
@@ -296,7 +297,7 @@ export default class ConversationLogger extends LoggerBase {
       this._contactMatcher.triggerMatch();
       const oldMap = this._lastProcessedConversations || {};
       this._lastProcessedConversations = this.conversationLogMap;
-      if (this._tabManager.active) {
+      if (!this._tabManager || this._tabManager.active) {
         Object.keys(this._lastProcessedConversations).forEach((conversationId) => {
           Object.keys(this._lastProcessedConversations[conversationId]).forEach((date) => {
             const conversation = this._lastProcessedConversations[conversationId][date];
@@ -327,10 +328,13 @@ export default class ConversationLogger extends LoggerBase {
       correspondentEntity,
     });
   }
+
+  @proxify
   async log({ conversation, ...options }) {
     super.log({ item: conversation, ...options });
   }
 
+  @proxify
   async logConversation({ conversationId, correspondentEntity, redirect, ...options }) {
     if (this.conversationLogMap[conversationId]) {
       await Promise.all(Object.keys(this.conversationLogMap[conversationId])
@@ -368,7 +372,8 @@ export default class ConversationLogger extends LoggerBase {
     return this._storage.getItem(this._storageKey).autoLog;
   }
 
-  setAutoLog(autoLog) {
+  @proxify
+  async setAutoLog(autoLog) {
     if (this.ready && autoLog !== this.autoLog) {
       this.store.dispatch({
         type: this.actionTypes.setAutoLog,

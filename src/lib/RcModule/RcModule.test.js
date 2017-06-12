@@ -102,7 +102,7 @@ describe('RcModule', () => {
         it('should return a store object after setStore', () => {
           const module = new RcModule();
           module.setStore(createStore(module.reducer));
-          expect(module.store).to.exists;
+          expect(module.store).to.exist;
           expect(module.store.dispatch).to.be.a('function');
           expect(module.store.getState).to.be.a('function');
         });

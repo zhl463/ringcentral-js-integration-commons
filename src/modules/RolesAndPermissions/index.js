@@ -1,6 +1,7 @@
 import DataFetcher from '../../lib/DataFetcher';
 import permissionsMessages from './permissionsMessages';
 import loginStatus from '../Auth/loginStatus';
+import ensureExist from '../../lib/ensureExist';
 
 const DEFAULT_TTL = 24 * 60 * 60 * 1000;
 
@@ -35,7 +36,7 @@ export default class RolesAndPermissions extends DataFetcher {
     this._isCRM = !!isCRM;
     this._flag = flag || 'SalesForce';
     this._alert = alert;
-    this._extensionInfo = extensionInfo;
+    this._extensionInfo = ensureExist(extensionInfo, 'extensionInfo');
     this.addSelector(
       'permissions',
       () => this.data,

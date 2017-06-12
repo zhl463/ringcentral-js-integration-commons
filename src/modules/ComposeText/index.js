@@ -7,6 +7,7 @@ import getComposeTextReducer from './getComposeTextReducer';
 import getCacheReducer from './getCacheReducer';
 
 import messageSenderMessages from '../MessageSender/messageSenderMessages';
+import proxify from '../../lib/proxy/proxify';
 
 export default class ComposeText extends RcModule {
   constructor({
@@ -30,14 +31,6 @@ export default class ComposeText extends RcModule {
     this._cacheReducer = getCacheReducer(this.actionTypes);
     this._messageSender = messageSender;
     this._numberValidate = numberValidate;
-    this.send = this.send.bind(this);
-    this.updateSenderNumber = this.updateSenderNumber.bind(this);
-    this.updateTypingToNumber = this.updateTypingToNumber.bind(this);
-    this.cleanTypingToNumber = this.cleanTypingToNumber.bind(this);
-    this.addToNumber = this.addToNumber.bind(this);
-    this.removeToNumber = this.removeToNumber.bind(this);
-    this.updateMessageText = this.updateMessageText.bind(this);
-    this.clean = this.clean.bind(this);
     storage.registerReducer({ key: this._storageKey, reducer: this._cacheReducer });
   }
 
@@ -120,6 +113,7 @@ export default class ComposeText extends RcModule {
     return true;
   }
 
+  @proxify
   async send() {
     const text = this.messageText;
     const fromNumber = this.senderNumber;
@@ -132,17 +126,19 @@ export default class ComposeText extends RcModule {
         return null;
       }
     }
-    return await this._messageSender.send({ fromNumber, toNumbers, text });
+    return this._messageSender.send({ fromNumber, toNumbers, text });
   }
 
-  updateSenderNumber(number) {
+  @proxify
+  async updateSenderNumber(number) {
     this.store.dispatch({
       type: this.actionTypes.updateSenderNumber,
       number: (number || ''),
     });
   }
 
-  updateTypingToNumber(number) {
+  @proxify
+  async updateTypingToNumber(number) {
     if (number.length > 30) {
       this._alertWarning(messageSenderMessages.recipientNumberInvalids);
       return;
@@ -153,13 +149,15 @@ export default class ComposeText extends RcModule {
     });
   }
 
-  cleanTypingToNumber() {
+  @proxify
+  async cleanTypingToNumber() {
     this.store.dispatch({
       type: this.actionTypes.cleanTypingToNumber,
     });
   }
 
-  addToNumber(number) {
+  @proxify
+  async addToNumber(number) {
     if (isBlank(number.phoneNumber)) {
       return;
     }
@@ -172,14 +170,16 @@ export default class ComposeText extends RcModule {
     });
   }
 
-  removeToNumber(number) {
+  @proxify
+  async removeToNumber(number) {
     this.store.dispatch({
       type: this.actionTypes.removeToNumber,
       number,
     });
   }
 
-  updateMessageText(text) {
+  @proxify
+  async updateMessageText(text) {
     if (text.length > 1000) {
       this._alertWarning(messageSenderMessages.textTooLong);
       return;
@@ -190,7 +190,8 @@ export default class ComposeText extends RcModule {
     });
   }
 
-  clean() {
+  @proxify
+  async clean() {
     this.store.dispatch({
       type: this.actionTypes.clean,
     });

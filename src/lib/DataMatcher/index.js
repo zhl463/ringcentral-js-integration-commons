@@ -5,6 +5,7 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import baseActionTypes from './baseActionTypes';
 import getDefaultReducer from './getDefaultReducer';
 import getDefaultDataReducer from './getDefaultDataReducer';
+import proxify from '../../lib/proxy/proxify';
 
 export function checkName(name) {
   if (!name) {
@@ -207,6 +208,8 @@ export default class DataMatcher extends RcModule {
     }
     this._querySources.set(getQueriesFn, readyCheckFn);
   }
+
+  @proxify
   async triggerMatch() {
     if (this.ready) {
       this._cleanUp();
@@ -216,6 +219,7 @@ export default class DataMatcher extends RcModule {
     }
   }
 
+  @proxify
   async match({
     queries,
     ignoreCache = false
@@ -229,6 +233,7 @@ export default class DataMatcher extends RcModule {
         })
       )));
   }
+
   async _fetchMatchResult({
     name,
     queries,
@@ -275,6 +280,8 @@ export default class DataMatcher extends RcModule {
       throw error;
     }
   }
+
+  @proxify
   async _matchSource({
     name,
     queries,

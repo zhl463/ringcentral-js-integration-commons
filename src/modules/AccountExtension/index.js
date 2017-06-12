@@ -12,6 +12,7 @@ import {
   simplifyExtensionData,
 } from './accountExtensionHelper';
 import subscriptionFilters from '../../enums/subscriptionFilters';
+import proxify from '../../lib/proxy/proxify';
 
 const extensionRegExp = /.*\/extension$/;
 const DEFAULT_TTL = 24 * 60 * 60 * 1000;
@@ -58,7 +59,6 @@ export default class AccountExtension extends DataFetcher {
       }
     }
   }
-
   async _processExtension(item) {
     const { extensionId, eventType } = item;
     const id = parseInt(extensionId, 10);
@@ -103,6 +103,7 @@ export default class AccountExtension extends DataFetcher {
     });
   }
 
+  @proxify
   async _fetchExtensionData(id) {
     return this._client.account().extension(id).get();
   }

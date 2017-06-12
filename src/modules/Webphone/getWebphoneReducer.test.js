@@ -31,11 +31,8 @@ describe('Webphone :: getVideoElementPreparedReducer', () => {
       expect(reducer(originalState, { type: 'foo' }))
       .to.equal(originalState);
     });
-
-    it('should return ovideoElementPrepared when actionTypes is init', () => {
-      const originalState = {};
-      expect(reducer(originalState, { type: actionTypes.init, videoElementPrepared: true }))
-      .to.equal(true);
+    it('should return true when action.type is videoElementPrepared', () => {
+      expect(reducer({}, { type: actionTypes.videoElementPrepared })).to.equal(true);
     });
   });
 });
@@ -204,7 +201,7 @@ describe('Webphone :: getCurrentSessionReducer', () => {
       expect(reducer(originalState, { type: actionTypes.destroyCurrentSession }))
         .to.equal(null);
     });
-    it('should return normalize session object when actionTypes is updateCurrentSession', () => {
+    it('should return session object when actionTypes is updateCurrentSession', () => {
       const originalState = {};
       const session = {
         id: '123',
@@ -233,9 +230,7 @@ describe('Webphone :: getCurrentSessionReducer', () => {
         isOnRecord: false,
       };
       expect(reducer(originalState, { type: actionTypes.updateCurrentSession, session }))
-        .to.have.include.keys(
-          'id', 'to', 'from', 'startTime', 'isOnHold', 'isOnMute', 'isOnRecord'
-        );
+        .to.equal(session);
     });
   });
 });
@@ -262,7 +257,7 @@ describe('Webphone :: getSessionsReducer', () => {
       expect(reducer(originalState, { type: actionTypes.destroySessions }))
         .to.deep.equal([]);
     });
-    it('should return normalize session array when actionTypes is updateSessions', () => {
+    it('should return session array when actionTypes is updateSessions', () => {
       const originalState = [];
       const sessions = [{
         id: '123',
@@ -290,10 +285,8 @@ describe('Webphone :: getSessionsReducer', () => {
         isOnMute: false,
         isOnRecord: false,
       }];
-      expect(reducer(originalState, { type: actionTypes.updateSessions, sessions })[0])
-        .to.have.include.keys(
-          'id', 'to', 'from', 'startTime', 'isOnHold', 'isOnMute', 'isOnRecord'
-        );
+      expect(reducer(originalState, { type: actionTypes.updateSessions, sessions }))
+        .to.equal(sessions);
     });
   });
 });

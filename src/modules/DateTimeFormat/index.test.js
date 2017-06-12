@@ -4,7 +4,7 @@ import { createStore } from 'redux';
 import DateTimeFormat from './index';
 import getDateTimeFormatReducer from './getDateTimeFormatReducer';
 import actionTypes from './actionTypes';
-import moduleStatus from '../../enums/moduleStatus';
+import moduleStatuses from '../../enums/moduleStatuses';
 
 describe('DateTimeFormat Unit Test', () => {
   let dateTimeFormat;
@@ -75,7 +75,7 @@ describe('DateTimeFormat Unit Test', () => {
       dateTimeFormat.store.subscribe(checker);
       dateTimeFormat._onStateChange();
       sinon.assert.calledTwice(checker);
-      expect(dateTimeFormat.store.getState().status).to.equal(moduleStatus.ready);
+      expect(dateTimeFormat.store.getState().status).to.equal(moduleStatuses.ready);
       expect(dateTimeFormat._defaultFormatter).to.be.a('function');
     });
     it('should reset module when _shouldReset() is true', () => {
@@ -88,7 +88,7 @@ describe('DateTimeFormat Unit Test', () => {
       dateTimeFormat.store.subscribe(checker);
       dateTimeFormat._onStateChange();
       sinon.assert.calledTwice(checker);
-      expect(dateTimeFormat.store.getState().status).to.equal(moduleStatus.pending);
+      expect(dateTimeFormat.store.getState().status).to.equal(moduleStatuses.pending);
     });
 
     it('should not do anything else', () => {

@@ -10,6 +10,7 @@ import actionTypes from './actionTypes';
 import getMessageStoreReducer from './getMessageStoreReducer';
 import getDataReducer from './getDataReducer';
 import sleep from '../../lib/sleep';
+import proxify from '../../lib/proxy/proxify';
 
 export function processResponseData(data) {
   const records = data.records.slice();
@@ -90,8 +91,6 @@ export default class MessageStore extends RcModule {
           conversation => messageHelper.messageIsVoicemail(conversation)
         )
     );
-
-    this.syncConversation = this.syncConversation.bind(this);
   }
 
   initialize() {
@@ -185,10 +184,11 @@ export default class MessageStore extends RcModule {
   }
 
   async _messageSyncApi(params) {
-    const response = await this._client.account()
-                             .extension()
-                             .messageSync()
-                             .list(params);
+    const response = await this._client
+      .account()
+      .extension()
+      .messageSync()
+      .list(params);
     return response;
   }
   async _recursiveFSync({
@@ -293,6 +293,7 @@ export default class MessageStore extends RcModule {
     });
   }
 
+  @proxify
   async syncConversation(id) {
     await this._sync(async () => {
       await this._updateConversationFromSync(id);
@@ -326,9 +327,9 @@ export default class MessageStore extends RcModule {
       readStatus: status,
     };
     const updateRequest = await this._client.account()
-                                            .extension()
-                                            .messageStore(messageId)
-                                            .put(body);
+      .extension()
+      .messageStore(messageId)
+      .put(body);
     return updateRequest;
   }
 
@@ -370,6 +371,7 @@ export default class MessageStore extends RcModule {
     return results;
   }
 
+  @proxify
   async readMessages(conversationId) {
     const conversation = this.conversationMap[conversationId];
     if (!conversation) {
@@ -403,7 +405,8 @@ export default class MessageStore extends RcModule {
     });
   }
 
-  updateConversationRecipientList(conversationId, recipients) {
+  @proxify
+  async updateConversationRecipientList(conversationId, recipients) {
     this.store.dispatch({
       type: this.actionTypes.updateConversationRecipients,
       conversationId,
@@ -411,7 +414,8 @@ export default class MessageStore extends RcModule {
     });
   }
 
-  pushMessages(records) {
+  @proxify
+  async pushMessages(records) {
     this.store.dispatch({
       type: this.actionTypes.updateMessages,
       records,
