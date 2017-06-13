@@ -1,5 +1,6 @@
 import Presence from '../Presence';
 import moduleStatuses from '../../enums/moduleStatuses';
+import { getLastNotDisturbDndStatusReducer } from '../Presence/getPresenceReducer';
 import actionTypes from './actionTypes';
 import getDetailedPresenceReducer from './getDetailedPresenceReducer';
 import subscriptionFilters from '../../enums/subscriptionFilters';
@@ -16,6 +17,7 @@ export default class DetailedPresence extends Presence {
     client,
     subscription,
     connectivityMonitor,
+    storage,
     ...options
   }) {
     super({
@@ -24,10 +26,21 @@ export default class DetailedPresence extends Presence {
     });
     this._auth = auth;
     this._client = client;
+    this._storage = storage;
     this._subscription = subscription;
     this._connectivityMonitor = connectivityMonitor;
-
-    this._reducer = getDetailedPresenceReducer(this.actionTypes);
+    this._lastNotDisturbDndStatusStorageKey = 'lastNotDisturbDndStatusDetailPresence';
+    if (this._storage) {
+      this._reducer = getDetailedPresenceReducer(this.actionTypes);
+      this._storage.registerReducer({
+        key: this._lastNotDisturbDndStatusStorageKey,
+        reducer: getLastNotDisturbDndStatusReducer(this.actionTypes)
+      });
+    } else {
+      this._reducer = getDetailedPresenceReducer(this.actionTypes, {
+        lastNotDisturbDndStatus: getLastNotDisturbDndStatusReducer(this.actionTypes),
+      });
+    }
     this._lastMessage = null;
     this.addSelector('sessionIdList',
       () => this.state.calls,
@@ -51,12 +64,18 @@ export default class DetailedPresence extends Presence {
         activeCalls,
         dndStatus,
         telephonyStatus,
+        presenceStatus,
+        userStatus,
       } = message.body;
       this.store.dispatch({
         type: this.actionTypes.notification,
         activeCalls,
         dndStatus,
         telephonyStatus,
+        presenceStatus,
+        userStatus,
+        message: message.body.message,
+        lastDndStatus: this.dndStatus,
         timestamp: Date.now(),
       });
     }
@@ -140,6 +159,9 @@ export default class DetailedPresence extends Presence {
         activeCalls,
         dndStatus,
         telephonyStatus,
+        presenceStatus,
+        userStatus,
+        message,
       } = (await this._client.service.platform()
         .get(subscriptionFilters.detailedPresenceWithSip)).json();
       if (this._auth.ownerId === ownerId) {
@@ -148,6 +170,9 @@ export default class DetailedPresence extends Presence {
           activeCalls,
           dndStatus,
           telephonyStatus,
+          presenceStatus,
+          userStatus,
+          message,
           timestamp: Date.now(),
         });
         this._promise = null;

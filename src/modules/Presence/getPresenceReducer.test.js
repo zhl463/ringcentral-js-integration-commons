@@ -1,12 +1,13 @@
 import { expect } from 'chai';
 import getPresenceReducer, {
   getDndStatusReducer,
+  getLastNotDisturbDndStatusReducer,
   getPresenceStatusReducer,
   getUserStatusReducer,
   getMessageReducer,
 } from './getPresenceReducer';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
-
+import dndStatuses from './dndStatus';
 import actionTypes from './actionTypes';
 
 describe('getDndStatusReducer', () => {
@@ -46,6 +47,86 @@ describe('getDndStatusReducer', () => {
       const dndStatus = {};
       expect(reducer(null, {
         type: actionTypes.reset,
+        dndStatus,
+      })).to.be.null;
+    });
+  });
+});
+
+describe('getLastNotDisturbDndStatusReducer', () => {
+  it('should be a function', () => {
+    expect(getLastNotDisturbDndStatusReducer).to.be.a('function');
+  });
+  it('should return a reducer', () => {
+    expect(getLastNotDisturbDndStatusReducer({ types: actionTypes })).to.be.a('function');
+  });
+  describe('lastNotDisturbDndStatusReducer', () => {
+    const reducer = getLastNotDisturbDndStatusReducer(actionTypes);
+    it('should have initial state of null', () => {
+      expect(reducer(undefined, {})).to.be.null;
+    });
+    it('should return original state if type is not recognized', () => {
+      const originalState = [];
+      expect(reducer(originalState, { type: 'foo' }))
+        .to.equal(originalState);
+    });
+    it(`should return action.lastDndStatus on fetchSuccess, notification,
+        update, updateSuccess`, () => {
+      [
+        actionTypes.fetchSuccess,
+        actionTypes.notification,
+        actionTypes.updateSuccess,
+        actionTypes.update,
+      ].forEach((type) => {
+        const dndStatus = {};
+        const lastDndStatus = {};
+        expect(reducer(null, {
+          type,
+          dndStatus,
+          lastDndStatus,
+        })).to.equal(lastDndStatus);
+      });
+    });
+    it(`should return origin state on fetchSuccess, notification,
+        update, updateSuccess if dndStatus is equal as dndStatus`, () => {
+      [
+        actionTypes.fetchSuccess,
+        actionTypes.notification,
+        actionTypes.updateSuccess,
+        actionTypes.update,
+      ].forEach((type) => {
+        const dndStatus = {};
+        const lastDndStatus = dndStatus;
+        const originalState = {};
+        expect(reducer(originalState, {
+          type,
+          dndStatus,
+          lastDndStatus,
+        })).to.equal(originalState);
+      });
+    });
+    it(`should return origin state on fetchSuccess, notification,
+        update, updateSuccess if lastDndStatus is doNotAcceptAnyCalls`, () => {
+      [
+        actionTypes.fetchSuccess,
+        actionTypes.notification,
+        actionTypes.updateSuccess,
+        actionTypes.update,
+      ].forEach((type) => {
+        const dndStatus = {};
+        const lastDndStatus = dndStatuses.doNotAcceptAnyCalls;
+        const originalState = {};
+        expect(reducer(originalState, {
+          type,
+          dndStatus,
+          lastDndStatus,
+        })).to.equal(originalState);
+      });
+    });
+    it('should return null on reset', () => {
+      const dndStatus = {};
+      expect(reducer(null, {
+        type: actionTypes.resetSuccess,
         dndStatus,
       })).to.be.null;
     });

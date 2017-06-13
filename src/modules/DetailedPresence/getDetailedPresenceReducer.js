@@ -1,7 +1,12 @@
 import 'core-js/fn/array/find';
 import 'core-js/fn/array/find-index';
 import { combineReducers } from 'redux';
-import { getDndStatusReducer } from '../Presence/getPresenceReducer';
+import {
+  getDndStatusReducer,
+  getPresenceStatusReducer,
+  getUserStatusReducer,
+  getMessageReducer,
+} from '../Presence/getPresenceReducer';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import {
   normalizeFromTo,
@@ -49,11 +54,15 @@ function getTelephonyStatusReducer(types) {
 }
 
 /* istanbul ignore next: unnecessary to test combineReducers */
-export default function getDetailedPresenceReducer(types) {
+export default function getDetailedPresenceReducer(types, reducers = {}) {
   return combineReducers({
+    ...reducers,
     status: getModuleStatusReducer(types),
     data: getDataReducer(types),
     dndStatus: getDndStatusReducer(types),
+    presenceStatus: getPresenceStatusReducer(types),
+    userStatus: getUserStatusReducer(types),
+    message: getMessageReducer(types),
     telephonyStatus: getTelephonyStatusReducer(types),
   });
 }

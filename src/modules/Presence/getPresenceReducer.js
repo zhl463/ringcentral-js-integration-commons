@@ -1,5 +1,6 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
+import dndStatuses from './dndStatus';
 
 export function getDndStatusReducer(types) {
   return (state = null, { type, dndStatus = state }) => {
@@ -10,6 +11,28 @@ export function getDndStatusReducer(types) {
       case types.updateError:
       case types.update:
         return dndStatus;
+      case types.resetSuccess:
+        return null;
+      default:
+        return state;
+    }
+  };
+}
+
+export function getLastNotDisturbDndStatusReducer(types) {
+  return (state = null, { type, dndStatus, lastDndStatus = state }) => {
+    switch (type) {
+      case types.notification:
+      case types.fetchSuccess:
+      case types.updateSuccess:
+      case types.update:
+        if (
+          lastDndStatus !== dndStatuses.doNotAcceptAnyCalls &&
+          lastDndStatus !== dndStatus
+        ) {
+          return lastDndStatus;
+        }
+        return state;
       case types.resetSuccess:
         return null;
       default:
@@ -65,8 +88,9 @@ export function getMessageReducer(types) {
   };
 }
 
-export default function getPresenceReducer(types) {
+export default function getPresenceReducer(types, reducers = {}) {
   return combineReducers({
+    ...reducers,
     status: getModuleStatusReducer(types),
     dndStatus: getDndStatusReducer(types),
     presenceStatus: getPresenceStatusReducer(types),

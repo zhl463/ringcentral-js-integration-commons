@@ -1,5 +1,7 @@
 import RcModule from '../../lib/RcModule';
-import getPresenceReducer from './getPresenceReducer';
+import getPresenceReducer, {
+  getLastNotDisturbDndStatusReducer
+} from './getPresenceReducer';
 import presenceActionTypes from './actionTypes';
 import loginStatus from '../Auth/loginStatus';
 import moduleStatuses from '../../enums/moduleStatuses';
@@ -15,6 +17,7 @@ export default class Presence extends RcModule {
   constructor({
     auth,
     client,
+    storage,
     subscription,
     actionTypes = presenceActionTypes,
     updateDelayTime = UPDATE_DELAY_TIME,
@@ -27,12 +30,23 @@ export default class Presence extends RcModule {
     this._auth = auth;
     this._client = client;
     this._subscription = subscription;
-
-    this._reducer = getPresenceReducer(this.actionTypes);
+    this._storage = storage;
     this._lastMessage = null;
 
     this._updateDelayTime = updateDelayTime;
     this._delayTimeoutId = null;
+    this._lastNotDisturbDndStatusStorageKey = 'lastNotDisturbDndStatus';
+    if (this._storage) {
+      this._reducer = getPresenceReducer(this.actionTypes);
+      this._storage.registerReducer({
+        key: this._lastNotDisturbDndStatusStorageKey,
+        reducer: getLastNotDisturbDndStatusReducer(this.actionTypes)
+      });
+    } else {
+      this._reducer = getPresenceReducer(this.actionTypes, {
+        lastNotDisturbDndStatus: getLastNotDisturbDndStatusReducer(this.actionTypes),
+      });
+    }
   }
 
   _subscriptionHandler = (message) => {
@@ -90,6 +104,7 @@ export default class Presence extends RcModule {
         this.store.dispatch({
           type: this.actionTypes.fetchSuccess,
           ...data,
+          lastDndStatus: this.dndStatus,
         });
       }
       this._promise = null;
@@ -123,6 +138,7 @@ export default class Presence extends RcModule {
         this.store.dispatch({
           type: this.actionTypes.updateSuccess,
           ...data,
+          lastDndStatus: this.dndStatus,
         });
       }
     } catch (error) {
@@ -143,7 +159,7 @@ export default class Presence extends RcModule {
       params.dndStatus !== dndStatus.takeAllCalls &&
       params.dndStatus !== dndStatus.doNotAcceptDepartmentCalls
     ) {
-      params.dndStatus = dndStatus.takeAllCalls;
+      params.dndStatus = this.lastNotDisturbDndStatus || dndStatus.takeAllCalls;
     }
     return params;
   }
@@ -211,6 +227,13 @@ export default class Presence extends RcModule {
 
   get dndStatus() {
     return this.state.dndStatus;
+  }
+
+  get lastNotDisturbDndStatus() {
+    if (this._storage) {
+      return this._storage.getItem(this._lastNotDisturbDndStatusStorageKey);
+    }
+    return this.state.lastNotDisturbDndStatus;
   }
 
   get userStatus() {

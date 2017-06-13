@@ -42,7 +42,6 @@ import Messages from '../src/modules/Messages';
 import MessageSender from '../src/modules/MessageSender';
 import MessageStore from '../src/modules/MessageStore';
 import NumberValidate from '../src/modules/NumberValidate';
-import Presence from '../src/modules/Presence';
 import RateLimiter from '../src/modules/RateLimiter';
 import RegionSettings from '../src/modules/RegionSettings';
 import Ringout from '../src/modules/Ringout';
@@ -265,6 +264,7 @@ export default class Phone extends RcModule {
       auth: this.auth,
       client: this.client,
       subscription: this.subscription,
+      storage: this.storage,
       getState: () => this.state.detailedPresence,
     }));
     reducers.detailedPresence = this.detailedPresence.reducer;

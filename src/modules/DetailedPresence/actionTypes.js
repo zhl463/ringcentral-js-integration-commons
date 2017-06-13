@@ -7,4 +7,7 @@ export default new Enum([
   'fetchSuccess',
   'fetchError',
   'notification',
+  'update',
+  'updateSuccess',
+  'updateError',
 ], 'detailedPresence');
