@@ -75,7 +75,7 @@ class DemoPhone extends RcModule {
   constructor() {
     super();
     this.addModule('client', new RingCentralClient(new SDK({
-      ...config.api,
+      ...config,
       clearCacheOnRefreshError: false,
     })));
     this.addModule('alert', new Alert({
@@ -100,7 +100,7 @@ class DemoPhone extends RcModule {
       client: this.client,
       globalStorage: this.globalStorage,
       sdkConfig: {
-        ...config.api,
+        ...config,
       },
       getState: () => this.state.environment,
     }));
@@ -216,7 +216,7 @@ class DemoPhone extends RcModule {
       getState: () => this.state.callingSettings,
     }));
     this.addModule('webphone', new Webphone({
-      appKey: config.api.appKey,
+      appKey: config.appKey,
       appName: 'RingCentral Integration',
       appVersion: '0.1.0',
       auth: this.auth,

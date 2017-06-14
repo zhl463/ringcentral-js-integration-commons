@@ -119,6 +119,7 @@ export default class Messages extends RcModule {
           const searchResults = [];
           allConversations.forEach((message) => {
             const searchNumber = cleanNumber(effectiveSearchString, false);
+            const searchRegExp = new RegExp(effectiveSearchString, 'i');
             if (searchNumber !== '' && message.correspondents.find(contact => (
               cleanNumber(contact.phoneNumber || contact.extensionNumber || '')
                 .indexOf(searchNumber) > -1
@@ -133,7 +134,7 @@ export default class Messages extends RcModule {
             if (message.correspondentMatches.length) {
               if (
                 message.correspondentMatches.find(entity => (
-                  entity.name && entity.name.indexOf(effectiveSearchString) > -1
+                  entity.name && searchRegExp.test(entity.name)
                 ))
               ) {
                 // match by entity's name
@@ -144,8 +145,7 @@ export default class Messages extends RcModule {
                 return;
               }
             } else if (message.correspondents.find(contact => (
-              (contact.name || '')
-                .indexOf(effectiveSearchString) > -1
+              searchRegExp.test(contact.name || '')
             ))) {
               searchResults.push({
                 ...message,
@@ -155,7 +155,7 @@ export default class Messages extends RcModule {
             }
 
             // try match messages of the same conversation
-            if (message.subject.indexOf(effectiveSearchString) > -1) {
+            if (searchRegExp.test(message.subject)) {
               searchResults.push({
                 ...message,
                 matchOrder: 1,
@@ -164,7 +164,7 @@ export default class Messages extends RcModule {
             }
             const matchedMessage = this._messageStore.messages.find(item => (
               item.conversationId === message.conversationId &&
-              item.subject.indexOf(effectiveSearchString) > -1
+              searchRegExp.test(item.subject)
             ));
             if (matchedMessage) {
               searchResults.push({
