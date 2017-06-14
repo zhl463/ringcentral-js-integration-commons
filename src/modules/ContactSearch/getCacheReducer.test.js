@@ -24,36 +24,36 @@ describe('ContactSearch :: Cache :: getContactSearchReducer', () => {
     });
 
     it('should return data with searchString and searceSource as key on save', () => {
-      const originalState = { '["dynamics","111"]': {} };
+      const originalState = { 'dynamics-111': {} };
       expect(reducer(originalState, {
         type: actionTypes.save,
         entities: [],
         sourceName: 'dynamics',
         searchString: 'searchString',
-      })).to.include.keys('["dynamics","111"]', '["dynamics","searchString"]');
+      })).to.include.keys('dynamics-111', 'dynamics-searchString');
     });
     it('should return data with entities on save', () => {
-      const originalState = { '["dynamics","111"]': { entities: ['1'] } };
+      const originalState = { 'dynamics-111': { entities: ['1'] } };
       const expectData = {
-        '["dynamics","111"]': { entities: ['1'] },
-        '["dynamics","searchString"]': { entities: ['2'] }
+        'dynamics-111': { entities: ['1'] },
+        'dynamics-searchString': { entities: ['2'] }
       };
       expect(reducer(originalState, {
         type: actionTypes.save,
         entities: ['2'],
         sourceName: 'dynamics',
         searchString: 'searchString',
-      })['["dynamics","searchString"]'].entities)
-        .to.deep.equal(expectData['["dynamics","searchString"]'].entities);
+      })['dynamics-searchString'].entities)
+        .to.deep.equal(expectData['dynamics-searchString'].entities);
     });
     it('should return data with entities and timestamp as key on save', () => {
-      const originalState = { '["dynamics","111"]': { entities: [] } };
+      const originalState = { 'dynamics-111': { entities: [] } };
       expect(reducer(originalState, {
         type: actionTypes.save,
         entities: [],
         sourceName: 'dynamics',
         searchString: 'searchString',
-      })['["dynamics","searchString"]']).to.include.keys('entities', 'timestamp');
+      })['dynamics-searchString']).to.include.keys('entities', 'timestamp');
     });
 
     it('should return empty object on cleanUp and initSuccess', () => {

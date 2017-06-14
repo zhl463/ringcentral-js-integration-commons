@@ -704,7 +704,7 @@ describe('ContactSearch Unit Test', () => {
     it('should return null if searching in cache is expired', () => {
       contactSearch._ttl = 30 * 60 * 1000;
       sinon.stub(contactSearch, 'cache', {
-        get: () => ({ contactSearch: { '["test","123"]': { timestamp: 0, entities: [] } } })
+        get: () => ({ contactSearch: { 'test-123': { timestamp: 0, entities: [] } } })
       });
       const result = contactSearch._searchFromCache({ sourceName: 'test', searchString: '123' });
       expect(result).to.equal(null);
@@ -713,7 +713,7 @@ describe('ContactSearch Unit Test', () => {
     it('should return entities successfully', () => {
       contactSearch._ttl = 30 * 60 * 1000;
       sinon.stub(contactSearch, 'cache', {
-        get: () => ({ contactSearch: { '["test","123"]': { timestamp: Date.now(), entities: ['321'] } } })
+        get: () => ({ contactSearch: { 'test-123': { timestamp: Date.now(), entities: ['321'] } } })
       });
       const result = contactSearch._searchFromCache({ sourceName: 'test', searchString: '123' });
       expect(result).to.deep.equal(['321']);

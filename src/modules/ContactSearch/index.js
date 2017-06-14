@@ -151,7 +151,7 @@ export default class ContactSearch extends RcModule {
   }
 
   _searchFromCache({ sourceName, searchString }) {
-    const key = JSON.stringify([sourceName, searchString]);
+    const key = `${sourceName}-${searchString}`;
     const searching = this.cache && this.cache.contactSearch && this.cache.contactSearch[key];
     const now = Date.now();
     if (searching && (now - searching.timestamp) < this._ttl) {
