@@ -90,13 +90,15 @@ export function getRecipients({ message, myExtensionNumber }) {
 
 export function getNumbersFromMessage({ extensionNumber, message }) {
   if (message.type === messageTypes.pager) {
+    // It is safer and simpler to just put all known contacts into array and filter self out
+    const contacts = (message.to && message.to.slice()) || [];
+    if (message.from) contacts.push(message.from);
     return {
       self: {
         extensionNumber
       },
       correspondents: (
-        message.to &&
-        message.to.filter(entry => (
+        contacts.filter(entry => (
           entry.extensionNumber !== extensionNumber
         ))
       ) || [],
