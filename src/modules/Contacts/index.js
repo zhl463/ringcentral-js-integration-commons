@@ -6,7 +6,7 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import getContactsReducer from './getContactsReducer';
 
 function addPhoneToContact(contact, phone, type) {
-  const phoneNumber = normalizeNumber(phone);
+  const phoneNumber = normalizeNumber({ phoneNumber: phone });
   if (isBlank(phoneNumber)) {
     return;
   }
@@ -65,7 +65,7 @@ export default class Contacts extends RcModule {
           const phones = extensionToPhoneNumberMap[contact.extensionNumber];
           if (phones && phones.length > 0) {
             phones.forEach((phone) => {
-              addPhoneToContact(contact, phone, 'directPhone');
+              addPhoneToContact(contact, phone.phoneNumber, 'directPhone');
             });
           }
           newExtensions.push(contact);
@@ -139,6 +139,49 @@ export default class Contacts extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.resetSuccess,
     });
+  }
+
+  searchPhoneNumber(phone) {
+    const result = [];
+    const phoneNumber = normalizeNumber({ phoneNumber: phone });
+    const matchContact = (contact) => {
+      let found = contact.extensionNumber && contact.extensionNumber === phoneNumber;
+      if (!found) {
+        contact.phoneNumbers.forEach((contactPhoneNumber) => {
+          if (!found && contactPhoneNumber.phoneNumber === phoneNumber) {
+            found = true;
+          }
+        });
+      }
+      if (!found) {
+        return;
+      }
+      const matchedContact = {
+        ...contact,
+        phoneNumbers: [
+          ...contact.phoneNumbers
+        ],
+        name: `${contact.firstName} ${contact.lastName}`,
+      };
+      if (contact.extensionNumber) {
+        matchedContact.phoneNumbers.push({
+          phoneType: 'extension',
+          phoneNumber: contact.extensionNumber,
+        });
+      }
+      result.push(matchedContact);
+    };
+    this.personalContacts.forEach(matchContact);
+    this.companyContacts.forEach(matchContact);
+    return result;
+  }
+
+  matchContacts({ phoneNumbers }) {
+    const result = {};
+    phoneNumbers.forEach((phoneNumber) => {
+      result[phoneNumber] = this.searchPhoneNumber(phoneNumber);
+    });
+    return result;
   }
 
   get status() {

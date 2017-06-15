@@ -35,6 +35,7 @@ export default class Webphone extends RcModule {
     rolesAndPermissions,
     webphoneLogLevel = 3,
     storage,
+    contactMatcher,
     ...options,
   }) {
     super({
@@ -51,6 +52,7 @@ export default class Webphone extends RcModule {
     this._rolesAndPermissions = rolesAndPermissions;
     this._storage = storage;
     this._storageWebphoneCountsKey = 'webphoneCounts';
+    this._contactMatcher = contactMatcher;
     this._webphone = null;
     this._remoteVideo = null;
     this._localVideo = null;
@@ -64,7 +66,29 @@ export default class Webphone extends RcModule {
       key: this._storageWebphoneCountsKey,
       reducer: getWebphoneCountsReducer(this.actionTypes),
     });
+
+    this.addSelector('sessionPhoneNumbers',
+      () => this.sessions,
+      (sessions) => {
+        const outputs = [];
+        sessions.forEach((session) => {
+          outputs.push(session.to);
+          outputs.push(session.from);
+        });
+        return outputs;
+      }
+    );
+
+    if (this._contactMatcher) {
+      this._contactMatcher.addQuerySource({
+        getQueriesFn: this._selectors.sessionPhoneNumbers,
+        readyCheckFn: () => (
+          this.ready
+        ),
+      });
+    }
   }
+
   _prepareVideoElement() {
     this._remoteVideo = document.createElement('video');
     this._remoteVideo.setAttribute('hidden', 'hidden');
@@ -290,6 +314,12 @@ export default class Webphone extends RcModule {
     this._disconnect();
   }
 
+  _onNewCall() {
+    if (this._contactMatcher) {
+      this._contactMatcher.triggerMatch();
+    }
+  }
+
   _onAccepted(session) {
     session.on('accepted', () => {
       console.log('accepted');
@@ -369,6 +399,7 @@ export default class Webphone extends RcModule {
       console.log('Event: Rejected');
       this._removeSession(session);
     });
+    this._onNewCall();
   }
 
   @proxify
@@ -651,6 +682,7 @@ export default class Webphone extends RcModule {
     this._addSession(session);
     this._setActiveSession(session);
     this._resetMinimized();
+    this._onNewCall();
     return session;
   }
 
