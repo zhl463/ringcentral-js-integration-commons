@@ -17,7 +17,6 @@ export default class CallMonitor extends RcModule {
   constructor({
     accountInfo,
     detailedPresence,
-    activeCalls,
     activityMatcher,
     contactMatcher,
     webphone,
@@ -33,7 +32,6 @@ export default class CallMonitor extends RcModule {
     });
     this._accountInfo = this::ensureExist(accountInfo, 'accountInfo');
     this._detailedPresence = this::ensureExist(detailedPresence, 'detailedPresence');
-    this._activeCalls = this::ensureExist(activeCalls, 'activeCalls');
     this._contactMatcher = contactMatcher;
     this._activityMatcher = activityMatcher;
     this._webphone = webphone;
@@ -45,14 +43,10 @@ export default class CallMonitor extends RcModule {
     this._reducer = getCallMonitorReducer(this.actionTypes);
     this.addSelector('normalizedCalls',
       () => this._detailedPresence.calls,
-      () => this._activeCalls.calls,
       () => this._accountInfo.countryCode,
       () => this._webphone && this._webphone.sessions,
-      (callsFromPresence, callsFromActiveCalls, countryCode, sessions) => (
+      (callsFromPresence, countryCode, sessions) => (
         callsFromPresence.map((call) => {
-          const activeCall = call.inboundLeg &&
-            callsFromActiveCalls.find(item => item.sessionId === call.inboundLeg.sessionId);
-
           // use account countryCode to normalize number due to API issues [RCINT-3419]
           const fromNumber = normalizeNumber({
             phoneNumber: call.from && call.from.phoneNumber,
@@ -91,16 +85,13 @@ export default class CallMonitor extends RcModule {
           return {
             ...call,
             from: {
-              ...((activeCall && activeCall.to) || {}),
               phoneNumber: fromNumber,
             },
             to: {
-              ...((activeCall && activeCall.from) || {}),
               phoneNumber: toNumber,
             },
             startTime: (
               (webphoneSession && webphoneSession.startTime) ||
-              (activeCall && activeCall.startTime) ||
               call.startTime
             ),
             webphoneSession,
@@ -162,7 +153,6 @@ export default class CallMonitor extends RcModule {
         getQueriesFn: this._selectors.uniqueNumbers,
         readyCheckFn: () => (
           this._accountInfo.ready &&
-          this._activeCalls.ready &&
           this._detailedPresence.ready
         ),
       });
@@ -187,7 +177,6 @@ export default class CallMonitor extends RcModule {
     if (
       this._accountInfo.ready &&
       this._detailedPresence.ready &&
-      this._activeCalls.ready &&
       (!this._contactMatcher || this._contactMatcher.ready) &&
       (!this._activityMatcher || this._activityMatcher.ready) &&
       this.pending
@@ -202,7 +191,6 @@ export default class CallMonitor extends RcModule {
       (
         !this._accountInfo.ready ||
         !this._detailedPresence.ready ||
-        !this._activeCalls.ready ||
         (this._contactMatcher && !this._contactMatcher.ready) ||
         (this._activityMatcher && !this._activityMatcher.ready)
       ) &&
