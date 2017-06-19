@@ -17,10 +17,11 @@ export function callIdentityFunction(call) {
 export default class CallLogger extends LoggerBase {
   constructor({
     storage,
-    callMonitor,
-    callHistory,
-    contactMatcher,
     activityMatcher,
+    callHistory,
+    callMonitor,
+    contactMatcher,
+    tabManager,
     ...options,
   }) {
     super({
@@ -35,6 +36,7 @@ export default class CallLogger extends LoggerBase {
     this._contactMatcher = this::ensureExist(contactMatcher, 'contactMatcher');
     this._activityMatcher = this::ensureExist(activityMatcher, 'activityMatcher');
     this._callHistory = callHistory;
+    this._tabManager = tabManager;
     this._storageKey = `${this._name}Data`;
     this._storage.registerReducer({
       key: this._storageKey,
@@ -54,6 +56,7 @@ export default class CallLogger extends LoggerBase {
     return this.pending &&
       this._callMonitor.ready &&
       (!this._callHistory || this._callHistory.ready) &&
+      (!this._tabManager || this._tabManager.ready) &&
       this._contactMatcher.ready &&
       this._activityMatcher.ready &&
       this._readyCheckFunction() &&
@@ -64,8 +67,9 @@ export default class CallLogger extends LoggerBase {
     return this.ready &&
       (
         !this._callMonitor.ready ||
-        (this._callMonitor && !this._callMonitor.ready) ||
+        !this._callMonitor.ready ||
         (this._callHistory && !this._callHistory.ready) ||
+        (this._tabManager && !this._tabManager.ready) ||
         !this._contactMatcher.ready ||
         !this._activityMatcher.ready ||
         !this._readyCheckFunction() ||
@@ -76,9 +80,17 @@ export default class CallLogger extends LoggerBase {
   async log({ call, ...options }) {
     return super.log({ item: call, ...options });
   }
-
-  _shouldLogNewCall(call) {
-    return this.autoLog &&
+  async _ensureActive() {
+    const isActive = (
+      !this._tabManager ||
+      (await this._tabManager.ensureActive())
+    );
+    return isActive;
+  }
+  async _shouldLogNewCall(call) {
+    const isActive = await this._ensureActive();
+    return isActive &&
+      this.autoLog &&
       (this.logOnRinging || !isRinging(call));
   }
 
@@ -119,7 +131,7 @@ export default class CallLogger extends LoggerBase {
     });
   }
   async _onNewCall(call) {
-    if (this._shouldLogNewCall(call)) {
+    if (await this._shouldLogNewCall(call)) {
       // RCINT-3857 check activity in case instance was reloaded when call is still active
       await this._activityMatcher.triggerMatch();
       if (
@@ -154,7 +166,8 @@ export default class CallLogger extends LoggerBase {
     }
   }
   async _shouldLogUpdatedCall(call) {
-    if (this.logOnRinging || !isRinging(call)) {
+    const isActive = await this._ensureActive();
+    if (isActive && (this.logOnRinging || !isRinging(call))) {
       if (this.autoLog) return true;
       await this._activityMatcher.triggerMatch();
       const activityMatches = this._activityMatcher.dataMapping[call.sessionId] || [];
