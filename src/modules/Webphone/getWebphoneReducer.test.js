@@ -7,6 +7,7 @@ import getWebphoneReducer, {
   getCurrentSessionReducer,
   getSessionsReducer,
   getMinimizedReducer,
+  getErrorCodeReducer,
 } from './getWebphoneReducer';
 
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
@@ -338,7 +339,7 @@ describe('getWebphoneReducer', () => {
     const currentSessionReducer = getCurrentSessionReducer(actionTypes);
     const sessionsReducer = getSessionsReducer(actionTypes);
     const minimizedReducer = getMinimizedReducer(actionTypes);
-
+    const errorCodeReducer = getErrorCodeReducer(actionTypes);
     expect(reducer(undefined, {})).to.deep.equal({
       status: statusReducer(undefined, {}),
       videoElementPrepared: videoElementPreparedReducer(undefined, {}),
@@ -348,6 +349,7 @@ describe('getWebphoneReducer', () => {
       currentSession: currentSessionReducer(undefined, {}),
       sessions: sessionsReducer(undefined, {}),
       minimized: minimizedReducer(undefined, {}),
+      errorCode: errorCodeReducer(undefined, {}),
     });
   });
 });

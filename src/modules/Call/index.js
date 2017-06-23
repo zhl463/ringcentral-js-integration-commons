@@ -67,7 +67,7 @@ export default class Call extends RcModule {
         // init webphone
         this._callSettingMode = this._callingSettings.callingMode;
         if (this._callSettingMode === callingModes.webphone) {
-          await this._webphone.connect(this._callingSettings.fromNumbers.length > 0);
+          await this._webphone.connect();
         }
         this.store.dispatch({
           type: this.actionTypes.initSuccess,
@@ -98,7 +98,7 @@ export default class Call extends RcModule {
           if (oldCallSettingMode === callingModes.webphone) {
             this._webphone.disconnect();
           } else if (this._callSettingMode === callingModes.webphone) {
-            await this._webphone.connect(this._callingSettings.fromNumbers.length > 0);
+            await this._webphone.connect();
           }
         }
       }

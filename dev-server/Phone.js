@@ -233,6 +233,7 @@ export default class Phone extends RcModule {
       storage: this.storage,
       rolesAndPermissions: this.rolesAndPermissions,
       contactMatcher: this.contactMatcher,
+      extensionDevice: this.extensionDevice,
       getState: () => this.state.webphone,
     }));
     reducers.webphone = this.webphone.reducer;

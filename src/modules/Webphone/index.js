@@ -10,6 +10,7 @@ import sessionStatus from './sessionStatus';
 import actionTypes from './actionTypes';
 import callDirections from '../../enums/callDirections';
 import webphoneErrors from './webphoneErrors';
+import ensureExist from '../../lib/ensureExist';
 import proxify from '../../lib/proxy/proxify';
 import {
   isBrowerSupport,
@@ -36,6 +37,7 @@ export default class Webphone extends RcModule {
     webphoneLogLevel = 3,
     storage,
     contactMatcher,
+    extensionDevice,
     ...options,
   }) {
     super({
@@ -47,9 +49,10 @@ export default class Webphone extends RcModule {
     this._appVersion = appVersion;
     this._alert = alert;
     this._webphoneLogLevel = webphoneLogLevel;
-    this._auth = auth;
-    this._client = client;
-    this._rolesAndPermissions = rolesAndPermissions;
+    this._auth = ensureExist(auth, 'auth');
+    this._client = ensureExist(client, 'client');
+    this._rolesAndPermissions = ensureExist(rolesAndPermissions, 'rolesAndPermissions');
+    this._extensionDevice = ensureExist(extensionDevice, 'extensionDevice');
     this._storage = storage;
     this._storageWebphoneCountsKey = 'webphoneCounts';
     this._contactMatcher = contactMatcher;
@@ -141,6 +144,7 @@ export default class Webphone extends RcModule {
     return (
       this._auth.loggedIn &&
       this._rolesAndPermissions.ready &&
+      this._extensionDevice.ready &&
       !this.ready
     );
   }
@@ -149,11 +153,13 @@ export default class Webphone extends RcModule {
     return (
       (
         !this._auth.loggedIn ||
-        !this._rolesAndPermissions.ready
+        !this._rolesAndPermissions.ready ||
+        !this._extensionDevice.ready
       ) &&
       this.ready
     );
   }
+
   @proxify
   async _sipProvision() {
     const response = await this._client.service.platform()
@@ -162,6 +168,7 @@ export default class Webphone extends RcModule {
       });
     return response.json();
   }
+
   _createWebphone(provisionData) {
     this._webphone = new RingCentralWebphone(provisionData, {
       appKey: this._appKey,
@@ -185,23 +192,28 @@ export default class Webphone extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.unregistered,
       });
-      this._webphone.userAgent.removeAllListeners();
-      this._webphone = null;
     };
     const onRegistrationFailed = (error) => {
-      this.store.dispatch({
-        type: this.actionTypes.registrationFailed,
-        error,
-      });
+      let needToReconnect = true;
+      let errorCode;
+      console.error(error);
       this._webphone.userAgent.removeAllListeners();
       this._webphone = null;
       if (error && error.reason_phrase && error.reason_phrase.indexOf('Too Many Contacts') > -1) {
+        errorCode = webphoneErrors.webphoneCountOverLimit;
         this._alert.warning({
-          message: webphoneErrors.webphoneCountOverLimit,
+          message: errorCode,
         });
-        return;
+        needToReconnect = false;
       }
-      this._connect(true);
+      this.store.dispatch({
+        type: this.actionTypes.registrationFailed,
+        errorCode,
+        error,
+      });
+      if (needToReconnect) {
+        this._connect(needToReconnect);
+      }
     };
     this._webphone.userAgent.audioHelper.setVolume(0.3);
     this._webphone.userAgent.on('registered', onRegistered);
@@ -249,40 +261,56 @@ export default class Webphone extends RcModule {
       }
       this._createWebphone(sipProvision);
     } catch (error) {
-      this.store.dispatch({
-        type: this.actionTypes.connectError,
-        error,
-      });
+      console.error(error);
       this._alert.warning({
         message: webphoneErrors.connectFailed,
         ttl: 0,
         allowDuplicates: false,
       });
+      let needToReconnect = true;
+      let errorCode;
       if (
         error && error.message &&
         (error.message.indexOf('Feature [WebPhone] is not available') > -1)
       ) {
         this._rolesAndPermissions.refreshServiceFeatures();
+        needToReconnect = false;
+        errorCode = webphoneErrors.notWebphonePermission;
         return;
       }
-      await this._connect(true);
+      this.store.dispatch({
+        type: this.actionTypes.connectError,
+        errorCode,
+        error,
+      });
+      if (needToReconnect) {
+        await this._connect(needToReconnect);
+      }
     }
   }
   @proxify
-  async connect(hasFromNumber) {
+  async connect() {
     if (
       (await this._auth.checkIsLoggedIn()) &&
       this.enabled &&
       this.connectionStatus === connectionStatus.disconnected
     ) {
       if (!isBrowerSupport()) {
+        this.store.dispatch({
+          type: this.actionTypes.connectError,
+          errorCode: webphoneErrors.browserNotSupported,
+        });
         this._alert.warning({
           message: webphoneErrors.browserNotSupported,
           ttl: 0,
         });
         return;
       }
-      if (!hasFromNumber) {
+      if (this._extensionDevice.phoneLines.length === 0) {
+        this.store.dispatch({
+          type: this.actionTypes.connectError,
+          errorCode: webphoneErrors.notOutboundCallWithoutDL,
+        });
         this._alert.warning({
           message: webphoneErrors.notOutboundCallWithoutDL,
         });
@@ -301,12 +329,22 @@ export default class Webphone extends RcModule {
         type: this.actionTypes.disconnect,
       });
       if (this._webphone) {
-        this._webphone.userAgent.stop();
-        this._webphone.userAgent.unregister();
         this._sessions.forEach((session) => {
           this.hangup(session);
         });
+        if (this._webphone.userAgent) {
+          this._webphone.userAgent.stop();
+          this._webphone.userAgent.unregister();
+        }
+        this._webphone = null;
+        this._activeSession = null;
+        this._sessions = new Map();
+        this._removeActiveSession();
+        this._updateSessions();
       }
+      this.store.dispatch({
+        type: this.actionTypes.unregistered,
+      });
     }
   }
   @proxify
@@ -667,6 +705,13 @@ export default class Webphone extends RcModule {
 
   @proxify
   async makeCall({ toNumber, fromNumber, homeCountryId }) {
+    if (!this._webphone) {
+      this._alert.warning({
+        message: this.errorCode,
+        ttl: 0,
+      });
+      return;
+    }
     const session = this._webphone.userAgent.invite(toNumber, {
       media: this.acceptOptions.media,
       fromNumber,
@@ -831,5 +876,9 @@ export default class Webphone extends RcModule {
         }
       }
     };
+  }
+
+  get errorCode() {
+    return this.state.errorCode;
   }
 }

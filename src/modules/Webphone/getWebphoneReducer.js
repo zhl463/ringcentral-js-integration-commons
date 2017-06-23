@@ -30,6 +30,18 @@ export function getConnectionStatusReducer(types) {
   };
 }
 
+export function getErrorCodeReducer(types) {
+  return (state = null, { type, errorCode = state }) => {
+    switch (type) {
+      case types.connectError:
+      case types.registrationFailed:
+        return errorCode;
+      default:
+        return state;
+    }
+  };
+}
+
 export function getConnectRetryCountsReducer(types) {
   return (state = 0, { type }) => {
     switch (type) {
@@ -105,6 +117,7 @@ export default function getWebphoneReducer(types) {
     videoElementPrepared: getVideoElementPreparedReducer(types),
     connectionStatus: getConnectionStatusReducer(types),
     connectRetryCounts: getConnectRetryCountsReducer(types),
+    errorCode: getErrorCodeReducer(types),
     webphoneCounts: getWebphoneCountsReducer(types),
     currentSession: getCurrentSessionReducer(types),
     sessions: getSessionsReducer(types),

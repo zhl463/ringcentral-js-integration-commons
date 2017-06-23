@@ -21,7 +21,7 @@ const base = {
       },
       {
         test: /\.ogg$/,
-        loader: 'url?publicPath=./&name=audio/[name]_[hash].[ext]',
+        loader: 'file?publicPath=./&name=audio/[name]_[hash].[ext]',
       },
     ],
   },
