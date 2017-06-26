@@ -51,10 +51,12 @@ export function getMyNumberFromMessage({ message, myExtensionNumber }) {
   return message.to[0];
 }
 
-export function uniqueRecipients(recipients) {
+export function uniqueRecipients(recipients, filter = () => true) {
   const recipientMap = {};
   recipients.forEach((recipient) => {
-    recipientMap[JSON.stringify(recipient)] = recipient;
+    if (filter(recipient)) {
+      recipientMap[JSON.stringify(recipient)] = recipient;
+    }
   });
   return Object.values(recipientMap);
 }
@@ -98,9 +100,9 @@ export function getNumbersFromMessage({ extensionNumber, message }) {
         extensionNumber
       },
       correspondents: (
-        contacts.filter(entry => (
-          entry.extensionNumber !== extensionNumber
-        ))
+        uniqueRecipients(contacts,
+          contact => contact.extensionNumber !== extensionNumber
+        )
       ) || [],
     };
   }
