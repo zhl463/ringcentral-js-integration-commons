@@ -199,7 +199,7 @@ export default class Webphone extends RcModule {
       console.error(error);
       this._webphone.userAgent.removeAllListeners();
       this._webphone = null;
-      if (error && error.reason_phrase && error.reason_phrase.indexOf('Too Many Contacts') > -1) {
+      if (error && error.status_code === 503) {
         errorCode = webphoneErrors.webphoneCountOverLimit;
         this._alert.warning({
           message: errorCode,
@@ -314,7 +314,6 @@ export default class Webphone extends RcModule {
         this._alert.warning({
           message: webphoneErrors.notOutboundCallWithoutDL,
         });
-        return;
       }
       await this._connect();
     }
@@ -709,6 +708,12 @@ export default class Webphone extends RcModule {
       this._alert.warning({
         message: this.errorCode,
         ttl: 0,
+      });
+      return;
+    }
+    if (this._extensionDevice.phoneLines.length === 0) {
+      this._alert.warning({
+        message: webphoneErrors.notOutboundCallWithoutDL,
       });
       return;
     }
