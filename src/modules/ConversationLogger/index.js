@@ -336,7 +336,6 @@ export default class ConversationLogger extends LoggerBase {
       await Promise.all(Object.keys(this.conversationLogMap[conversationId])
         .map(date => this.conversationLogMap[conversationId][date])
         .sort(sortByDate)
-        .reverse() // reverse to get the last items first
         .map((conversation, idx) => {
           const queueIndex = this._autoLogQueue
             .find(item => item.conversationLogId === conversation.conversationLogId);

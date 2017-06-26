@@ -1,4 +1,4 @@
-import messageTypes from '../enums/messageTypes';
+import messageTypes from '../../enums/messageTypes';
 
 export function filterNumbers(numbers, filterNumber) {
   return numbers.filter((number) => {
@@ -135,8 +135,7 @@ export function getNumbersFromMessage({ extensionNumber, message }) {
 export function sortByDate(a, b) {
   const ta = new Date(a.creationTime).getTime();
   const tb = new Date(b.creationTime).getTime();
-  if (ta === tb) return 0;
-  return ta > tb ? -1 : 1;
+  return tb - ta;
 }
 
 export function sortSearchResults(a, b) {
