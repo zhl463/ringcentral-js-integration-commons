@@ -55,7 +55,8 @@ export function uniqueRecipients(recipients, filter = () => true) {
   const recipientMap = {};
   recipients.forEach((recipient) => {
     if (filter(recipient)) {
-      recipientMap[JSON.stringify(recipient)] = recipient;
+      const key = recipient.extensionNumber || recipient.phoneNumber;
+      recipientMap[key] = recipient;
     }
   });
   return Object.values(recipientMap);
