@@ -707,7 +707,6 @@ export default class Webphone extends RcModule {
     if (!this._webphone) {
       this._alert.warning({
         message: this.errorCode,
-        ttl: 0,
       });
       return;
     }
