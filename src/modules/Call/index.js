@@ -50,59 +50,75 @@ export default class Call extends RcModule {
   }
 
   initialize() {
-    this.store.subscribe(async () => {
-      if (
-        this._numberValidate.ready &&
-        this._callingSettings.ready &&
-        this._storage.ready &&
-        this._regionSettings.ready &&
-        (!this._webphone || this._webphone.ready) &&
-        this._ringout.ready &&
-        this._softphone.ready &&
-        this.status === moduleStatuses.pending
-      ) {
-        this.store.dispatch({
-          type: this.actionTypes.init,
-        });
-        // init webphone
-        this._callSettingMode = this._callingSettings.callingMode;
-        if (this._callSettingMode === callingModes.webphone) {
-          await this._webphone.connect();
-        }
-        this.store.dispatch({
-          type: this.actionTypes.initSuccess,
-        });
-      } else if (
-        (
-          !this._numberValidate.ready ||
-          !this._callingSettings.ready ||
-          !this._regionSettings.ready ||
-          (!!this._webphone && !this._webphone.ready) ||
-          !this._ringout.ready ||
-          !this._softphone.ready ||
-          !this._storage.ready
-        ) &&
-        this.ready
-      ) {
-        this.store.dispatch({
-          type: this.actionTypes.resetSuccess,
-        });
-        this._callSettingMode = this._callingSettings.callingMode;
-        if (this._callSettingMode === callingModes.webphone && this._webphone) {
-          this._webphone.disconnect();
-        }
-      } else if (this.ready) {
-        const oldCallSettingMode = this._callSettingMode;
-        if (this._callingSettings.callingMode !== oldCallSettingMode && this._webphone) {
-          this._callSettingMode = this._callingSettings.callingMode;
-          if (oldCallSettingMode === callingModes.webphone) {
-            this._webphone.disconnect();
-          } else if (this._callSettingMode === callingModes.webphone) {
-            await this._webphone.connect();
-          }
-        }
-      }
+    this.store.subscribe(() => this._onStateChange());
+  }
+  async _onStateChange() {
+    if (this._shouldInit()) {
+      // init webphone
+      this._initModule();
+    } else if (this._shouldReset()) {
+      this._resetModule();
+    } else if (this.ready) {
+      this._processCall();
+    }
+  }
+  _shouldInit() {
+    return (
+      this._numberValidate.ready &&
+      this._callingSettings.ready &&
+      this._storage.ready &&
+      this._regionSettings.ready &&
+      (!this._webphone || this._webphone.ready) &&
+      this._ringout.ready &&
+      this._softphone.ready &&
+      this.pending
+    );
+  }
+  _shouldReset() {
+    return (
+      (
+        !this._numberValidate.ready ||
+        !this._callingSettings.ready ||
+        !this._regionSettings.ready ||
+        (!!this._webphone && !this._webphone.ready) ||
+        !this._ringout.ready ||
+        !this._softphone.ready ||
+        !this._storage.ready
+      ) &&
+      this.ready
+    );
+  }
+  async _initModule() {
+    this.store.dispatch({
+      type: this.actionTypes.init,
     });
+    this._callSettingMode = this._callingSettings.callingMode;
+    if (this._callSettingMode === callingModes.webphone) {
+      await this._webphone.connect();
+    }
+    this.store.dispatch({
+      type: this.actionTypes.initSuccess,
+    });
+  }
+  async _resetModule() {
+    this.store.dispatch({
+      type: this.actionTypes.resetSuccess,
+    });
+    this._callSettingMode = this._callingSettings.callingMode;
+    if (this._callSettingMode === callingModes.webphone && this._webphone) {
+      this._webphone.disconnect();
+    }
+  }
+  async _processCall() {
+    const oldCallSettingMode = this._callSettingMode;
+    if (this._callingSettings.callingMode !== oldCallSettingMode && this._webphone) {
+      this._callSettingMode = this._callingSettings.callingMode;
+      if (oldCallSettingMode === callingModes.webphone) {
+        this._webphone.disconnect();
+      } else if (this._callSettingMode === callingModes.webphone) {
+        await this._webphone.connect();
+      }
+    }
   }
   @proxify
   async onToNumberChange(value) {
@@ -114,7 +130,8 @@ export default class Call extends RcModule {
 
   @proxify
   async onCall() {
-    if (this.callStatus === callStatus.idle) {
+    // if (this.callStatus === callStatus.idle) {
+    if (this.isIdle) {
       // last number check
       if (`${this.toNumber}`.trim().length === 0) {
         if (this.lastCallNumber) {
@@ -252,6 +269,10 @@ export default class Call extends RcModule {
 
   get ready() {
     return this.state.status === moduleStatuses.ready;
+  }
+
+  get pending() {
+    return this.state.status === moduleStatuses.pending;
   }
 
   get callStatus() {
