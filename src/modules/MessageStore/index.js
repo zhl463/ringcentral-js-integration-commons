@@ -435,7 +435,7 @@ export default class MessageStore extends RcModule {
   }
 
   get allConversations() {
-    return this.cache.data.conversations;
+    return (this.cache && this.cache.data.conversations) || [];
   }
 
   get voicemailMessages() {

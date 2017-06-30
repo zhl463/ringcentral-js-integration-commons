@@ -256,7 +256,7 @@ export default class Webphone extends RcModule {
       const sipProvision = await this._sipProvision();
 
       // do not continue if it is disconnecting
-      if (this.connectionStatus === connectionStatus.disconnecting) {
+      if (this.disconnecting) {
         return;
       }
       this._createWebphone(sipProvision);
@@ -425,6 +425,7 @@ export default class Webphone extends RcModule {
     session.callStatus = sessionStatus.connecting;
     if (!this._activeSession) {
       this._activeSession = session;
+      this._resetMinimized();
       this.store.dispatch({
         type: this.actionTypes.updateCurrentSession,
         session: normalizeSession(session),
@@ -884,5 +885,21 @@ export default class Webphone extends RcModule {
 
   get errorCode() {
     return this.state.errorCode;
+  }
+
+  get disconnecting() {
+    return this.connectionStatus === connectionStatus.disconnecting;
+  }
+
+  get connecting() {
+    return this.connectionStatus === connectionStatus.connecting;
+  }
+
+  get connected() {
+    return this.connectionStatus === connectionStatus.connected;
+  }
+
+  get connectFailed() {
+    return this.connectionStatus === connectionStatus.connectFailed;
   }
 }
