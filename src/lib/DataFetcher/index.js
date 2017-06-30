@@ -82,71 +82,88 @@ export default class DataFetcher extends Pollable {
     this._promise = null;
     this._lastMessage = null;
   }
+  initialize() {
+    this.store.subscribe(() => this._onStateChange());
+  }
   async _onStateChange() {
-    if (
-      this._auth.loggedIn &&
-      (!this._storage || this._storage.ready) &&
-      (!this._readyCheckFn || this._readyCheckFn()) &&
-      (!this._subscription || this._subscription.ready) &&
-      this.status === moduleStatuses.pending
-    ) {
-      this.store.dispatch({
-        type: this.actionTypes.init,
-      });
-      if (
-        (!this._tabManager || this._tabManager.active) &&
-        (
-          this._auth.isFreshLogin ||
-          !this.timestamp ||
-          Date.now() - this.timestamp > this.ttl
-        )
-      ) {
-        try {
-          await this.fetchData();
-        } catch (e) {
-          console.error('fetchData error:', e);
-        }
-      } else if (this._polling) {
-        this._startPolling();
-      } else {
-        this._retry();
-      }
-      if (this._subscription && this._subscriptionFilters) {
-        this._subscription.subscribe(this._subscriptionFilters);
-      }
-      this.store.dispatch({
-        type: this.actionTypes.initSuccess,
-      });
-    } else if (
-      (
-        !this._auth.loggedIn ||
-        (this._storage && !this._storage.ready) ||
-        (this._readyCheckFn && !this._readyCheckFn()) ||
-        (this._subscription && !this._subscription.ready)
-      ) &&
-      this.ready
-    ) {
+    if (this._shouldInit()) {
+      await this._initModule();
+    } else if (this._shouldReset()) {
       this._clearTimeout();
       this._promise = null;
       this.store.dispatch({
         type: this.actionTypes.resetSuccess,
       });
-    } else if (
-      this.ready &&
-      this._subscription &&
-      this._subscription.ready &&
-      this._subscriptionHandler &&
-      this._subscription.message &&
-      this._subscription.message !== this._lastMessage
-    ) {
-      this._lastMessage = this._subscription.message;
-      this._subscriptionHandler(this._lastMessage);
+    } else if (this._shouldSubscribe()) {
+      this._processSubscription();
     }
   }
-  initialize() {
-    this.store.subscribe(() => this._onStateChange());
+  _shouldInit() {
+    return (
+      this._auth.loggedIn &&
+      (!this._storage || this._storage.ready) &&
+      (!this._readyCheckFn || this._readyCheckFn()) &&
+      (!this._subscription || this._subscription.ready) &&
+      this.pending
+    );
   }
-
+  _shouldReset() {
+    return (
+      (
+        !this._auth.loggedIn ||
+        (!!this._storage && !this._storage.ready) ||
+        (!!this._readyCheckFn && !this._readyCheckFn()) ||
+        (!!this._subscription && !this._subscription.ready)
+      ) &&
+      this.ready
+    );
+  }
+  _shouldSubscribe() {
+    return (
+      this.ready &&
+      !!this._subscription &&
+      this._subscription.ready &&
+      !!this._subscriptionHandler &&
+      !!this._subscription.message &&
+      this._subscription.message !== this._lastMessage
+    );
+  }
+  _shouldFetch() {
+    return (
+      (!this._tabManager || this._tabManager.active) &&
+        (
+          this._auth.isFreshLogin ||
+          !this.timestamp ||
+          Date.now() - this.timestamp > this.ttl
+        )
+    );
+  }
+  async _initModule() {
+    this.store.dispatch({
+      type: this.actionTypes.init,
+    });
+    if (this._shouldFetch()) {
+      try {
+        await this.fetchData();
+      } catch (e) {
+        console.error('fetchData error:', e);
+      }
+    } else if (this._polling) {
+      this._startPolling();
+    } else {
+      this._retry();
+    }
+    if (this._subscription && this._subscriptionFilters) {
+      this._subscription.subscribe(this._subscriptionFilters);
+    }
+    this.store.dispatch({
+      type: this.actionTypes.initSuccess,
+    });
+  }
+  _processSubscription() {
+    this._lastMessage = this._subscription.message;
+    this._subscriptionHandler(this._lastMessage);
+  }
   get data() {
     return this._storage ?
       this._storage.getItem(this._dataStorageKey) :
@@ -165,6 +182,10 @@ export default class DataFetcher extends Pollable {
 
   get ready() {
     return this.state.status === moduleStatuses.ready;
+  }
+
+  get pending() {
+    return this.state.status === moduleStatuses.pending;
   }
 
   get ttl() {
