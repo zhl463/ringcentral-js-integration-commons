@@ -227,13 +227,14 @@ export default class Phone extends RcModule {
       appKey: config.appKey,
       appName: 'RingCentral Integration',
       appVersion: '0.1.0',
-      auth: this.auth,
       alert: this.alert,
+      auth: this.auth,
       client: this.client,
-      storage: this.storage,
-      rolesAndPermissions: this.rolesAndPermissions,
       contactMatcher: this.contactMatcher,
       extensionDevice: this.extensionDevice,
+      globalStorage: this.globalStorage,
+      rolesAndPermissions: this.rolesAndPermissions,
+      storage: this.storage,
       getState: () => this.state.webphone,
     }));
     reducers.webphone = this.webphone.reducer;

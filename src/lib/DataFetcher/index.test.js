@@ -20,7 +20,7 @@ describe('DataFetcher Unit Test', () => {
       '_shouldFetch',
       '_shouldReset',
       '_shouldSubscribe',
-      '_initModule',
+      '_init',
       '_clearTimeout',
       '_processSubscription',
       'fetchData',
@@ -33,15 +33,15 @@ describe('DataFetcher Unit Test', () => {
   });
 
   describe('_onStateChange', () => {
-    it('_initModule should be called once when _shouldInit is true', () => {
+    it('_init should be called once when _shouldInit is true', () => {
       sinon.stub(dataFetcher, '_shouldInit').callsFake(() => true);
       sinon.stub(dataFetcher, '_shouldReset').callsFake(() => false);
       sinon.stub(dataFetcher, '_shouldSubscribe').callsFake(() => false);
-      sinon.stub(dataFetcher, '_initModule');
+      sinon.stub(dataFetcher, '_init');
       sinon.stub(dataFetcher, '_clearTimeout');
       sinon.stub(dataFetcher, '_processSubscription');
       dataFetcher._onStateChange();
-      sinon.assert.calledOnce(dataFetcher._initModule);
+      sinon.assert.calledOnce(dataFetcher._init);
       sinon.assert.notCalled(dataFetcher._clearTimeout);
       sinon.assert.notCalled(dataFetcher._processSubscription);
     });
@@ -49,11 +49,11 @@ describe('DataFetcher Unit Test', () => {
       sinon.stub(dataFetcher, '_shouldInit').callsFake(() => false);
       sinon.stub(dataFetcher, '_shouldReset').callsFake(() => true);
       sinon.stub(dataFetcher, '_shouldSubscribe').callsFake(() => false);
-      sinon.stub(dataFetcher, '_initModule');
+      sinon.stub(dataFetcher, '_init');
       sinon.stub(dataFetcher, '_clearTimeout');
       sinon.stub(dataFetcher, '_processSubscription');
       dataFetcher._onStateChange();
-      sinon.assert.notCalled(dataFetcher._initModule);
+      sinon.assert.notCalled(dataFetcher._init);
       sinon.assert.calledOnce(dataFetcher._clearTimeout);
       sinon.assert.notCalled(dataFetcher._processSubscription);
     });
@@ -61,23 +61,23 @@ describe('DataFetcher Unit Test', () => {
       sinon.stub(dataFetcher, '_shouldInit').callsFake(() => false);
       sinon.stub(dataFetcher, '_shouldReset').callsFake(() => false);
       sinon.stub(dataFetcher, '_shouldSubscribe').callsFake(() => true);
-      sinon.stub(dataFetcher, '_initModule');
+      sinon.stub(dataFetcher, '_init');
       sinon.stub(dataFetcher, '_clearTimeout');
       sinon.stub(dataFetcher, '_processSubscription');
       dataFetcher._onStateChange();
-      sinon.assert.notCalled(dataFetcher._initModule);
+      sinon.assert.notCalled(dataFetcher._init);
       sinon.assert.notCalled(dataFetcher._clearTimeout);
       sinon.assert.calledOnce(dataFetcher._processSubscription);
     });
-    it('_initModule and _clearTimeout and _processSubscription should not be called', () => {
+    it('_init and _clearTimeout and _processSubscription should not be called', () => {
       sinon.stub(dataFetcher, '_shouldInit').callsFake(() => false);
       sinon.stub(dataFetcher, '_shouldReset').callsFake(() => false);
       sinon.stub(dataFetcher, '_shouldSubscribe').callsFake(() => false);
-      sinon.stub(dataFetcher, '_initModule');
+      sinon.stub(dataFetcher, '_init');
       sinon.stub(dataFetcher, '_clearTimeout');
       sinon.stub(dataFetcher, '_processSubscription');
       dataFetcher._onStateChange();
-      sinon.assert.notCalled(dataFetcher._initModule);
+      sinon.assert.notCalled(dataFetcher._init);
       sinon.assert.notCalled(dataFetcher._clearTimeout);
       sinon.assert.notCalled(dataFetcher._processSubscription);
     });
@@ -336,7 +336,7 @@ describe('DataFetcher Unit Test', () => {
       5
     );
   });
-  describe('_initModule', async () => {
+  describe('_init', async () => {
     it('fetchData should be called once', async () => {
       sinon.stub(dataFetcher, '_shouldFetch').callsFake(() => true);
       dataFetcher._polling = false;
@@ -348,7 +348,7 @@ describe('DataFetcher Unit Test', () => {
         subscribe: sinon.stub().callsFake(() => {})
       };
       sinon.stub(dataFetcher, '_subscription');
-      await dataFetcher._initModule();
+      await dataFetcher._init();
       sinon.assert.calledOnce(dataFetcher.fetchData);
       sinon.assert.notCalled(dataFetcher._startPolling);
       sinon.assert.notCalled(dataFetcher._retry);
@@ -365,7 +365,7 @@ describe('DataFetcher Unit Test', () => {
       };
       dataFetcher._subscriptionFilters = true;
       sinon.stub(dataFetcher, '_subscription');
-      await dataFetcher._initModule();
+      await dataFetcher._init();
       sinon.assert.calledOnce(dataFetcher.fetchData);
       sinon.assert.notCalled(dataFetcher._startPolling);
       sinon.assert.notCalled(dataFetcher._retry);
@@ -382,7 +382,7 @@ describe('DataFetcher Unit Test', () => {
       };
       dataFetcher._subscriptionFilters = false;
       sinon.stub(dataFetcher, '_subscription');
-      await dataFetcher._initModule();
+      await dataFetcher._init();
       sinon.assert.notCalled(dataFetcher.fetchData);
       sinon.assert.calledOnce(dataFetcher._startPolling);
       sinon.assert.notCalled(dataFetcher._retry);
@@ -399,7 +399,7 @@ describe('DataFetcher Unit Test', () => {
       };
       dataFetcher._subscriptionFilters = true;
       sinon.stub(dataFetcher, '_subscription');
-      await dataFetcher._initModule();
+      await dataFetcher._init();
       sinon.assert.notCalled(dataFetcher.fetchData);
       sinon.assert.calledOnce(dataFetcher._startPolling);
       sinon.assert.notCalled(dataFetcher._retry);
@@ -416,7 +416,7 @@ describe('DataFetcher Unit Test', () => {
       };
       dataFetcher._subscriptionFilters = false;
       sinon.stub(dataFetcher, '_subscription');
-      await dataFetcher._initModule();
+      await dataFetcher._init();
       sinon.assert.notCalled(dataFetcher.fetchData);
       sinon.assert.notCalled(dataFetcher._startPolling);
       sinon.assert.calledOnce(dataFetcher._retry);
@@ -433,7 +433,7 @@ describe('DataFetcher Unit Test', () => {
       };
       dataFetcher._subscriptionFilters = true;
       sinon.stub(dataFetcher, '_subscription');
-      await dataFetcher._initModule();
+      await dataFetcher._init();
       sinon.assert.notCalled(dataFetcher.fetchData);
       sinon.assert.notCalled(dataFetcher._startPolling);
       sinon.assert.calledOnce(dataFetcher._retry);

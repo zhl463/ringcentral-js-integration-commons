@@ -18,7 +18,10 @@ import {
   patchIncomingSession,
   normalizeSession,
 } from './webphoneHelper';
-import getWebphoneReducer, { getWebphoneCountsReducer } from './getWebphoneReducer';
+import getWebphoneReducer, {
+  getWebphoneCountsReducer,
+  getUserMediaReducer,
+} from './getWebphoneReducer';
 
 const FIRST_THREE_RETRIES_DELAY = 10 * 1000;
 const FOURTH_RETRIES_DELAY = 30 * 1000;
@@ -36,6 +39,7 @@ export default class Webphone extends RcModule {
     rolesAndPermissions,
     webphoneLogLevel = 3,
     storage,
+    globalStorage,
     contactMatcher,
     extensionDevice,
     ...options,
@@ -49,12 +53,14 @@ export default class Webphone extends RcModule {
     this._appVersion = appVersion;
     this._alert = alert;
     this._webphoneLogLevel = webphoneLogLevel;
-    this._auth = ensureExist(auth, 'auth');
-    this._client = ensureExist(client, 'client');
-    this._rolesAndPermissions = ensureExist(rolesAndPermissions, 'rolesAndPermissions');
-    this._extensionDevice = ensureExist(extensionDevice, 'extensionDevice');
-    this._storage = storage;
+    this._auth = this::ensureExist(auth, 'auth');
+    this._client = this::ensureExist(client, 'client');
+    this._rolesAndPermissions = this::ensureExist(rolesAndPermissions, 'rolesAndPermissions');
+    this._extensionDevice = this::ensureExist(extensionDevice, 'extensionDevice');
+    this._storage = this::ensureExist(storage, 'storage');
+    this._globalStorage = this::ensureExist(globalStorage, 'globalStorage');
     this._storageWebphoneCountsKey = 'webphoneCounts';
+    this._userMediaStorageKey = 'userMadia';
     this._contactMatcher = contactMatcher;
     this._webphone = null;
     this._remoteVideo = null;
@@ -69,6 +75,11 @@ export default class Webphone extends RcModule {
       key: this._storageWebphoneCountsKey,
       reducer: getWebphoneCountsReducer(this.actionTypes),
     });
+    globalStorage.registerReducer({
+      key: this._userMediaStorageKey,
+      reducer: getUserMediaReducer(this.actionTypes),
+    });
+
 
     this.addSelector('sessionPhoneNumbers',
       () => this.sessions,
@@ -123,9 +134,25 @@ export default class Webphone extends RcModule {
     }
     this.store.subscribe(() => this._onStateChange());
   }
-  // initializeProxy() {
-  //   navigator.webkitGetUserMedia({ audio: true });
-  // }
+  initializeProxy() {
+    // TODO enhance to only try to get userMedia on webphone register?
+    if (
+      !this.userMedia
+    ) {
+      navigator.getUserMedia = navigator.getUserMedia ||
+        navigator.webkitGetUserMedia ||
+        navigator.mozGetUserMedia;
+      if (navigator.getUserMedia) {
+        navigator.getUserMedia({
+          audio: true,
+        }, () => {
+          this._onGetUserMediaSuccess();
+        }, (error) => {
+          this._onGetUserMediaError(error);
+        });
+      }
+    }
+  }
 
   _onStateChange() {
     if (this._shouldInit()) {
@@ -145,6 +172,8 @@ export default class Webphone extends RcModule {
       this._auth.loggedIn &&
       this._rolesAndPermissions.ready &&
       this._extensionDevice.ready &&
+      this._storage.ready &&
+      this._globalStorage.ready &&
       !this.ready
     );
   }
@@ -154,6 +183,8 @@ export default class Webphone extends RcModule {
       (
         !this._auth.loggedIn ||
         !this._rolesAndPermissions.ready ||
+        !this._storage.ready ||
+        !this._globalStorage.ready ||
         !this._extensionDevice.ready
       ) &&
       this.ready
@@ -866,6 +897,24 @@ export default class Webphone extends RcModule {
 
   get webphoneCounts() {
     return this._storage.getItem(this._storageWebphoneCountsKey);
+  }
+
+  get userMedia() {
+    return this._globalStorage.getItem(this._userMediaStorageKey);
+  }
+
+  @proxify
+  async _onGetUserMediaSuccess() {
+    this.store.dispatch({
+      type: this.actionTypes.getUserMediaSuccess,
+    });
+  }
+  @proxify
+  async _onGetUserMediaError(error) {
+    this.store.dispatch({
+      type: this.actionTypes.getUserMediaError,
+      error,
+    });
   }
 
   get connectRetryCounts() {

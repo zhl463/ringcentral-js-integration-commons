@@ -18,4 +18,6 @@ export default new Enum([
   'toggleMinimized',
   'resetMinimized',
   'videoElementPrepared',
+  'getUserMediaSuccess',
+  'getUserMediaError',
 ], 'webphone');
