@@ -41,6 +41,7 @@ export default class Webphone extends RcModule {
     storage,
     globalStorage,
     contactMatcher,
+    extensionDevice,
     ...options,
   }) {
     super({
