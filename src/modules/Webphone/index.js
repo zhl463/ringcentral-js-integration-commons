@@ -41,7 +41,6 @@ export default class Webphone extends RcModule {
     storage,
     globalStorage,
     contactMatcher,
-    extensionDevice,
     ...options,
   }) {
     super({
@@ -200,6 +199,19 @@ export default class Webphone extends RcModule {
     return response.json();
   }
 
+  async _fetchDL() {
+    const response = await this._client.account().extension().device().list();
+    const devices = response.records;
+    let phoneLines = [];
+    devices.forEach((device) => {
+      if (!device.phoneLines || device.phoneLines.length === 0) {
+        return;
+      }
+      phoneLines = phoneLines.concat(device.phoneLines);
+    });
+    return phoneLines;
+  }
+
   _createWebphone(provisionData) {
     this._webphone = new RingCentralWebphone(provisionData, {
       appKey: this._appKey,
@@ -337,13 +349,25 @@ export default class Webphone extends RcModule {
         });
         return;
       }
-      if (this._extensionDevice.phoneLines.length === 0) {
+      try {
+        const phoneLines = await this._fetchDL();
+        if (phoneLines.length === 0) {
+          this.store.dispatch({
+            type: this.actionTypes.connectError,
+            errorCode: webphoneErrors.notOutboundCallWithoutDL,
+          });
+          this._alert.warning({
+            message: webphoneErrors.notOutboundCallWithoutDL,
+          });
+        }
+      } catch (error) {
+        console.log(error);
         this.store.dispatch({
           type: this.actionTypes.connectError,
-          errorCode: webphoneErrors.notOutboundCallWithoutDL,
+          errorCode: webphoneErrors.checkDLError,
         });
         this._alert.warning({
-          message: webphoneErrors.notOutboundCallWithoutDL,
+          message: webphoneErrors.checkDLError,
         });
       }
       await this._connect();
@@ -742,7 +766,8 @@ export default class Webphone extends RcModule {
       });
       return;
     }
-    if (this._extensionDevice.phoneLines.length === 0) {
+    const phoneLines = await this._fetchDL();
+    if (phoneLines.length === 0) {
       this._alert.warning({
         message: webphoneErrors.notOutboundCallWithoutDL,
       });

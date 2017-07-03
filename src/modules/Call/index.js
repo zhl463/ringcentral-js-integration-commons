@@ -52,16 +52,23 @@ export default class Call extends RcModule {
   initialize() {
     this.store.subscribe(() => this._onStateChange());
   }
+
   async _onStateChange() {
     if (this._shouldInit()) {
-      // init webphone
-      this._initModule();
+      this.store.dispatch({
+        type: this.actionTypes.init,
+      });
+      await this._initCallModule();
+      this.store.dispatch({
+        type: this.actionTypes.initSuccess,
+      });
     } else if (this._shouldReset()) {
-      this._resetModule();
+      this._resetCallModule();
     } else if (this.ready) {
-      this._processCall();
+      await this._processCall();
     }
   }
+
   _shouldInit() {
     return (
       this._numberValidate.ready &&
@@ -88,19 +95,15 @@ export default class Call extends RcModule {
       this.ready
     );
   }
-  async _initModule() {
-    this.store.dispatch({
-      type: this.actionTypes.init,
-    });
+
+  async _initCallModule() {
     this._callSettingMode = this._callingSettings.callingMode;
-    if (this._callSettingMode === callingModes.webphone) {
+    if (this._callSettingMode === callingModes.webphone && this._webphone) {
       await this._webphone.connect();
     }
-    this.store.dispatch({
-      type: this.actionTypes.initSuccess,
-    });
   }
-  async _resetModule() {
+
+  _resetCallModule() {
     this.store.dispatch({
       type: this.actionTypes.resetSuccess,
     });

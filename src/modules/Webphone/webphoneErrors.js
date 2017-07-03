@@ -7,4 +7,5 @@ export default new Enum([
   'notOutboundCallWithoutDL',
   'notWebphonePermission',
   'getSipProvisionError',
+  'checkDLError',
 ], 'webphone');
