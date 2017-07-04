@@ -734,7 +734,10 @@ export default class Webphone extends RcModule {
         session.toVoiceMail();
       } catch (e) {
         console.error(e);
-        this._removeSession(session);
+        // this._removeSession(session);
+        this._alert.warning({
+          message: webphoneErrors.toVoiceMailError
+        });
       }
     });
   }
