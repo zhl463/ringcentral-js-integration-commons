@@ -127,6 +127,7 @@ export default class Call extends RcModule {
         this.store.dispatch({
           type: this.actionTypes.connect,
           number: this.toNumber,
+          callSettingMode: this._callSettingMode // for Track
         });
         try {
           const validatedNumbers = await this._getValidatedNumbers();

@@ -343,6 +343,11 @@ export default class Auth extends RcModule {
     return this.state.loginStatus === loginStatus.loggedIn ||
       this.state.loginStatus === loginStatus.beforeLogout;
   }
+
+  get notLoggedIn() {
+    return this.state.loginStatus === loginStatus.notLoggedIn;
+  }
+
   _createProxyFrame = (onLogin) => {
     this._proxyFrame = document.createElement('iframe');
     this._proxyFrame.src = this.proxyUri;

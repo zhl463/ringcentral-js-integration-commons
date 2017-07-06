@@ -7,12 +7,12 @@ import { connect, Provider } from 'react-redux';
 import JSONTree from 'react-json-tree';
 
 import RcModule from '../src/lib/RcModule';
-
 import AccountExtension from '../src/modules/AccountExtension';
 import AccountInfo from '../src/modules/AccountInfo';
 import ActiveCalls from '../src/modules/ActiveCalls';
 import Alert from '../src/modules/Alert';
 import Auth from '../src/modules/Auth';
+import Analytics from '../src/modules/Analytics';
 import BlockedNumber from '../src/modules/BlockedNumber';
 import Brand from '../src/modules/Brand';
 import Call from '../src/modules/Call';
@@ -419,7 +419,24 @@ class DemoPhone extends RcModule {
       conversationLogger: this.conversationLogger,
       getState: () => this.state.messages,
     }));
+
+    this.addModule('analytics', new Analytics({
+      analyticsKey: 'd51li7ZONOLUcHKBqVmQmhG2mF0FySUZ',
+      appName: 'RingCentral Integration',
+      appVersion: '0.1.1-beta',
+      brandCode: 'rc',
+      auth: this.auth,
+      call: this.call,
+      webphone: this.webphone,
+      contacts: this.contacts,
+      messageSender: this.messageSender,
+      adapter: this.dynamicsAdapter,
+      router: this.router,
+      getState: () => this.state.analytics,
+    }));
+
     this._reducer = combineReducers({
+      analytics: this.analytics.reducer,
       accountInfo: this.accountInfo.reducer,
       accountExtension: this.accountExtension.reducer,
       activeCalls: this.activeCalls.reducer,
@@ -469,7 +486,7 @@ class DemoPhone extends RcModule {
       contacts: this.contacts.reducer,
       conversationLogger: this.conversationLogger.reducer,
       lastAction: (state = null, action) => {
-        console.log(action);
+        // console.log(action);
         return action;
       },
     });
