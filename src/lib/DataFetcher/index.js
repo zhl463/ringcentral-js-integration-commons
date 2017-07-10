@@ -87,7 +87,13 @@ export default class DataFetcher extends Pollable {
   }
   async _onStateChange() {
     if (this._shouldInit()) {
+      this.store.dispatch({
+        type: this.actionTypes.init,
+      });
       await this._init();
+      this.store.dispatch({
+        type: this.actionTypes.initSuccess,
+      });
     } else if (this._shouldReset()) {
       this._clearTimeout();
       this._promise = null;
@@ -139,9 +145,6 @@ export default class DataFetcher extends Pollable {
     );
   }
   async _init() {
-    this.store.dispatch({
-      type: this.actionTypes.init,
-    });
     if (this._shouldFetch()) {
       try {
         await this.fetchData();
@@ -156,9 +159,6 @@ export default class DataFetcher extends Pollable {
     if (this._subscription && this._subscriptionFilters) {
       this._subscription.subscribe(this._subscriptionFilters);
     }
-    this.store.dispatch({
-      type: this.actionTypes.initSuccess,
-    });
   }
   _processSubscription() {
     this._lastMessage = this._subscription.message;
