@@ -37,10 +37,17 @@ export default class Presence extends RcModule {
     this.toggleAcceptCallQueueCalls = this.toggleAcceptCallQueueCalls.bind(this);
     this._updateDelayTime = updateDelayTime;
     this._delayTimeoutId = null;
+    this._lastSequence = 0;
   }
 
   _subscriptionHandler = (message) => {
     if (message && presenceEndPoint.test(message.event) && message.body) {
+      if (message.body.sequence) {
+        if (message.body.sequence <= this._lastSequence) {
+          return;
+        }
+        this._lastSequence = message.body.sequence;
+      }
       this.store.dispatch({
         type: this.actionTypes.notification,
         ...message.body,
@@ -68,6 +75,11 @@ export default class Presence extends RcModule {
           !this._subscription.ready) &&
         this.ready
       ) {
+        this.store.dispatch({
+          type: this.actionTypes.reset,
+        });
+        this._lastSequence = 0;
+        this._lastMessage = null;
         this.store.dispatch({
           type: this.actionTypes.resetSuccess,
         });

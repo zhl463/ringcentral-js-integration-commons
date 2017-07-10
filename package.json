@@ -97,6 +97,7 @@
     "json-mask": "^0.3.8",
     "loganberry": "^0.9.1",
     "phoneformat.js": "^1.0.3",
+    "ramda": "^0.24.1",
     "redux": "^3.5.2",
     "reselect": "^2.5.4",
     "ringcentral-web-phone": "^0.4.1",
