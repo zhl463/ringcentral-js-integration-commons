@@ -135,7 +135,6 @@ export default class Webphone extends RcModule {
     this.store.subscribe(() => this._onStateChange());
   }
   initializeProxy() {
-    // TODO enhance to only try to get userMedia on webphone register?
     if (
       !this.userMedia
     ) {
@@ -145,8 +144,15 @@ export default class Webphone extends RcModule {
       if (navigator.getUserMedia) {
         navigator.getUserMedia({
           audio: true,
-        }, () => {
+        }, (stream) => {
           this._onGetUserMediaSuccess();
+          if (typeof stream.stop === 'function') {
+            stream.stop();
+          } else {
+            stream.getTracks().forEach((track) => {
+              track.stop();
+            });
+          }
         }, (error) => {
           this._onGetUserMediaError(error);
         });
