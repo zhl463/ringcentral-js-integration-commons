@@ -9,4 +9,5 @@ export default new Enum([
   'getSipProvisionError',
   'toVoiceMailError',
   'checkDLError',
+  'forwardError',
 ], 'webphone');

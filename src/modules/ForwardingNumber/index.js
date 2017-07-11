@@ -26,6 +26,12 @@ export default class ForwardingNumber extends DataFetcher {
       () => this.data,
       data => data || [],
     );
+    this.addSelector(
+      'forwardingNumbers',
+      () => this.numbers,
+      phoneNumbers =>
+        phoneNumbers.filter(p => p.features.indexOf('CallForwarding') !== -1 && p.phoneNumber)
+    );
   }
 
   get numbers() {
@@ -34,5 +40,9 @@ export default class ForwardingNumber extends DataFetcher {
 
   get flipNumbers() {
     return this._selectors.flipNumbers();
+  }
+
+  get forwardingNumbers() {
+    return this._selectors.forwardingNumbers();
   }
 }

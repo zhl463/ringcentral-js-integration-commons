@@ -223,6 +223,39 @@ export default class Phone extends RcModule {
       getState: () => this.state.contactMatcher,
     }));
     reducers.contactMatcher = this.contactMatcher.reducer;
+    this.addModule('subscription', new Subscription({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      tabManager: this.tabManager,
+      getState: () => this.state.subscription,
+    }));
+    reducers.subscription = this.subscription.reducer;
+    this.addModule('regionSettings', new RegionSettings({
+      storage: this.storage,
+      extensionInfo: this.extensionInfo,
+      dialingPlan: this.dialingPlan,
+      alert: this.alert,
+      tabManager: this.tabManager,
+      getState: () => this.state.regionSettings,
+    }));
+    reducers.regionSettings = this.regionSettings.reducer;
+    this.addModule('accountExtension', new AccountExtension({
+      auth: this.auth,
+      client: this.client,
+      storage: this.storage,
+      subscription: this.subscription,
+      getState: () => this.state.accountExtension,
+    }));
+    reducers.accountExtension = this.accountExtension.reducer;
+    this.addModule('numberValidate', new NumberValidate({
+      client: this.client,
+      accountExtension: this.accountExtension,
+      regionSettings: this.regionSettings,
+      accountInfo: this.accountInfo,
+      getState: () => this.state.numberValidate,
+    }));
+    reducers.numberValidate = this.numberValidate.reducer;
     this.addModule('webphone', new Webphone({
       appKey: config.appKey,
       appName: 'RingCentral Integration',
@@ -235,18 +268,10 @@ export default class Phone extends RcModule {
       globalStorage: this.globalStorage,
       rolesAndPermissions: this.rolesAndPermissions,
       storage: this.storage,
+      numberValidate: this.numberValidate,
       getState: () => this.state.webphone,
     }));
     reducers.webphone = this.webphone.reducer;
-    this.addModule('regionSettings', new RegionSettings({
-      storage: this.storage,
-      extensionInfo: this.extensionInfo,
-      dialingPlan: this.dialingPlan,
-      alert: this.alert,
-      tabManager: this.tabManager,
-      getState: () => this.state.regionSettings,
-    }));
-    reducers.regionSettings = this.regionSettings.reducer;
     this.addModule('callingSettings', new CallingSettings({
       alert: this.alert,
       brand: this.brand,
@@ -260,14 +285,6 @@ export default class Phone extends RcModule {
       getState: () => this.state.callingSettings,
     }));
     reducers.callingSettings = this.callingSettings.reducer;
-    this.addModule('subscription', new Subscription({
-      auth: this.auth,
-      client: this.client,
-      storage: this.storage,
-      tabManager: this.tabManager,
-      getState: () => this.state.subscription,
-    }));
-    reducers.subscription = this.subscription.reducer;
     this.addModule('detailedPresence', new DetailedPresence({
       auth: this.auth,
       client: this.client,
@@ -285,22 +302,6 @@ export default class Phone extends RcModule {
       getState: () => this.state.callLog,
     }));
     reducers.callLog = this.callLog.reducer;
-    this.addModule('accountExtension', new AccountExtension({
-      auth: this.auth,
-      client: this.client,
-      storage: this.storage,
-      subscription: this.subscription,
-      getState: () => this.state.accountExtension,
-    }));
-    reducers.accountExtension = this.accountExtension.reducer;
-    this.addModule('numberValidate', new NumberValidate({
-      client: this.client,
-      accountExtension: this.accountExtension,
-      regionSettings: this.regionSettings,
-      accountInfo: this.accountInfo,
-      getState: () => this.state.numberValidate,
-    }));
-    reducers.numberValidate = this.numberValidate.reducer;
     this.addModule('call', new Call({
       alert: this.alert,
       client: this.client,

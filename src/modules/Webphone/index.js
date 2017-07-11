@@ -10,6 +10,7 @@ import sessionStatus from './sessionStatus';
 import actionTypes from './actionTypes';
 import callDirections from '../../enums/callDirections';
 import webphoneErrors from './webphoneErrors';
+import callErrors from '../Call/callErrors';
 import ensureExist from '../../lib/ensureExist';
 import proxify from '../../lib/proxy/proxify';
 import {
@@ -42,6 +43,7 @@ export default class Webphone extends RcModule {
     globalStorage,
     contactMatcher,
     extensionDevice,
+    numberValidate,
     ...options,
   }) {
     super({
@@ -59,6 +61,7 @@ export default class Webphone extends RcModule {
     this._extensionDevice = this::ensureExist(extensionDevice, 'extensionDevice');
     this._storage = this::ensureExist(storage, 'storage');
     this._globalStorage = this::ensureExist(globalStorage, 'globalStorage');
+    this._numberValidate = this::ensureExist(numberValidate, 'numberValidate');
     this._storageWebphoneCountsKey = 'webphoneCounts';
     this._userMediaStorageKey = 'userMadia';
     this._contactMatcher = contactMatcher;
@@ -180,6 +183,7 @@ export default class Webphone extends RcModule {
       this._extensionDevice.ready &&
       this._storage.ready &&
       this._globalStorage.ready &&
+      this._numberValidate.ready &&
       !this.ready
     );
   }
@@ -191,6 +195,7 @@ export default class Webphone extends RcModule {
         !this._rolesAndPermissions.ready ||
         !this._storage.ready ||
         !this._globalStorage.ready ||
+        !this._numberValidate.ready ||
         !this._extensionDevice.ready
       ) &&
       this.ready
@@ -537,18 +542,35 @@ export default class Webphone extends RcModule {
     this._resetMinimized();
   }
   @proxify
-  async forward(forwardNumber, sessionId) {
+  async forward(sessionId, forwardNumber) {
     const session = this._sessions.get(sessionId);
     if (!session) {
-      return;
+      return false;
     }
     try {
+      const validatedResult
+        = await this._numberValidate.validateNumbers([forwardNumber]);
+      if (!validatedResult.result) {
+        validatedResult.errors.forEach((error) => {
+          this._alert.warning({
+            message: callErrors[error.type]
+          });
+        });
+        return false;
+      }
       await session.forward(forwardNumber, this.acceptOptions);
       console.log('Forwarded');
+      this._removeSession(session);
+      return true;
     } catch (e) {
       console.error(e);
+      this._alert.warning({
+        message: webphoneErrors.forwardError
+      });
+      return false;
     }
   }
+
   @proxify
   async increaseVolume(sessionId) {
     this._sessionHandleWithId(sessionId, (session) => {
