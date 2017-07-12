@@ -264,7 +264,6 @@ export default class Webphone extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.registrationFailed,
         errorCode,
-        error,
       });
       if (needToReconnect) {
         this._connect(needToReconnect);
