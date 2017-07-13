@@ -588,7 +588,9 @@ export default class Webphone extends RcModule {
         });
         return false;
       }
-      await session.forward(forwardNumber, this.acceptOptions);
+      const validPhoneNumber =
+        validatedResult.numbers[0] && validatedResult.numbers[0].e164;
+      await session.forward(validPhoneNumber, this.acceptOptions);
       console.log('Forwarded');
       this._removeSession(session);
       if (typeof this._onCallEnd === 'function') {
