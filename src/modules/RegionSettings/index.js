@@ -105,9 +105,10 @@ export default class RegionSettings extends RcModule {
       });
     }
     if (!countryCode) {
-      countryCode = this._dialingPlan.plans.find(plan => (
+      const country = this._dialingPlan.plans.find(plan => (
         plan.isoCode === this._extensionInfo.country.isoCode
-      )).isoCode;
+      )) || this._dialingPlan.plans[0];
+      countryCode = country && country.isoCode;
       this.store.dispatch({
         type: this.actionTypes.setData,
         countryCode,
