@@ -153,6 +153,7 @@ class DemoPhone extends RcModule {
       getState: () => this.state.extensionInfo,
     }));
     this.addModule('rolesAndPermissions', new RolesAndPermissions({
+      alert: this.alert,
       auth: this.auth,
       client: this.client,
       storage: this.storage,
