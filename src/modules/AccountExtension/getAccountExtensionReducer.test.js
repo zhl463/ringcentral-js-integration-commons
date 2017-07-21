@@ -14,8 +14,8 @@ describe('getDataReducer', () => {
   });
   describe('defaultDataReducer', () => {
     const reducer = getDataReducer(actionTypes);
-    it('should have initial state of []', () => {
-      expect(reducer(undefined, {})).to.deep.equal([]);
+    it('should have initial state of null', () => {
+      expect(reducer(undefined, {})).to.equal(null);
     });
     it('should return original state if type is not recognized', () => {
       const originalState = [];
@@ -29,10 +29,10 @@ describe('getDataReducer', () => {
         data,
       })).to.equal(data);
     });
-    it('should return [] on resetSuccess', () => {
+    it('should return null on resetSuccess', () => {
       expect(reducer([], {
         type: actionTypes.resetSuccess,
-      })).to.deep.equal([]);
+      })).to.equal(null);
     });
     it('should add action.data to state on add', () => {
       expect(reducer(['foo'], {

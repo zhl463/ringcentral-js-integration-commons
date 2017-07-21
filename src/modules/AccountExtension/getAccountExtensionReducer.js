@@ -1,16 +1,18 @@
 export function getDataReducer(types) {
-  // use [] instead of null as initial state to avoid add or delete to error out
-  // in case initial load failed but an update was made through subscription
-  return (state = [], { type, data, id, }) => {
+  return (state = null, { type, data, id, }) => {
     switch (type) {
       case types.fetchSuccess:
         return data;
       case types.add:
-        return [...state, data];
+        return Array.isArray(state) ?
+          [...state, data] :
+          null;
       case types.delete:
-        return state.filter(item => item.id !== id);
+        return Array.isArray(state) ?
+          state.filter(item => item.id !== id) :
+          null;
       case types.resetSuccess:
-        return [];
+        return null;
       default:
         return state;
     }

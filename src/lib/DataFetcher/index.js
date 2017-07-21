@@ -91,6 +91,7 @@ export default class DataFetcher extends Pollable {
         type: this.actionTypes.init,
       });
       await this._init();
+    } else if (this._isDataReady()) {
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
@@ -105,44 +106,52 @@ export default class DataFetcher extends Pollable {
     }
   }
   _shouldInit() {
-    return (
+    return !!(
       this._auth.loggedIn &&
       (!this._storage || this._storage.ready) &&
       (!this._readyCheckFn || this._readyCheckFn()) &&
       (!this._subscription || this._subscription.ready) &&
+      (!this._tabManager || this._tabManager.ready) &&
       this.pending
     );
   }
   _shouldReset() {
-    return (
+    return !!(
       (
         !this._auth.loggedIn ||
-        (!!this._storage && !this._storage.ready) ||
-        (!!this._readyCheckFn && !this._readyCheckFn()) ||
-        (!!this._subscription && !this._subscription.ready)
+        (this._storage && !this._storage.ready) ||
+        (this._readyCheckFn && !this._readyCheckFn()) ||
+        (this._subscription && !this._subscription.ready) ||
+        (this._tabManager && !this._tabManager.ready)
       ) &&
       this.ready
     );
   }
   _shouldSubscribe() {
-    return (
+    return !!(
       this.ready &&
-      !!this._subscription &&
+      this._subscription &&
       this._subscription.ready &&
-      !!this._subscriptionHandler &&
-      !!this._subscription.message &&
+      this._subscriptionHandler &&
+      this._subscription.message &&
       this._subscription.message !== this._lastMessage
     );
   }
   _shouldFetch() {
     return (
       (!this._tabManager || this._tabManager.active) &&
-        (
-          this._auth.isFreshLogin ||
-          !this.timestamp ||
-          Date.now() - this.timestamp > this.ttl
-        )
+      (
+        this._auth.isFreshLogin ||
+        !this.timestamp ||
+        Date.now() - this.timestamp > this.ttl
+      )
     );
+  }
+  _isDataReady() {
+    // only turns ready when data has been fetched
+    // (could be from other tabs)
+    return this.status === moduleStatuses.initializing &&
+      this.data !== null;
   }
   async _init() {
     if (this._shouldFetch()) {

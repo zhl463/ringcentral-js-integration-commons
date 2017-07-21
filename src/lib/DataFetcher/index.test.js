@@ -18,6 +18,7 @@ describe('DataFetcher Unit Test', () => {
       '_onStateChange',
       '_shouldInit',
       '_shouldFetch',
+      '_isDataReady',
       '_shouldReset',
       '_shouldSubscribe',
       '_init',
@@ -49,6 +50,7 @@ describe('DataFetcher Unit Test', () => {
       sinon.stub(dataFetcher, '_shouldInit').callsFake(() => false);
       sinon.stub(dataFetcher, '_shouldReset').callsFake(() => true);
       sinon.stub(dataFetcher, '_shouldSubscribe').callsFake(() => false);
+      sinon.stub(dataFetcher, '_isDataReady').callsFake(() => false);
       sinon.stub(dataFetcher, '_init');
       sinon.stub(dataFetcher, '_clearTimeout');
       sinon.stub(dataFetcher, '_processSubscription');
@@ -61,6 +63,7 @@ describe('DataFetcher Unit Test', () => {
       sinon.stub(dataFetcher, '_shouldInit').callsFake(() => false);
       sinon.stub(dataFetcher, '_shouldReset').callsFake(() => false);
       sinon.stub(dataFetcher, '_shouldSubscribe').callsFake(() => true);
+      sinon.stub(dataFetcher, '_isDataReady').callsFake(() => false);
       sinon.stub(dataFetcher, '_init');
       sinon.stub(dataFetcher, '_clearTimeout');
       sinon.stub(dataFetcher, '_processSubscription');

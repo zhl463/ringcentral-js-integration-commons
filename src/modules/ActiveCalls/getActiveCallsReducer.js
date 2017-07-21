@@ -6,14 +6,14 @@ import {
 } from '../../lib/callLogHelpers';
 
 export function getDataReducer(types) {
-  return (state = [], { type, data }) => {
+  return (state = null, { type, data }) => {
     switch (type) {
       case types.fetchSuccess:
         return data
           .map(call => normalizeStartTime(removeUri(call)))
           .sort(sortByStartTime);
       case types.resetSuccess:
-        return [];
+        return null;
       default:
         return state;
     }
