@@ -202,36 +202,25 @@ describe('Webphone :: getCurrentSessionReducer', () => {
       expect(reducer(originalState, { type: actionTypes.destroyCurrentSession }))
         .to.equal(null);
     });
-    it('should return session object when actionTypes is updateCurrentSession', () => {
+    it('should return new session object when actionTypes is updateCurrentSession', () => {
       const originalState = {};
       const session = {
         id: '123',
         direction: 'inbound',
         callStatus: 'test',
-        request: {
-          to: {
-            uri: {
-              user: 'test',
-            },
-            displayName: 'haha',
-          },
-          from: {
-            uri: {
-              user: 'test',
-            },
-            displayName: 'ha',
-          },
-        },
-        startTime: 'Fri Apr 21 2017 13:39:34 GMT+0800',
+        to: 'test',
+        toUserName: 'haha',
+        from: 'test',
+        fromUserName: 'ha',
+        startTime: (new Date('Fri Apr 21 2017 13:39:34 GMT+0800')).getTime(),
         creationTime: 1492753174000,
-        isOnHold: () => ({
-          local: false,
-        }),
+        isOnHold: false,
         isOnMute: false,
         isOnRecord: false,
+        contactMatch: {},
       };
       expect(reducer(originalState, { type: actionTypes.updateCurrentSession, session }))
-        .to.equal(session);
+        .to.deep.equal(session);
     });
   });
 });

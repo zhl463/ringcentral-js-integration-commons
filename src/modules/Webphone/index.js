@@ -672,15 +672,15 @@ export default class Webphone extends RcModule {
       return;
     }
     if (session.isOnHold().local) {
+      this._sessions.forEach((sessionItem, sessionItemId) => {
+        if (session.id !== sessionItemId) {
+          if (!sessionItem.isOnHold().local) {
+            sessionItem.hold();
+          }
+        }
+      });
       session.unhold();
     }
-    this._sessions.forEach((sessionItem, sessionItemId) => {
-      if (session.id !== sessionItemId) {
-        if (!sessionItem.isOnHold().local) {
-          sessionItem.hold();
-        }
-      }
-    });
     this._setActiveSession(session);
     this._updateCurrentSessionAndSessions(session);
   }
@@ -881,6 +881,14 @@ export default class Webphone extends RcModule {
       this._onCallStart(session, this.currentSession);
     }
     return session;
+  }
+
+  @proxify
+  async updateSessionMatchedContact(sessionId, contact) {
+    this._sessionHandleWithId(sessionId, (session) => {
+      session.contactMatch = contact;
+      this._updateCurrentSessionAndSessions(session);
+    });
   }
 
   _addSession(session) {

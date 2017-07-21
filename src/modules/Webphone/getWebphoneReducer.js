@@ -76,7 +76,7 @@ export function getCurrentSessionReducer(types) {
   return (state = null, { type, session }) => {
     switch (type) {
       case types.updateCurrentSession:
-        return session;
+        return { ...state, ...session };
       case types.destroyCurrentSession:
         return null;
       default:
