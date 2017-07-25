@@ -98,8 +98,6 @@ export function normalizeFromTo(call) {
   };
 }
 
-
-
 /* ringout leg helpers */
 export function areTwoLegs(inbound, outbound) {
   if (isInbound(inbound) && isOutbound(outbound)) {

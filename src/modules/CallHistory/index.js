@@ -209,13 +209,16 @@ export default class CallHistory extends RcModule {
     return false;
   }
 
-  _shouldAddEndedCalls() {
+  _getEndedCalls() {
     if (this._callMonitor) {
       const monitorCalls = this._callMonitor.calls;
+      const callLogCalls = this._callLog.calls;
       if (this._lastProcessedMonitorCalls !== monitorCalls) {
         const endedCalls = (this._lastProcessedMonitorCalls || [])
           .filter(call => (
-            !monitorCalls.find(currentCall => call.sessionId === currentCall.sessionId)
+            !monitorCalls.find(currentCall => call.sessionId === currentCall.sessionId) &&
+            // if the call's callLog has been fetch, skip
+            !callLogCalls.find(currentCall => call.sessionId === currentCall.sessionId)
           ));
         this._lastProcessedMonitorCalls = monitorCalls;
         return endedCalls;
@@ -247,7 +250,7 @@ export default class CallHistory extends RcModule {
       this._activityMatcher.triggerMatch();
     }
 
-    const endedCalls = this._shouldAddEndedCalls();
+    const endedCalls = this._getEndedCalls();
     if (endedCalls && endedCalls.length) {
       this._addEndedCalls(endedCalls);
     }
