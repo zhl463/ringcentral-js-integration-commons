@@ -173,7 +173,7 @@ export default class Contacts extends RcModule {
         phoneNumbers: [
           ...contact.phoneNumbers
         ],
-        entityType: 'contact',
+        entityType: 'rcContact',
         name,
       };
       if (contact.extensionNumber) {
