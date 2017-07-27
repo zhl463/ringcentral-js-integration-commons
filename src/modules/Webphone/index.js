@@ -15,8 +15,6 @@ import ensureExist from '../../lib/ensureExist';
 import proxify from '../../lib/proxy/proxify';
 import {
   isBrowerSupport,
-  patchUserAgent,
-  patchIncomingSession,
   normalizeSession,
 } from './webphoneHelper';
 import getWebphoneReducer, {
@@ -283,7 +281,6 @@ export default class Webphone extends RcModule {
       console.debug('UA invite');
       this._onInvite(session);
     });
-    patchUserAgent(this._webphone.userAgent);
   }
 
   @proxify
@@ -518,7 +515,6 @@ export default class Webphone extends RcModule {
         session: normalizeSession(session),
       });
     }
-    patchIncomingSession(session);
     this._addSession(session);
     session.on('rejected', () => {
       console.log('Event: Rejected');
@@ -812,7 +808,7 @@ export default class Webphone extends RcModule {
   async toVoiceMail(sessionId) {
     this._sessionHandleWithId(sessionId, (session) => {
       try {
-        session.toVoiceMail();
+        session.toVoicemail();
       } catch (e) {
         console.error(e);
         // this._removeSession(session);
