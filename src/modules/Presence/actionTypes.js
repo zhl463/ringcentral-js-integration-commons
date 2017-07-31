@@ -7,6 +7,7 @@ export default new Enum([
   'fetch',
   'fetchSuccess',
   'fetchError',
+  'reset',
   'resetSuccess',
   'update',
   'updateSuccess',

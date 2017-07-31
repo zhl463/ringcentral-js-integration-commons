@@ -1,4 +1,5 @@
 import RcModule from '../../lib/RcModule';
+import sleep from '../../lib/sleep';
 import loginStatus from '../Auth/loginStatus';
 import moduleStatuses from '../../enums/moduleStatuses';
 import getSubscriptionReducer, {
@@ -60,6 +61,7 @@ export default class Subscription extends RcModule {
     });
   }
 
+
   get status() {
     return this.state.status;
   }
@@ -83,7 +85,18 @@ export default class Subscription extends RcModule {
   get cachedSubscription() {
     return this._storage.getItem(this._cacheStorageKey);
   }
-
+  async _detectSleep() {
+    while (this._subscription) {
+      const t = Date.now();
+      await sleep(10000);
+      if (this.ready && this._subscribe && Date.now() - t > 20 * 1000) {
+        // a time lapse of 10 seconds is detected
+        await this.remove();
+        await this._subscribe();
+        break;
+      }
+    }
+  }
   _createSubscription() {
     this._subscription = this._client.service.createSubscription();
     if (this.cachedSubscription) {
@@ -151,12 +164,10 @@ export default class Subscription extends RcModule {
         this._retry();
       }
     });
+    this._detectSleep();
   }
-  async _subscribe() {
-    if (!this._subscription) {
-      this._createSubscription();
-    }
-    this._subscription.setEventFilters(this.filters);
+  async _register() {
+    await sleep(1000);
     try {
       this.store.dispatch({
         type: this.actionTypes.subscribe,
@@ -165,8 +176,19 @@ export default class Subscription extends RcModule {
     } catch (error) {
       /* falls through */
     }
+    this._registerPromise = null;
   }
-  subscribe(events) {
+  async _subscribe() {
+    if (!this._subscription) {
+      this._createSubscription();
+    }
+    this._subscription.setEventFilters(this.filters);
+    if (!this._registerPromise) {
+      this._registerPromise = this._register();
+    }
+    return this._registerPromise;
+  }
+  subscribe(events = []) {
     if (this.ready) {
       const oldFilters = this.filters;
       this.store.dispatch({
@@ -178,7 +200,7 @@ export default class Subscription extends RcModule {
       }
     }
   }
-  unsubscribe(events) {
+  unsubscribe(events = []) {
     if (this.ready) {
       const oldFilters = this.filters;
       this.store.dispatch({
