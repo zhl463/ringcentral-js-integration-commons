@@ -470,6 +470,7 @@ export default class Phone extends RcModule {
     }));
     reducers.conversationLogger = this.conversationLogger.reducer;
     this.addModule('messages', new Messages({
+      contactMatcher: this.contactMatcher,
       messageStore: this.messageStore,
       extensionInfo: this.extensionInfo,
       conversationLogger: this.conversationLogger,

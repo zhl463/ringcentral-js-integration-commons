@@ -26,6 +26,7 @@ export function normalizeSession(session) {
     isOnMute: !!session.isOnMute,
     isOnRecord: !!session.isOnRecord,
     contactMatch: session.contactMatch,
+    minimized: !!session.minimized,
   };
 }
 
