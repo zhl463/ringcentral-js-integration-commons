@@ -153,6 +153,8 @@ export default class Webphone extends RcModule {
         ),
       });
     }
+
+    this._isFirstRegister = true;
   }
 
   _prepareVideoElement() {
@@ -288,11 +290,17 @@ export default class Webphone extends RcModule {
         outgoing: outgoingAudio, // path to aduotfile for outgoing call
       }
     });
-
+    this._isFirstRegister = true;
     const onRegistered = () => {
       this.store.dispatch({
         type: this.actionTypes.registered,
       });
+      if (this._isFirstRegister) {
+        this._alert.info({
+          message: webphoneErrors.connected,
+        });
+      }
+      this._isFirstRegister = false;
     };
     const onUnregistered = () => {
       this.store.dispatch({

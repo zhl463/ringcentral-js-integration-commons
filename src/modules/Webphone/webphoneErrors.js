@@ -2,6 +2,7 @@ import Enum from '../../lib/Enum';
 
 export default new Enum([
   'connectFailed',
+  'connected',
   'browserNotSupported',
   'webphoneCountOverLimit',
   'notOutboundCallWithoutDL',

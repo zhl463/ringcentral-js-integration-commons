@@ -220,6 +220,7 @@ export default class CallingSettings extends RcModule {
               callingSettingsMessages.firstLogin :
               callingSettingsMessages.firstLoginOther,
       });
+      this._warningEmergencyCallingNotAvailable();
       if (typeof this._onFirstLogin === 'function') {
         this._onFirstLogin();
       }
