@@ -56,7 +56,7 @@ export default class CallHistory extends RcModule {
             from: callFrom,
             to: callTo,
           };
-        })
+        }).sort(sortByStartTime)
       ),
     );
 
@@ -65,20 +65,31 @@ export default class CallHistory extends RcModule {
       () => this.state.endedCalls,
       () => (this._contactMatcher && this._contactMatcher.dataMapping),
       () => (this._activityMatcher && this._activityMatcher.dataMapping),
-      (normalizedCalls, endedCalls, contactMapping = {}, activityMapping = {}) => {
+      () => (this._callMonitor && this._callMonitor.callMatched),
+      (
+        normalizedCalls,
+        endedCalls,
+        contactMapping = {},
+        activityMapping = {},
+        callMatched = {}
+      ) => {
         const sessionIds = {};
         return normalizedCalls.map((call) => {
           sessionIds[call.sessionId] = true;
           const fromNumber = call.from && (call.from.phoneNumber || call.from.extensionNumber);
           const toNumber = call.to && (call.to.phoneNumber || call.to.extensionNumber);
+          const fromMatches = (fromNumber && contactMapping[fromNumber]) || [];
+          const toMatches = (toNumber && contactMapping[toNumber]) || [];
+          const activityMatches = (activityMapping[call.sessionId]) || [];
+          const matched = callMatched[call.sessionId];
           return {
             ...call,
-            fromMatches: (fromNumber && contactMapping[fromNumber]) || [],
-            toMatches: (toNumber && contactMapping[toNumber]) || [],
-            activityMatches: (activityMapping[call.sessionId]) || [],
+            fromMatches,
+            toMatches,
+            activityMatches,
+            toNumberEntity: matched,
           };
-        }).concat(endedCalls.filter(call => !sessionIds[call.sessionId]))
-          .sort(sortByStartTime);
+        }).concat(endedCalls.filter(call => !sessionIds[call.sessionId]));
       },
     );
 
@@ -284,6 +295,10 @@ export default class CallHistory extends RcModule {
   }
 
   _addEndedCalls(endedCalls) {
+    endedCalls.map((call) => {
+      call.result = 'Disconnected';
+      return call;
+    });
     this.store.dispatch({
       type: this.actionTypes.addEndedCalls,
       endedCalls,

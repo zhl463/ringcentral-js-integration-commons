@@ -5,6 +5,8 @@ export default new Enum([
   'initSuccess',
   'resetSuccess',
   'toNumberChanged',
+  'toNumberMatched',
+  'cleanToNumberEntities',
   'updateFromNumber',
   'connect',
   'connectSuccess',

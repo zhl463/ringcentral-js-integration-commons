@@ -5,4 +5,5 @@ export default new Enum([
   'initSuccess',
   'reset',
   'resetSuccess',
+  'setData',
 ], 'callMonitorAcionTypes');

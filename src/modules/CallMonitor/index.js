@@ -3,7 +3,9 @@ import RcModule from '../../lib/RcModule';
 import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import callDirections from '../../enums/callDirections';
-import getCallMonitorReducer from './getCallMonitorReducer';
+import getCallMonitorReducer, {
+  getCallMatchedReducer
+} from './getCallMonitorReducer';
 import normalizeNumber from '../../lib/normalizeNumber';
 import {
   isRinging,
@@ -15,6 +17,7 @@ import ensureExist from '../../lib/ensureExist';
 
 export default class CallMonitor extends RcModule {
   constructor({
+    call,
     accountInfo,
     detailedPresence,
     activityMatcher,
@@ -24,12 +27,14 @@ export default class CallMonitor extends RcModule {
     onNewCall,
     onCallUpdated,
     onCallEnded,
+    storage,
     ...options
   }) {
     super({
       ...options,
       actionTypes,
     });
+    this._call = call;
     this._accountInfo = this::ensureExist(accountInfo, 'accountInfo');
     this._detailedPresence = this::ensureExist(detailedPresence, 'detailedPresence');
     this._contactMatcher = contactMatcher;
@@ -39,8 +44,17 @@ export default class CallMonitor extends RcModule {
     this._onNewCall = onNewCall;
     this._onCallUpdated = onCallUpdated;
     this._onCallEnded = onCallEnded;
+    this._storage = storage;
+    this._callMatchedKey = 'callMatched';
 
     this._reducer = getCallMonitorReducer(this.actionTypes);
+
+    this._storage.registerReducer({
+      key: this._callMatchedKey,
+      reducer: getCallMatchedReducer(this.actionTypes),
+    });
+
+
     this.addSelector('normalizedCalls',
       () => this._detailedPresence.calls,
       () => this._accountInfo.countryCode,
@@ -104,25 +118,31 @@ export default class CallMonitor extends RcModule {
             sessionItem => call.webphoneSession.id === sessionItem.id
           );
           return !!session;
-        })
+        }).sort(sortByStartTime)
       ),
     );
     this.addSelector('calls',
       this._selectors.normalizedCalls,
       () => (this._contactMatcher && this._contactMatcher.dataMapping),
       () => (this._activityMatcher && this._activityMatcher.dataMapping),
-      (normalizedCalls, contactMapping = {}, activityMapping = {}) => (
-        normalizedCalls.map((call) => {
+      () => (this.callMatched),
+      (normalizedCalls, contactMapping = {}, activityMapping = {}, callMatched) => {
+        const calls = normalizedCalls.map((call) => {
           const fromNumber = call.from && call.from.phoneNumber;
           const toNumber = call.to && call.to.phoneNumber;
+          const fromMatches = (fromNumber && contactMapping[fromNumber]) || [];
+          const toMatches = (toNumber && contactMapping[toNumber]) || [];
+          const matched = callMatched[call.sessionId];
           return {
             ...call,
-            fromMatches: (fromNumber && contactMapping[fromNumber]) || [],
-            toMatches: (toNumber && contactMapping[toNumber]) || [],
+            fromMatches,
+            toMatches,
             activityMatches: (activityMapping[call.sessionId]) || [],
+            toNumberEntity: matched,
           };
-        }).sort(sortByStartTime)
-      )
+        });
+        return calls;
+      }
     );
 
     this.addSelector('uniqueNumbers',
@@ -175,10 +195,12 @@ export default class CallMonitor extends RcModule {
 
   _onStateChange = async () => {
     if (
+      this._call.ready &&
       this._accountInfo.ready &&
       this._detailedPresence.ready &&
       (!this._contactMatcher || this._contactMatcher.ready) &&
       (!this._activityMatcher || this._activityMatcher.ready) &&
+      this._storage.ready &&
       this.pending
     ) {
       this.store.dispatch({
@@ -189,10 +211,12 @@ export default class CallMonitor extends RcModule {
       });
     } else if (
       (
+        !this._call.ready ||
         !this._accountInfo.ready ||
         !this._detailedPresence.ready ||
         (this._contactMatcher && !this._contactMatcher.ready) ||
-        (this._activityMatcher && !this._activityMatcher.ready)
+        (this._activityMatcher && !this._activityMatcher.ready) ||
+        !this._storage.ready
       ) &&
       this.ready
     ) {
@@ -230,8 +254,20 @@ export default class CallMonitor extends RcModule {
           this._lastProcessedCalls &&
           this._lastProcessedCalls.slice()
         ) || [];
+
         this._lastProcessedCalls = this.calls;
 
+        // no ringing calls
+        if (oldCalls.length !== 0 &&
+            this.calls.length === 0 &&
+            this._call.toNumberEntities &&
+            this._call.toNumberEntities.length !== 0) {
+          // console.log('no calls clean to number:');
+          this._call.cleanToNumberEntities();
+        }
+
+        let entities = this._call.toNumberEntities.sort(sortByStartTime);
+        // const matchedMap = {};
         this.calls.forEach((call) => {
           const oldCallIndex = oldCalls.findIndex(item => item.sessionId === call.sessionId);
           if (oldCallIndex === -1) {
@@ -251,7 +287,22 @@ export default class CallMonitor extends RcModule {
               this._onCallUpdated(call);
             }
           }
+          entities.find((entity, index) => {
+            const toEntity = call.toMatches.find(toMatch =>
+              toMatch.id === entity.entityId
+            );
+            if (toEntity !== undefined) {
+              entities = this._removeMatched(index, entities);
+              this._setMatchedData({
+                sessionId: call.sessionId,
+                toEntityId: toEntity.id,
+              });
+              return true;
+            }
+            return false;
+          });
         });
+
         oldCalls.forEach((call) => {
           if (typeof this._onCallEnded === 'function') {
             this._onCallEnded(call);
@@ -262,6 +313,20 @@ export default class CallMonitor extends RcModule {
   }
   initialize() {
     this.store.subscribe(this._onStateChange);
+  }
+
+  _removeMatched(index, entities) {
+    console.log('removeMatched:', index);
+    entities.splice(index, 1);
+    console.log('entities after splice:', entities);
+    return entities;
+  }
+
+  _setMatchedData(matched) {
+    this.store.dispatch({
+      type: this.actionTypes.setData,
+      ...matched,
+    });
   }
 
   get hasRingingCalls() {
@@ -282,5 +347,9 @@ export default class CallMonitor extends RcModule {
 
   get calls() {
     return this._selectors.calls();
+  }
+
+  get callMatched() {
+    return this._storage.getItem(this._callMatchedKey);
   }
 }

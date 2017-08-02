@@ -112,6 +112,22 @@ export default class Call extends RcModule {
     });
   }
 
+  // save the click to dial entity, only when call took place
+  onToNumberMatch({ entityId, startTime }) {
+    if (this.callStatus === callStatus.idle) {
+      this.store.dispatch({
+        type: this.actionTypes.toNumberMatched,
+        data: { entityId, startTime },
+      });
+    }
+  }
+
+  cleanToNumberEntities() {
+    this.store.dispatch({
+      type: this.actionTypes.cleanToNumberEntities,
+    });
+  }
+
   onCall = async () => {
     if (this.callStatus === callStatus.idle) {
       // last number check
@@ -246,6 +262,7 @@ export default class Call extends RcModule {
     }
   }
 
+
   get status() {
     return this.state.status;
   }
@@ -268,5 +285,9 @@ export default class Call extends RcModule {
 
   get toNumber() {
     return this.state.toNumber;
+  }
+
+  get toNumberEntities() {
+    return this.state.toNumberEntities;
   }
 }
