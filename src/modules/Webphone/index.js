@@ -812,7 +812,12 @@ export default class Webphone extends RcModule {
       console.log('Flipped');
     } catch (e) {
       console.error(e);
+      this._alert.warning({
+        message: webphoneErrors.flipError
+      });
     }
+    session.isOnFlip = true;
+    this._updateSessions();
   }
 
   @proxify
