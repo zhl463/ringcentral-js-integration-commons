@@ -46,8 +46,8 @@ export function getISODateTo(records) {
   });
   return dateTo && (new Date(dateTo)).toISOString();
 }
-
-const presenceRegExp = /\/presence\?detailedTelephonyState=true$/;
+// to not use $ at the end, presence with sipData has extra query parameters
+const presenceRegExp = /\/presence\?detailedTelephonyState=true/;
 
 export default class CallLog extends Pollable {
   constructor({

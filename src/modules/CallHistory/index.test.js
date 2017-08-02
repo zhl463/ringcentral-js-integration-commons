@@ -19,7 +19,7 @@ describe('CallHistory Unit Test', () => {
       '_shouldReset',
       '_shouldTriggerContactMatch',
       '_shouldTriggerActivityMatch',
-      '_shouldAddEndedCalls',
+      '_getEndedCalls',
       '_shouldRemoveEndedCalls',
       '_processCallHistory',
       '_initModuleStatus',
@@ -296,7 +296,7 @@ describe('CallHistory Unit Test', () => {
       expect(callHistory._shouldTriggerActivityMatch('foo')).to.equal(false);
     });
   });
-  describe('_shouldAddEndedCalls', () => {
+  describe('_getEndedCalls', () => {
     let monitorCalls;
     beforeEach(() => {
       monitorCalls = {
@@ -308,12 +308,15 @@ describe('CallHistory Unit Test', () => {
     it(`Should return endedCalls when _lastProcessedMonitorCalls is not equal to monitorCalls
         `, () => {
       callHistory._callMonitor = monitorCalls;
+      callHistory._callLog = {
+        calls: [],
+      };
       callHistory._lastProcessedMonitorCalls = [{
         sessionId: 'bar'
       }, {
         sessionId: 'foo'
       }];
-      expect(callHistory._shouldAddEndedCalls()).to.deep.equal([{ sessionId: 'bar' }]);
+      expect(callHistory._getEndedCalls()).to.deep.equal([{ sessionId: 'bar' }]);
     });
     it('Should return [] when sessionId already exist', () => {
       callHistory._callMonitor = {
@@ -323,22 +326,31 @@ describe('CallHistory Unit Test', () => {
           sessionId: 'foo'
         }]
       };
+      callHistory._callLog = {
+        calls: [],
+      };
       callHistory._lastProcessedMonitorCalls = [{
         sessionId: 'bar'
       }];
-      expect(callHistory._shouldAddEndedCalls()).to.deep.equal([]);
+      expect(callHistory._getEndedCalls()).to.deep.equal([]);
     });
     it('Should return null when _lastProcessedMonitorCalls is equal to monitorCalls', () => {
       callHistory._callMonitor = monitorCalls;
+      callHistory._callLog = {
+        calls: [],
+      };
       callHistory._lastProcessedMonitorCalls = monitorCalls.calls;
-      expect(callHistory._shouldAddEndedCalls()).to.be.a('null');
+      expect(callHistory._getEndedCalls()).to.be.a('null');
     });
     it('Should return null when _callMonitor is undefined', () => {
       callHistory._callMonitor = undefined;
+      callHistory._callLog = {
+        calls: [],
+      };
       callHistory._lastProcessedMonitorCalls = [{
         sessionId: 'foo'
       }];
-      expect(callHistory._shouldAddEndedCalls()).to.be.a('null');
+      expect(callHistory._getEndedCalls()).to.be.a('null');
     });
   });
   describe('_shouldRemoveEndedCalls', () => {
@@ -394,7 +406,7 @@ describe('CallHistory Unit Test', () => {
     it('_contactMatcher.triggerMatch should be called once when _shouldTriggerContactMatch is true', () => {
       sinon.stub(callHistory, '_shouldTriggerContactMatch').callsFake(() => true);
       sinon.stub(callHistory, '_shouldTriggerActivityMatch').callsFake(() => false);
-      sinon.stub(callHistory, '_shouldAddEndedCalls').callsFake(() => null);
+      sinon.stub(callHistory, '_getEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_shouldRemoveEndedCalls').callsFake(() => null);
 
       callHistory._contactMatcher = {
@@ -408,7 +420,7 @@ describe('CallHistory Unit Test', () => {
     it('_contactMatcher.triggerMatch should not be called when _shouldTriggerContactMatch is false', () => {
       sinon.stub(callHistory, '_shouldTriggerContactMatch').callsFake(() => false);
       sinon.stub(callHistory, '_shouldTriggerActivityMatch').callsFake(() => false);
-      sinon.stub(callHistory, '_shouldAddEndedCalls').callsFake(() => null);
+      sinon.stub(callHistory, '_getEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_shouldRemoveEndedCalls').callsFake(() => null);
 
       callHistory._contactMatcher = {
@@ -422,7 +434,7 @@ describe('CallHistory Unit Test', () => {
     it('_activityMatcher.triggerMatch should be called once when _shouldTriggerActivityMatch is true', () => {
       sinon.stub(callHistory, '_shouldTriggerContactMatch').callsFake(() => false);
       sinon.stub(callHistory, '_shouldTriggerActivityMatch').callsFake(() => true);
-      sinon.stub(callHistory, '_shouldAddEndedCalls').callsFake(() => null);
+      sinon.stub(callHistory, '_getEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_shouldRemoveEndedCalls').callsFake(() => null);
 
       callHistory._activityMatcher = {
@@ -436,7 +448,7 @@ describe('CallHistory Unit Test', () => {
     it('_activityMatcher.triggerMatch should not be called when _shouldTriggerActivityMatch is false', () => {
       sinon.stub(callHistory, '_shouldTriggerContactMatch').callsFake(() => false);
       sinon.stub(callHistory, '_shouldTriggerActivityMatch').callsFake(() => false);
-      sinon.stub(callHistory, '_shouldAddEndedCalls').callsFake(() => null);
+      sinon.stub(callHistory, '_getEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_shouldRemoveEndedCalls').callsFake(() => null);
 
       callHistory._activityMatcher = {
@@ -447,30 +459,30 @@ describe('CallHistory Unit Test', () => {
 
       sinon.assert.notCalled(callHistory._activityMatcher.triggerMatch);
     });
-    it('_addEndedCalls should be called when _shouldAddEndedCalls is return an array contains values', () => {
+    it('_addEndedCalls should be called when _getEndedCalls is return an array contains values', () => {
       sinon.stub(callHistory, '_shouldTriggerContactMatch').callsFake(() => false);
       sinon.stub(callHistory, '_shouldTriggerActivityMatch').callsFake(() => false);
-      sinon.stub(callHistory, '_shouldAddEndedCalls').callsFake(() => [{ sessionId: 'foo' }]);
+      sinon.stub(callHistory, '_getEndedCalls').callsFake(() => [{ sessionId: 'foo' }]);
       sinon.stub(callHistory, '_shouldRemoveEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_addEndedCalls');
       callHistory._processCallHistory();
 
       sinon.assert.calledOnce(callHistory._addEndedCalls);
     });
-    it('_addEndedCalls should not be called when _shouldAddEndedCalls is return an empty array', () => {
+    it('_addEndedCalls should not be called when _getEndedCalls is return an empty array', () => {
       sinon.stub(callHistory, '_shouldTriggerContactMatch').callsFake(() => false);
       sinon.stub(callHistory, '_shouldTriggerActivityMatch').callsFake(() => false);
-      sinon.stub(callHistory, '_shouldAddEndedCalls').callsFake(() => []);
+      sinon.stub(callHistory, '_getEndedCalls').callsFake(() => []);
       sinon.stub(callHistory, '_shouldRemoveEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_addEndedCalls');
       callHistory._processCallHistory();
 
       sinon.assert.notCalled(callHistory._addEndedCalls);
     });
-    it('_addEndedCalls should not be called when _shouldAddEndedCalls is return null', () => {
+    it('_addEndedCalls should not be called when _getEndedCalls is return null', () => {
       sinon.stub(callHistory, '_shouldTriggerContactMatch').callsFake(() => false);
       sinon.stub(callHistory, '_shouldTriggerActivityMatch').callsFake(() => false);
-      sinon.stub(callHistory, '_shouldAddEndedCalls').callsFake(() => null);
+      sinon.stub(callHistory, '_getEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_shouldRemoveEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_addEndedCalls');
       callHistory._processCallHistory();
@@ -480,7 +492,7 @@ describe('CallHistory Unit Test', () => {
     it('_removeEndedCalls should be called when _shouldRemoveEndedCalls is return an array contains values', () => {
       sinon.stub(callHistory, '_shouldTriggerContactMatch').callsFake(() => false);
       sinon.stub(callHistory, '_shouldTriggerActivityMatch').callsFake(() => false);
-      sinon.stub(callHistory, '_shouldAddEndedCalls').callsFake(() => null);
+      sinon.stub(callHistory, '_getEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_shouldRemoveEndedCalls').callsFake(() => [{ sessionId: 'foo' }]);
       sinon.stub(callHistory, '_removeEndedCalls');
       callHistory._processCallHistory();
@@ -490,7 +502,7 @@ describe('CallHistory Unit Test', () => {
     it('_removeEndedCalls should not be called when _shouldRemoveEndedCalls is return an empty array', () => {
       sinon.stub(callHistory, '_shouldTriggerContactMatch').callsFake(() => false);
       sinon.stub(callHistory, '_shouldTriggerActivityMatch').callsFake(() => false);
-      sinon.stub(callHistory, '_shouldAddEndedCalls').callsFake(() => null);
+      sinon.stub(callHistory, '_getEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_shouldRemoveEndedCalls').callsFake(() => []);
       sinon.stub(callHistory, '_removeEndedCalls');
       callHistory._processCallHistory();
@@ -500,7 +512,7 @@ describe('CallHistory Unit Test', () => {
     it('_removeEndedCalls should not be called when _shouldRemoveEndedCalls is return null', () => {
       sinon.stub(callHistory, '_shouldTriggerContactMatch').callsFake(() => false);
       sinon.stub(callHistory, '_shouldTriggerActivityMatch').callsFake(() => false);
-      sinon.stub(callHistory, '_shouldAddEndedCalls').callsFake(() => null);
+      sinon.stub(callHistory, '_getEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_shouldRemoveEndedCalls').callsFake(() => null);
       sinon.stub(callHistory, '_removeEndedCalls');
       callHistory._processCallHistory();

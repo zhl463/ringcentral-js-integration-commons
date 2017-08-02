@@ -49,8 +49,9 @@ export default class RolesAndPermissions extends DataFetcher {
     if (this.ready &&
       this._auth.loginStatus === loginStatus.loggedIn &&
       this._isCRM &&
+      this.tierEnabled !== null &&
       !this.tierEnabled
-      ) {
+    ) {
       await this._auth.logout();
       this._alert.danger({
         message: permissionsMessages.invalidTier,
@@ -90,10 +91,12 @@ export default class RolesAndPermissions extends DataFetcher {
   }
 
   get tierEnabled() {
-    return !!(
-      this._extensionInfo.serviceFeatures &&
-      this._extensionInfo.serviceFeatures[this._flag] &&
-       this._extensionInfo.serviceFeatures[this._flag].enabled
-    );
+    if (
+      !this._extensionInfo.serviceFeatures ||
+      !this._extensionInfo.serviceFeatures[this._flag]
+    ) {
+      return null;
+    }
+    return this._extensionInfo.serviceFeatures[this._flag].enabled;
   }
 }

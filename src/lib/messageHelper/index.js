@@ -1,4 +1,4 @@
-import messageTypes from '../enums/messageTypes';
+import messageTypes from '../../enums/messageTypes';
 
 export function filterNumbers(numbers, filterNumber) {
   return numbers.filter((number) => {
@@ -51,10 +51,13 @@ export function getMyNumberFromMessage({ message, myExtensionNumber }) {
   return message.to[0];
 }
 
-export function uniqueRecipients(recipients) {
+export function uniqueRecipients(recipients, filter = () => true) {
   const recipientMap = {};
   recipients.forEach((recipient) => {
-    recipientMap[JSON.stringify(recipient)] = recipient;
+    if (filter(recipient)) {
+      const key = recipient.extensionNumber || recipient.phoneNumber;
+      recipientMap[key] = recipient;
+    }
   });
   return Object.values(recipientMap);
 }
@@ -90,15 +93,17 @@ export function getRecipients({ message, myExtensionNumber }) {
 
 export function getNumbersFromMessage({ extensionNumber, message }) {
   if (message.type === messageTypes.pager) {
+    // It is safer and simpler to just put all known contacts into array and filter self out
+    const contacts = (message.to && message.to.slice()) || [];
+    if (message.from) contacts.push(message.from);
     return {
       self: {
         extensionNumber
       },
       correspondents: (
-        message.to &&
-        message.to.filter(entry => (
-          entry.extensionNumber !== extensionNumber
-        ))
+        uniqueRecipients(contacts,
+          contact => contact.extensionNumber !== extensionNumber
+        )
       ) || [],
     };
   }
@@ -131,8 +136,7 @@ export function getNumbersFromMessage({ extensionNumber, message }) {
 export function sortByDate(a, b) {
   const ta = new Date(a.creationTime).getTime();
   const tb = new Date(b.creationTime).getTime();
-  if (ta === tb) return 0;
-  return ta > tb ? -1 : 1;
+  return tb - ta;
 }
 
 export function sortSearchResults(a, b) {

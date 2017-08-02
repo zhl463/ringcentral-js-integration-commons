@@ -54,12 +54,19 @@ export default class DetailedPresence extends Presence {
           .filter(call => !isEnded(call))
       ),
     );
-
+    this._lastMessage = null;
     this._lastTelephonyStatus = null;
+    this._lastSequence = 0;
   }
 
   _subscriptionHandler = (message) => {
     if (presenceRegExp.test(message.event) && message.body) {
+      if (message.body.sequence) {
+        if (message.body.sequence <= this._lastSequence) {
+          return;
+        }
+        this._lastSequence = message.body.sequence;
+      }
       const {
         activeCalls,
         dndStatus,
@@ -106,6 +113,12 @@ export default class DetailedPresence extends Presence {
       ) &&
       this.ready
     ) {
+      this.store.dispatch({
+        type: this.actionTypes.reset,
+      });
+      this._lastTelephonyStatus = null;
+      this._lastSequence = 0;
+      this._lastMessage = null;
       this.store.dispatch({
         type: this.actionTypes.resetSuccess,
       });
@@ -163,7 +176,7 @@ export default class DetailedPresence extends Presence {
         userStatus,
         message,
       } = (await this._client.service.platform()
-        .get(subscriptionFilters.detailedPresenceWithSip)).json();
+          .get(subscriptionFilters.detailedPresenceWithSip)).json();
       if (this._auth.ownerId === ownerId) {
         this.store.dispatch({
           type: this.actionTypes.fetchSuccess,

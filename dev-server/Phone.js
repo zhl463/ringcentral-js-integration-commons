@@ -53,6 +53,7 @@ import TabManager from '../src/modules/TabManager';
 import Webphone from '../src/modules/Webphone';
 import RecentMessages from '../src/modules/RecentMessages';
 import RecentCalls from '../src/modules/RecentCalls';
+import Analytics from '../src/modules/Analytics';
 
 import config from './config';
 
@@ -344,9 +345,11 @@ export default class Phone extends RcModule {
     }));
     reducers.composeText = this.composeText.reducer;
     this.addModule('callMonitor', new CallMonitor({
+      call: this.call,
       accountInfo: this.accountInfo,
       detailedPresence: this.detailedPresence,
       webphone: this.webphone,
+      storage: this.storage,
       getState: () => this.state.callMonitor,
     }));
     reducers.callMonitor = this.callMonitor.reducer;
@@ -489,6 +492,23 @@ export default class Phone extends RcModule {
       getState: () => this.state.recentCalls
     }));
     reducers.recentCalls = this.recentCalls.reducer;
+
+    this.addModule('analytics', new Analytics({
+      analyticsKey: 'd51li7ZONOLUcHKBqVmQmhG2mF0FySUZ',
+      appName: 'RingCentral Integration',
+      appVersion: '0.1.1-beta',
+      brandCode: 'rc',
+      auth: this.auth,
+      call: this.call,
+      webphone: this.webphone,
+      contacts: this.contacts,
+      messageSender: this.messageSender,
+      adapter: this.dynamicsAdapter,
+      router: this.router,
+      getState: () => this.state.analytics,
+    }));
+    reducers.analytics = this.analytics.reducer;
+
     this._reducer = combineReducers({
       ...reducers,
       lastAction: (state = null, action) => {

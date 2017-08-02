@@ -1,4 +1,5 @@
 import RcModule from '../../lib/RcModule';
+import sleep from '../../lib/sleep';
 import loginStatus from '../Auth/loginStatus';
 import moduleStatuses from '../../enums/moduleStatuses';
 import getSubscriptionReducer, {
@@ -61,6 +62,7 @@ export default class Subscription extends RcModule {
     });
   }
 
+
   get status() {
     return this.state.status;
   }
@@ -85,8 +87,20 @@ export default class Subscription extends RcModule {
     return this._storage.getItem(this._cacheStorageKey);
   }
 
-  @proxify
-  async _createSubscription() {
+  async _detectSleep() {
+    while (this._subscription) {
+      const t = Date.now();
+      await sleep(10000);
+      if (this.ready && this._subscribe && Date.now() - t > 20 * 1000) {
+        // a time lapse of 10 seconds is detected
+        await this.remove();
+        await this._subscribe();
+        break;
+      }
+    }
+  }
+
+  _createSubscription() {
     this._subscription = this._client.service.createSubscription();
     if (this.cachedSubscription) {
       try {
@@ -153,14 +167,11 @@ export default class Subscription extends RcModule {
         this._retry();
       }
     });
+    this._detectSleep();
   }
 
-  @proxify
-  async _subscribe() {
-    if (!this._subscription) {
-      await this._createSubscription();
-    }
-    this._subscription.setEventFilters(this.filters);
+  async _register() {
+    await sleep(1000);
     try {
       this.store.dispatch({
         type: this.actionTypes.subscribe,
@@ -169,10 +180,22 @@ export default class Subscription extends RcModule {
     } catch (error) {
       /* falls through */
     }
+    this._registerPromise = null;
+  }
+
+  _subscribe() {
+    if (!this._subscription) {
+      this._createSubscription();
+    }
+    this._subscription.setEventFilters(this.filters);
+    if (!this._registerPromise) {
+      this._registerPromise = this._register();
+    }
+    return this._registerPromise;
   }
 
   @proxify
-  async subscribe(events) {
+  async subscribe(events = []) {
     if (this.ready) {
       const oldFilters = this.filters;
       this.store.dispatch({
@@ -184,8 +207,9 @@ export default class Subscription extends RcModule {
       }
     }
   }
+
   @proxify
-  async unsubscribe(events) {
+  async unsubscribe(events = []) {
     if (this.ready) {
       const oldFilters = this.filters;
       this.store.dispatch({
@@ -199,14 +223,14 @@ export default class Subscription extends RcModule {
       }
     }
   }
-  @proxify
+
   async _stopRetry() {
     if (this._retryTimeoutId) {
       clearTimeout(this._retryTimeoutId);
       this._retryTimeoutId = null;
     }
   }
-  @proxify
+
   async _retry(t = this._timeToRetry) {
     this._stopRetry();
     this._retryTimeoutId = setTimeout(() => {
@@ -215,7 +239,7 @@ export default class Subscription extends RcModule {
       }
     }, t);
   }
-  @proxify
+
   async _remove() {
     if (this._subscription) {
       try {
@@ -233,6 +257,7 @@ export default class Subscription extends RcModule {
       this._removePromise = null;
     }
   }
+
   @proxify
   async remove() {
     if (!this._removePromise) {
@@ -241,7 +266,6 @@ export default class Subscription extends RcModule {
     return this._removePromise;
   }
 
-  @proxify
   async _reset() {
     this.store.dispatch({
       type: this.actionTypes.reset,
@@ -264,6 +288,7 @@ export default class Subscription extends RcModule {
       type: this.actionTypes.resetSuccess,
     });
   }
+
   @proxify
   async reset() {
     if (!this._resetPromise) {

@@ -77,10 +77,13 @@ export function sortByStartTime(a, b) {
 }
 
 export function normalizeStartTime(call) {
-  return {
+  const result = {
     ...call,
-    startTime: (new Date(call.startTime)).getTime(),
   };
+  if (call.startTime) {
+    result.startTime = (new Date(call.startTime)).getTime();
+  }
+  return result;
 }
 
 export function normalizeFromTo(call) {
@@ -94,8 +97,6 @@ export function normalizeFromTo(call) {
       { phoneNumber: call.to },
   };
 }
-
-
 
 /* ringout leg helpers */
 export function areTwoLegs(inbound, outbound) {

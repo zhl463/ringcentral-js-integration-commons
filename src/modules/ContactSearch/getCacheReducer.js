@@ -6,7 +6,7 @@ export function getContactSearchReducer(types) {
     let key = null;
     switch (type) {
       case types.save:
-        key = JSON.stringify([sourceName, searchString]);
+        key = `${sourceName}-${searchString}`;
         data[key] = {
           entities,
           timestamp: Date.now(),

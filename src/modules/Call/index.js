@@ -131,9 +131,24 @@ export default class Call extends RcModule {
     });
   }
 
+  // save the click to dial entity, only when call took place
+  onToNumberMatch({ entityId, startTime }) {
+    if (this.isIdle) {
+      this.store.dispatch({
+        type: this.actionTypes.toNumberMatched,
+        data: { entityId, startTime },
+      });
+    }
+  }
+
+  cleanToNumberEntities() {
+    this.store.dispatch({
+      type: this.actionTypes.cleanToNumberEntities,
+    });
+  }
+
   @proxify
   async onCall() {
-    // if (this.callStatus === callStatus.idle) {
     if (this.isIdle) {
       // last number check
       if (`${this.toNumber}`.trim().length === 0) {
@@ -148,6 +163,7 @@ export default class Call extends RcModule {
         this.store.dispatch({
           type: this.actionTypes.connect,
           number: this.toNumber,
+          callSettingMode: this._callSettingMode // for Track
         });
         try {
           const validatedNumbers = await this._getValidatedNumbers();
@@ -266,6 +282,7 @@ export default class Call extends RcModule {
     }
   }
 
+
   get status() {
     return this.state.status;
   }
@@ -292,5 +309,9 @@ export default class Call extends RcModule {
 
   get toNumber() {
     return this.state.toNumber;
+  }
+
+  get toNumberEntities() {
+    return this.state.toNumberEntities;
   }
 }

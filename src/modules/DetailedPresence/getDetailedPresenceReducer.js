@@ -1,5 +1,6 @@
 import 'core-js/fn/array/find';
 import 'core-js/fn/array/find-index';
+import R from 'ramda';
 import { combineReducers } from 'redux';
 import {
   getDndStatusReducer,
@@ -10,25 +11,39 @@ import {
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import {
   normalizeFromTo,
+  normalizeStartTime,
   isIntermediateCall,
 } from '../../lib/callLogHelpers';
 
 export function getDataReducer(types) {
+  const removeIntermediateCall = R.reduce((result, activeCall) => {
+    if (
+      !isIntermediateCall(activeCall) &&
+      !R.find(item => item.sessionId === activeCall.sessionId, result)
+    ) {
+      result.push(activeCall);
+    }
+    return result;
+  });
   return (state = [], { type, activeCalls = [], timestamp }) => {
     switch (type) {
       case types.fetchSuccess:
       case types.notification: {
-        return activeCalls
-          .map((activeCall) => {
-            const existingCall = state.find(call => (
-              call.sessionId === activeCall.sessionId
-            ));
-            if (!existingCall) return { ...normalizeFromTo(activeCall), startTime: timestamp };
-            if (isIntermediateCall(activeCall)) return existingCall;
-            return { ...existingCall, ...normalizeFromTo(activeCall) };
-          })
-          // [RCINT-3558] should ignore intermediate call states
-          .filter(activeCall => !isIntermediateCall(activeCall));
+        return R.map((activeCall) => {
+          const existingCall = state.find(call => (
+            call.sessionId === activeCall.sessionId
+          ));
+          if (!existingCall) {
+            return {
+              startTime: timestamp,
+              ...normalizeStartTime(normalizeFromTo(activeCall)),
+            };
+          }
+          return {
+            ...existingCall,
+            ...normalizeStartTime(normalizeFromTo(activeCall)),
+          };
+        }, removeIntermediateCall([], activeCalls));
       }
       case types.resetSuccess:
         return [];
