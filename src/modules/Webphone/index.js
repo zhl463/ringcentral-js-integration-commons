@@ -7,6 +7,7 @@ import sleep from '../../lib/sleep';
 import moduleStatuses from '../../enums/moduleStatuses';
 import connectionStatus from './connectionStatus';
 import sessionStatus from './sessionStatus';
+import recordStatus from './recordStatus';
 import actionTypes from './actionTypes';
 import callDirections from '../../enums/callDirections';
 import webphoneErrors from './webphoneErrors';
@@ -724,15 +725,37 @@ export default class Webphone extends RcModule {
     if (!session) {
       return;
     }
+    // If the status of current session is not connected,
+    // the recording process can not be started.
+    if (session.callStatus === sessionStatus.connecting) {
+      return;
+    }
     try {
-      session.isOnRecord = true;
+      session.recordStatus = recordStatus.pending;
       this._updateSessions();
       await session.startRecord();
-      console.log('Recording Started');
-    } catch (e) {
-      session.isOnRecord = false;
+      session.recordStatus = recordStatus.recording;
       this._updateSessions();
+    } catch (e) {
       console.error(e);
+      session.recordStatus = recordStatus.idle;
+      this._updateSessions();
+      // Recording has been disabled
+      if (e && e.code === -5) {
+        this._alert.danger({
+          message: webphoneErrors.recordDisabled
+        });
+        // Disabled phone recording
+        session.recordStatus = recordStatus.pending;
+        this._updateSessions();
+        return;
+      }
+      this._alert.danger({
+        message: webphoneErrors.recordError,
+        payload: {
+          errorCode: e.code
+        }
+      });
     }
   }
 
@@ -743,13 +766,14 @@ export default class Webphone extends RcModule {
       return;
     }
     try {
-      session.isOnRecord = false;
+      session.recordStatus = recordStatus.pending;
       this._updateSessions();
       await session.stopRecord();
-      console.log('Recording Stopped');
+      session.recordStatus = recordStatus.idle;
+      this._updateSessions();
     } catch (e) {
       console.error(e);
-      session.isOnRecord = true;
+      session.recordStatus = recordStatus.recording;
       this._updateSessions();
     }
   }
