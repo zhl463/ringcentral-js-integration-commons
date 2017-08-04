@@ -799,11 +799,31 @@ export default class Webphone extends RcModule {
       return;
     }
     try {
-      await session.transfer(transferNumber);
-      console.log('Transferred');
+      session.isOnTransfer = true;
+      this._updateSessions();
+      const validatedResult
+        = await this._numberValidate.validateNumbers([transferNumber]);
+      if (!validatedResult.result) {
+        validatedResult.errors.forEach((error) => {
+          this._alert.warning({
+            message: callErrors[error.type]
+          });
+        });
+        return;
+      }
+      const validPhoneNumber =
+        validatedResult.numbers[0] && validatedResult.numbers[0].e164;
+      await session.transfer(validPhoneNumber);
+      session.isOnTransfer = false;
+      this._updateSessions();
       this._onCallEnd(session);
     } catch (e) {
       console.error(e);
+      session.isOnTransfer = false;
+      this._updateSessions();
+      this._alert.danger({
+        message: webphoneErrors.transferError
+      });
     }
   }
 
