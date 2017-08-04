@@ -838,9 +838,10 @@ export default class Webphone extends RcModule {
     if (!session) {
       return;
     }
+    session.isOnFlip = true;
     try {
       await session.flip(flipValue);
-      this._onCallEnd(session);
+      // this._onCallEnd(session);
       console.log('Flipped');
     } catch (e) {
       console.error(e);
@@ -848,7 +849,6 @@ export default class Webphone extends RcModule {
         message: webphoneErrors.flipError
       });
     }
-    session.isOnFlip = true;
     this._updateSessions();
   }
 
