@@ -143,6 +143,9 @@ export default class CallLogger extends LoggerBase {
       ) {
         // is completely new, need entity information
         await this._contactMatcher.triggerMatch();
+
+        const toNumberEntity = (call.toNumberEntity) || '';
+
         const fromMatches = (call.from && call.from.phoneNumber &&
           this._contactMatcher.dataMapping[call.from.phoneNumber]) || [];
 
@@ -153,10 +156,16 @@ export default class CallLogger extends LoggerBase {
           fromMatches.length === 1 &&
           fromMatches[0]) ||
           null;
-        const toEntity = (toMatches &&
-          toMatches.length === 1 &&
-          toMatches[0]) ||
-          null;
+
+        let toEntity = null;
+        if(toMatches && toMatches.length === 1) {
+          toEntity = toMatches[0];
+        }else if(toMatches && toMatches.length > 1 && toNumberEntity !== '') {
+          toEntity = toMatches.find(match =>
+            toNumberEntity === match.id
+          );
+        }
+
         await this._autoLogCall({
           call,
           fromEntity,

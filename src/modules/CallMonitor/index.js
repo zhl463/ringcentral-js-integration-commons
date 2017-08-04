@@ -34,8 +34,7 @@ export default class CallMonitor extends RcModule {
       ...options,
       actionTypes,
     });
-    // TODO make call module optional
-    this._call = this::ensureExist(call, 'call');
+    this._call = call;
     this._accountInfo = this::ensureExist(accountInfo, 'accountInfo');
     this._detailedPresence = this::ensureExist(detailedPresence, 'detailedPresence');
     this._contactMatcher = contactMatcher;
@@ -196,7 +195,7 @@ export default class CallMonitor extends RcModule {
 
   async _onStateChange() {
     if (
-      this._call.ready &&
+      (!this._call || this._call.ready) &&
       this._accountInfo.ready &&
       this._detailedPresence.ready &&
       (!this._contactMatcher || this._contactMatcher.ready) &&
@@ -212,7 +211,7 @@ export default class CallMonitor extends RcModule {
       });
     } else if (
       (
-        !this._call.ready ||
+        (this._call && !this._call.ready) ||
         !this._accountInfo.ready ||
         !this._detailedPresence.ready ||
         (this._contactMatcher && !this._contactMatcher.ready) ||
@@ -259,7 +258,8 @@ export default class CallMonitor extends RcModule {
         this._lastProcessedCalls = this.calls;
 
         // no ringing calls
-        if (oldCalls.length !== 0 &&
+        if (this._call &&
+            oldCalls.length !== 0 &&
             this.calls.length === 0 &&
             this._call.toNumberEntities &&
             this._call.toNumberEntities.length !== 0) {
@@ -267,7 +267,7 @@ export default class CallMonitor extends RcModule {
           this._call.cleanToNumberEntities();
         }
 
-        let entities = this._call.toNumberEntities.sort(sortByStartTime);
+        let entities = this._call ? this._call.toNumberEntities.sort(sortByStartTime) : [];
         // const matchedMap = {};
         this.calls.forEach((call) => {
           const oldCallIndex = oldCalls.findIndex(item => item.sessionId === call.sessionId);

@@ -37,7 +37,7 @@ export default function init() {
       ];
 
       analytics.factory = function factory(method) {
-        console.debug(method);
+        // console.debug(method);
         return function pushMethod(...args) {
           args.unshift(method);
           analytics.push(args);
