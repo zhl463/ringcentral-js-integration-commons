@@ -858,16 +858,17 @@ export default class Webphone extends RcModule {
     if (!session) {
       return;
     }
-    session.isOnFlip = true;
     try {
       await session.flip(flipValue);
       // this._onCallEnd(session);
+      session.isOnFlip = true;
       console.log('Flipped');
     } catch (e) {
-      console.error(e);
+      session.isOnFlip = false;
       this._alert.warning({
         message: webphoneErrors.flipError
       });
+      console.error(e);
     }
     this._updateSessions();
   }
