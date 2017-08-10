@@ -231,6 +231,7 @@ export default class Phone extends RcModule {
       client: this.client,
       storage: this.storage,
       tabManager: this.tabManager,
+      connectivityMonitor: this.connectivityMonitor,
       getState: () => this.state.subscription,
     }));
     reducers.subscription = this.subscription.reducer;
