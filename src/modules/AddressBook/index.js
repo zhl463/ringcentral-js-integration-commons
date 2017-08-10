@@ -1,6 +1,5 @@
 import Pollable from '../../lib/Pollable';
 import sleep from '../../lib/sleep';
-import moduleStatuses from '../../enums/moduleStatuses';
 import syncTypes from '../../enums/syncTypes';
 import actionTypes from './actionTypes';
 import proxify from '../../lib/proxy/proxify';

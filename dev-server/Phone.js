@@ -293,6 +293,7 @@ export default class Phone extends RcModule {
       client: this.client,
       subscription: this.subscription,
       storage: this.storage,
+      connectivityMonitor: this.connectivityMonitor,
       getState: () => this.state.detailedPresence,
     }));
     reducers.detailedPresence = this.detailedPresence.reducer;
@@ -393,6 +394,7 @@ export default class Phone extends RcModule {
       client: this.client,
       storage: this.storage,
       subscription: this.subscription,
+      connectivityMonitor: this.connectivityMonitor,
       getState: () => this.state.messageStore,
     }));
     reducers.messageStore = this.messageStore.reducer;

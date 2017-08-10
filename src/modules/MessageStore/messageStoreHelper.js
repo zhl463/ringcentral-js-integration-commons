@@ -21,6 +21,7 @@ export function getMessageSyncParams({
   syncToken,
   conversationId,
   dateTo,
+  daySpan = 7,
 }) {
   if (syncToken) {
     return {
@@ -29,7 +30,7 @@ export function getMessageSyncParams({
     };
   }
   const lastSevenDate = new Date();
-  lastSevenDate.setDate(lastSevenDate.getDate() - 7);
+  lastSevenDate.setDate(lastSevenDate.getDate() - daySpan);
   const params = {
     syncType: syncTypes.fSync,
     dateFrom: lastSevenDate.toISOString(),
