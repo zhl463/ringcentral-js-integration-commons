@@ -344,6 +344,7 @@ export default class Phone extends RcModule {
       getState: () => this.state.composeText,
       messageSender: this.messageSender,
       numberValidate: this.numberValidate,
+      contactSearch: this.contactSearch,
     }));
     reducers.composeText = this.composeText.reducer;
     this.addModule('callMonitor', new CallMonitor({

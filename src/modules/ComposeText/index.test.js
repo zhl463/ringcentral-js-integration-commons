@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { createStore } from 'redux';
 import ComposeText from './index';
 import getComposeTextReducer from './getComposeTextReducer';
-import actionTypes from './composeTextActionTypes';
+import actionTypes from './actionTypes';
 import messageSenderMessages from '../MessageSender/messageSenderMessages';
 
 describe('ComposeText Unit Test', () => {
@@ -19,6 +19,8 @@ describe('ComposeText Unit Test', () => {
       '_onStateChange',
       '_shouldInit',
       '_shouldReset',
+      '_shouldHandleRecipient',
+      '_handleRecipient',
       '_initSenderNumber',
       '_resetModuleStatus',
       '_alertWarning',
@@ -39,86 +41,138 @@ describe('ComposeText Unit Test', () => {
   describe('_onStateChange', () => {
     it('_initSenderNumber and clean should be called once', () => {
       sinon.stub(composeText, '_shouldInit').callsFake(() => true);
+      sinon.stub(composeText, '_shouldHandleRecipient').callsFake(() => false);
       sinon.stub(composeText, '_shouldReset').callsFake(() => false);
       composeText._auth = {
         isFreshLogin: true
       };
       sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, '_handleRecipient');
       sinon.stub(composeText, '_resetModuleStatus');
       sinon.stub(composeText, 'clean');
       composeText._onStateChange();
       sinon.assert.calledOnce(composeText._initSenderNumber);
+      sinon.assert.notCalled(composeText._handleRecipient);
       sinon.assert.notCalled(composeText._resetModuleStatus);
       sinon.assert.calledOnce(composeText.clean);
     });
     it('_initSenderNumber should be called once', () => {
       sinon.stub(composeText, '_shouldInit').callsFake(() => true);
+      sinon.stub(composeText, '_shouldHandleRecipient').callsFake(() => false);
       sinon.stub(composeText, '_shouldReset').callsFake(() => false);
       composeText._auth = {
         isFreshLogin: false
       };
       sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, '_handleRecipient');
       sinon.stub(composeText, '_resetModuleStatus');
       sinon.stub(composeText, 'clean');
       composeText._onStateChange();
       sinon.assert.calledOnce(composeText._initSenderNumber);
+      sinon.assert.notCalled(composeText._handleRecipient);
+      sinon.assert.notCalled(composeText._resetModuleStatus);
+      sinon.assert.notCalled(composeText.clean);
+    });
+    it('_handleRecipient should be called once', () => {
+      sinon.stub(composeText, '_shouldInit').callsFake(() => false);
+      sinon.stub(composeText, '_shouldHandleRecipient').callsFake(() => true);
+      sinon.stub(composeText, '_shouldReset').callsFake(() => false);
+      composeText._auth = {
+        isFreshLogin: true
+      };
+      sinon.stub(composeText, '_resetModuleStatus');
+      sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, '_handleRecipient');
+      sinon.stub(composeText, 'clean');
+      composeText._onStateChange();
+      sinon.assert.notCalled(composeText._initSenderNumber);
+      sinon.assert.calledOnce(composeText._handleRecipient);
+      sinon.assert.notCalled(composeText._resetModuleStatus);
+      sinon.assert.notCalled(composeText.clean);
+    });
+    it('_handleRecipient should be called once when _shouldHandleRecipient is true', () => {
+      sinon.stub(composeText, '_shouldInit').callsFake(() => false);
+      sinon.stub(composeText, '_shouldHandleRecipient').callsFake(() => true);
+      sinon.stub(composeText, '_shouldReset').callsFake(() => false);
+      composeText._auth = {
+        isFreshLogin: false
+      };
+      sinon.stub(composeText, '_resetModuleStatus');
+      sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, '_handleRecipient');
+      sinon.stub(composeText, 'clean');
+      composeText._onStateChange();
+      sinon.assert.notCalled(composeText._initSenderNumber);
+      sinon.assert.calledOnce(composeText._handleRecipient);
       sinon.assert.notCalled(composeText._resetModuleStatus);
       sinon.assert.notCalled(composeText.clean);
     });
     it('_resetModuleStatus should be called once', () => {
       sinon.stub(composeText, '_shouldInit').callsFake(() => false);
+      sinon.stub(composeText, '_shouldHandleRecipient').callsFake(() => false);
       sinon.stub(composeText, '_shouldReset').callsFake(() => true);
       composeText._auth = {
         isFreshLogin: true
       };
       sinon.stub(composeText, '_resetModuleStatus');
       sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, '_handleRecipient');
       sinon.stub(composeText, 'clean');
       composeText._onStateChange();
       sinon.assert.notCalled(composeText._initSenderNumber);
+      sinon.assert.notCalled(composeText._handleRecipient);
       sinon.assert.calledOnce(composeText._resetModuleStatus);
       sinon.assert.notCalled(composeText.clean);
     });
     it('_resetModuleStatus should be called once when _shouldReset is true', () => {
       sinon.stub(composeText, '_shouldInit').callsFake(() => false);
+      sinon.stub(composeText, '_shouldHandleRecipient').callsFake(() => false);
       sinon.stub(composeText, '_shouldReset').callsFake(() => true);
       composeText._auth = {
         isFreshLogin: false
       };
       sinon.stub(composeText, '_resetModuleStatus');
       sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, '_handleRecipient');
       sinon.stub(composeText, 'clean');
       composeText._onStateChange();
       sinon.assert.notCalled(composeText._initSenderNumber);
+      sinon.assert.notCalled(composeText._handleRecipient);
       sinon.assert.calledOnce(composeText._resetModuleStatus);
       sinon.assert.notCalled(composeText.clean);
     });
-    it('_initSenderNumber and _resetModuleStatus and clean should Not be called', () => {
+    it('_initSenderNumber and _resetModuleStatus and _handleRecipient and clean should Not be called', () => {
       sinon.stub(composeText, '_shouldInit').callsFake(() => false);
       sinon.stub(composeText, '_shouldReset').callsFake(() => false);
+      sinon.stub(composeText, '_shouldHandleRecipient').callsFake(() => false);
       composeText._auth = {
         isFreshLogin: true
       };
       sinon.stub(composeText, '_resetModuleStatus');
       sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, '_handleRecipient');
       sinon.stub(composeText, 'clean');
       composeText._onStateChange();
       sinon.assert.notCalled(composeText._resetModuleStatus);
       sinon.assert.notCalled(composeText._initSenderNumber);
+      sinon.assert.notCalled(composeText._handleRecipient);
       sinon.assert.notCalled(composeText.clean);
     });
-    it('_initSenderNumber and _resetModuleStatus and clean should Not be called', () => {
+    it('_initSenderNumber and _resetModuleStatus and _shouldHandleRecipient and clean should Not be called', () => {
       sinon.stub(composeText, '_shouldInit').callsFake(() => false);
       sinon.stub(composeText, '_shouldReset').callsFake(() => false);
+      sinon.stub(composeText, '_shouldHandleRecipient').callsFake(() => false);
       composeText._auth = {
         isFreshLogin: false
       };
       sinon.stub(composeText, '_resetModuleStatus');
       sinon.stub(composeText, '_initSenderNumber');
+      sinon.stub(composeText, '_handleRecipient');
       sinon.stub(composeText, 'clean');
       composeText._onStateChange();
       sinon.assert.notCalled(composeText._resetModuleStatus);
       sinon.assert.notCalled(composeText._initSenderNumber);
+      sinon.assert.notCalled(composeText._handleRecipient);
       sinon.assert.notCalled(composeText.clean);
     });
   });

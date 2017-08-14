@@ -7,7 +7,7 @@ import getComposeTextReducer, {
   getMessageText,
 } from './getComposeTextReducer';
 
-import composeTextActionTypes from './composeTextActionTypes';
+import composeTextActionTypes from './actionTypes';
 import composeTextStatus from './composeTextStatus';
 
 describe('CompostText :: getSenderNumber', () => {

@@ -27,13 +27,27 @@ export function getTypingToNumber(types) {
   };
 }
 
+export function getToNumberEntityReducer(types) {
+  return (state = '', { type, entityId }) => {
+    switch (type) {
+      case types.toNumberMatched:
+        return entityId;
+      case types.clean:
+      case types.cleanTypingToNumber:
+        return '';
+      default:
+        return state;
+    }
+  };
+}
+
 export function getToNumbers(types) {
   return (state = [], { type, number }) => {
     const newState = state;
     let oldNumber = null;
     switch (type) {
       case types.addToNumber:
-        oldNumber = newState.find((item) => (
+        oldNumber = newState.find(item => (
           number.phoneNumber === item.phoneNumber
         ));
         if (oldNumber) {
@@ -73,5 +87,6 @@ export default function getComposeTextReducer(types) {
     typingToNumber: getTypingToNumber(types),
     toNumbers: getToNumbers(types),
     messageText: getMessageText(types),
+    toNumberEntity: getToNumberEntityReducer(types),
   });
 }

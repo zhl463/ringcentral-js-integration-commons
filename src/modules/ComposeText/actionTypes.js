@@ -3,10 +3,12 @@ import moduleActionTypes from '../../enums/moduleActionTypes';
 
 export default new Enum([
   ...Object.keys(moduleActionTypes),
+  'clean',
   'updateSenderNumber',
   'updateTypingToNumber',
   'cleanTypingToNumber',
   'addToNumber',
   'removeToNumber',
   'updateMessageText',
+  'toNumberMatched',
 ], 'composeText');

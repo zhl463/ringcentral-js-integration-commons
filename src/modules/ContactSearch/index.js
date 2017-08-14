@@ -213,6 +213,10 @@ export default class ContactSearch extends RcModule {
     return this.state.searching;
   }
 
+  get searchResult() {
+    return this.searching ? this.searching.result : [];
+  }
+
   get ready() {
     return this.status === moduleStatuses.ready;
   }

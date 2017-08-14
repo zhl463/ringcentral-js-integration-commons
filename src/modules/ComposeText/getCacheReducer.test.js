@@ -3,7 +3,7 @@ import getCacheReducer, {
   getSenderNumberReducer,
 } from './getCacheReducer';
 
-import composeTextActionTypes from './composeTextActionTypes';
+import composeTextActionTypes from './actionTypes';
 
 describe('ComposeText :: Cache :: getSenderNumberReducer', () => {
   it('should be a function', () => {
