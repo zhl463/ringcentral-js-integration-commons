@@ -226,7 +226,10 @@ export default class Call extends RcModule {
     if (!validatedResult.result) {
       validatedResult.errors.forEach((error) => {
         this._alert.warning({
-          message: callErrors[error.type]
+          message: callErrors[error.type],
+          payload: {
+            phoneNumber: error.phoneNumber
+          }
         });
       });
       return null;

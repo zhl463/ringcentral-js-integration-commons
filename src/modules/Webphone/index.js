@@ -606,7 +606,10 @@ export default class Webphone extends RcModule {
       if (!validatedResult.result) {
         validatedResult.errors.forEach((error) => {
           this._alert.warning({
-            message: callErrors[error.type]
+            message: callErrors[error.type],
+            payload: {
+              phoneNumber: error.phoneNumber
+            }
           });
         });
         return false;
@@ -806,7 +809,10 @@ export default class Webphone extends RcModule {
       if (!validatedResult.result) {
         validatedResult.errors.forEach((error) => {
           this._alert.warning({
-            message: callErrors[error.type]
+            message: callErrors[error.type],
+            payload: {
+              phoneNumber: error.phoneNumber
+            }
           });
         });
         session.isOnTransfer = false;
