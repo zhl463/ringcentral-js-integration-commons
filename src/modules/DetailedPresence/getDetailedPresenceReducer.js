@@ -34,9 +34,13 @@ export function getDataReducer(types) {
             call.sessionId === activeCall.sessionId
           ));
           if (!existingCall) {
+            const normalizedCall = normalizeStartTime(normalizeFromTo(activeCall));
+            const startTime = normalizedCall.startTime || timestamp;
+            const offset = Math.min(startTime - timestamp, 0);
             return {
-              startTime: timestamp,
-              ...normalizeStartTime(normalizeFromTo(activeCall)),
+              ...normalizedCall,
+              startTime,
+              offset,
             };
           }
           return {
