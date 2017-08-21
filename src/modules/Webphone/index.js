@@ -560,6 +560,10 @@ export default class Webphone extends RcModule {
       console.log('Event: Rejected');
       this._onCallEnd(session);
     });
+    session.on('terminated', () => {
+      console.log('Event: Terminated');
+      this._onCallEnd(session);
+    });
     this._onCallRing(session);
   }
 
