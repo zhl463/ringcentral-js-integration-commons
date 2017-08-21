@@ -96,15 +96,24 @@ export function getNumbersFromMessage({ extensionNumber, message }) {
     // It is safer and simpler to just put all known contacts into array and filter self out
     const contacts = (message.to && message.to.slice()) || [];
     if (message.from) contacts.push(message.from);
+    const correspondents = uniqueRecipients(contacts,
+      contact => contact.extensionNumber !== extensionNumber
+    );
+    // to support send message to myself.
+    if (correspondents && correspondents.length === 0) {
+      const myPhoneLength =
+        contacts.filter(contact => contact.extensionNumber === extensionNumber).length;
+      if (myPhoneLength > 0 && contacts.length === myPhoneLength) {
+        correspondents.push({
+          extensionNumber,
+        });
+      }
+    }
     return {
       self: {
         extensionNumber
       },
-      correspondents: (
-        uniqueRecipients(contacts,
-          contact => contact.extensionNumber !== extensionNumber
-        )
-      ) || [],
+      correspondents: correspondents || [],
     };
   }
 
