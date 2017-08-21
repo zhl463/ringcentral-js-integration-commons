@@ -13,7 +13,7 @@ import {
   sortByStartTime,
 } from '../../lib/callLogHelpers';
 import ensureExist from '../../lib/ensureExist';
-
+import { isRing, isOnHold } from '../Webphone/webphoneHelper';
 
 export default class CallMonitor extends RcModule {
   constructor({
@@ -60,35 +60,37 @@ export default class CallMonitor extends RcModule {
       () => this._accountInfo.countryCode,
       () => this._webphone && this._webphone.sessions,
       (callsFromPresence, countryCode, sessions) => (
-        callsFromPresence.map((call) => {
+        callsFromPresence.map((callItem) => {
           // use account countryCode to normalize number due to API issues [RCINT-3419]
           const fromNumber = normalizeNumber({
-            phoneNumber: call.from && call.from.phoneNumber,
+            phoneNumber: callItem.from && callItem.from.phoneNumber,
             countryCode,
           });
           const toNumber = normalizeNumber({
-            phoneNumber: call.to && call.to.phoneNumber,
+            phoneNumber: callItem.to && callItem.to.phoneNumber,
             countryCode,
           });
           let webphoneSession;
-          if (sessions && call.sipData) {
+          if (sessions && callItem.sipData) {
             webphoneSession = sessions.find((session) => {
-              if (session.direction !== call.direction) {
+              // debugger;
+              if (session.direction !== callItem.direction) {
                 return false;
               }
-              let remoteUser;
-              if (session.direction === callDirections.outbound) {
-                remoteUser = session.to;
-              } else {
-                remoteUser = session.from;
-              }
-              if (call.sipData.remoteUri.indexOf(remoteUser) === -1) {
-                return false;
-              }
-              const startTime = session.startTime || session.creationTime;
               if (
-                call.startTime - startTime > 4000 ||
-                session.startTime - startTime > 4000
+                session.direction === callDirections.inbound &&
+                callItem.sipData.remoteUri.indexOf(session.from) === -1
+              ) {
+                return false;
+              }
+              if (
+                session.direction === callDirections.outbound &&
+                callItem.sipData.remoteUri.indexOf(session.to) === -1
+              ) {
+                return false;
+              }
+              if (
+                Math.abs(callItem.startTime - session.creationTime) > 5000
               ) {
                 return false;
               }
@@ -97,7 +99,7 @@ export default class CallMonitor extends RcModule {
           }
 
           return {
-            ...call,
+            ...callItem,
             from: {
               phoneNumber: fromNumber,
             },
@@ -106,43 +108,74 @@ export default class CallMonitor extends RcModule {
             },
             startTime: (
               (webphoneSession && webphoneSession.startTime) ||
-              call.startTime
+              callItem.startTime
             ),
             webphoneSession,
           };
-        }).filter((call) => {
-          if (!call.webphoneSession || !sessions) {
+        }).filter((callItem) => {
+          if (!callItem.webphoneSession || !sessions) {
             return true;
           }
           const session = sessions.find(
-            sessionItem => call.webphoneSession.id === sessionItem.id
+            sessionItem => callItem.webphoneSession.id === sessionItem.id
           );
           return !!session;
         }).sort(sortByStartTime)
       ),
     );
+
     this.addSelector('calls',
       this._selectors.normalizedCalls,
       () => (this._contactMatcher && this._contactMatcher.dataMapping),
       () => (this._activityMatcher && this._activityMatcher.dataMapping),
       () => (this.callMatched),
       (normalizedCalls, contactMapping = {}, activityMapping = {}, callMatched) => {
-        const calls = normalizedCalls.map((call) => {
-          const fromNumber = call.from && call.from.phoneNumber;
-          const toNumber = call.to && call.to.phoneNumber;
+        const calls = normalizedCalls.map((callItem) => {
+          const fromNumber = callItem.from && callItem.from.phoneNumber;
+          const toNumber = callItem.to && callItem.to.phoneNumber;
           const fromMatches = (fromNumber && contactMapping[fromNumber]) || [];
           const toMatches = (toNumber && contactMapping[toNumber]) || [];
-          const toNumberEntity = callMatched[call.sessionId];
+          const toNumberEntity = callMatched[callItem.sessionId];
           return {
-            ...call,
+            ...callItem,
             fromMatches,
             toMatches,
-            activityMatches: (activityMapping[call.sessionId]) || [],
+            activityMatches: (activityMapping[callItem.sessionId]) || [],
             toNumberEntity,
           };
         });
         return calls;
       }
+    );
+
+    this.addSelector('activeRingCalls',
+      this._selectors.calls,
+      calls => calls.filter(callItem =>
+        callItem.webphoneSession && isRing(callItem.webphoneSession)
+      )
+    );
+
+    this.addSelector('activeOnHoldCalls',
+      this._selectors.calls,
+      calls => calls.filter(callItem =>
+        callItem.webphoneSession && isOnHold(callItem.webphoneSession)
+      )
+    );
+
+    this.addSelector('activeCurrentCalls',
+      this._selectors.calls,
+      calls => calls.filter(callItem =>
+        callItem.webphoneSession &&
+        !isOnHold(callItem.webphoneSession) &&
+        !isRing(callItem.webphoneSession)
+      )
+    );
+
+    this.addSelector('otherDeviceCalls',
+      this._selectors.calls,
+      calls => calls.filter(callItem =>
+        !callItem.webphoneSession
+      )
     );
 
     this.addSelector('uniqueNumbers',
@@ -156,12 +189,12 @@ export default class CallMonitor extends RcModule {
             numberMap[number] = true;
           }
         }
-        normalizedCalls.forEach((call) => {
-          if (call.from && call.from.phoneNumber) {
-            addIfNotExist(call.from.phoneNumber);
+        normalizedCalls.forEach((callItem) => {
+          if (callItem.from && callItem.from.phoneNumber) {
+            addIfNotExist(callItem.from.phoneNumber);
           }
-          if (call.to && call.to.phoneNumber) {
-            addIfNotExist(call.to.phoneNumber);
+          if (callItem.to && callItem.to.phoneNumber) {
+            addIfNotExist(callItem.to.phoneNumber);
           }
         });
         return output;
@@ -177,10 +210,12 @@ export default class CallMonitor extends RcModule {
         ),
       });
     }
+
     this.addSelector('sessionIds',
       () => this._detailedPresence.calls,
-      calls => calls.map(call => call.sessionId)
+      calls => calls.map(callItem => callItem.sessionId)
     );
+
     if (this._activityMatcher) {
       this._activityMatcher.addQuerySource({
         getQueriesFn: this._selectors.sessionIds,
@@ -352,5 +387,21 @@ export default class CallMonitor extends RcModule {
 
   get callMatched() {
     return this._storage.getItem(this._callMatchedKey);
+  }
+
+  get activeRingCalls() {
+    return this._selectors.activeRingCalls();
+  }
+
+  get activeOnHoldCalls() {
+    return this._selectors.activeOnHoldCalls();
+  }
+
+  get activeCurrentCalls() {
+    return this._selectors.activeCurrentCalls();
+  }
+
+  get otherDeviceCalls() {
+    return this._selectors.otherDeviceCalls();
   }
 }

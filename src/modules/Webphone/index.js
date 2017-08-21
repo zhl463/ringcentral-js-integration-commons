@@ -17,6 +17,7 @@ import proxify from '../../lib/proxy/proxify';
 import {
   isBrowerSupport,
   normalizeSession,
+  isRing,
 } from './webphoneHelper';
 import getWebphoneReducer, {
   getWebphoneCountsReducer,
@@ -144,6 +145,11 @@ export default class Webphone extends RcModule {
         );
         return activeSession;
       }
+    );
+
+    this.addSelector('ringSessions',
+      () => this.sessions,
+      sessions => sessions.filter(session => isRing(session))
     );
 
     if (this._contactMatcher) {
@@ -1038,8 +1044,11 @@ export default class Webphone extends RcModule {
     if (this._contactMatcher) {
       this._contactMatcher.triggerMatch();
     }
+    if (this.activeSessionId) {
+      this._webphone.userAgent.audioHelper.playIncoming(false);
+    }
     if (typeof this._onCallRingFunc === 'function') {
-      this._onCallRingFunc(session, this.activeSession);
+      this._onCallRingFunc(session, this.ringSession);
     }
   }
 
@@ -1105,6 +1114,10 @@ export default class Webphone extends RcModule {
 
   get sessions() {
     return this.state.sessions;
+  }
+
+  get ringSessions() {
+    return this._selectors.ringSessions();
   }
 
   get videoElementPrepared() {
