@@ -33,7 +33,7 @@ export default class ComposeText extends RcModule {
     this._messageSender = messageSender;
     this._numberValidate = numberValidate;
     this._contactSearch = contactSearch;
-    this._lastToNumberEntity = '';
+    this._lastContactSearchResult = [];
     storage.registerReducer({ key: this._storageKey, reducer: this._cacheReducer });
   }
 
@@ -86,7 +86,7 @@ export default class ComposeText extends RcModule {
       (!!this._contactSearch &&
         this._contactSearch.ready &&
         this._contactSearch.searchResult.length > 0) &&
-      this.toNumberEntity !== this._lastToNumberEntity
+      this._contactSearch.searchResult !== this._lastContactSearchResult
     );
   }
 
@@ -108,15 +108,15 @@ export default class ComposeText extends RcModule {
   }
 
   _handleRecipient() {
-    this._lastToNumberEntity = this.toNumberEntity;
-    const recipient = this._contactSearch.searchResult.find(
-      item => item.id === this.toNumberEntity
-    );
-    if (recipient) {
-      this.toNumbers.map(toNumber =>
-        this.removeToNumber(toNumber)
+    const dummy = this.toNumbers.find(toNumber => !toNumber.entityType);
+    if (dummy) {
+      const recipient = this._contactSearch.searchResult.find(
+        item => item.id === dummy.id
       );
-      this.addToRecipients(recipient);
+      if (recipient) {
+        this.addToNumber(recipient);
+        this._lastContactSearchResult = this._contactSearch.searchResult.slice();
+      }
     }
   }
 
