@@ -89,8 +89,14 @@ export default class CallMonitor extends RcModule {
               ) {
                 return false;
               }
+              let webphoneStartTime;
+              if (session.direction === callDirections.inbound) {
+                webphoneStartTime = session.creationTime;
+              } else {
+                webphoneStartTime = session.startTime || session.creationTime;
+              }
               if (
-                Math.abs(callItem.startTime - session.creationTime) > 5000
+                Math.abs(callItem.startTime - webphoneStartTime) > 6000
               ) {
                 return false;
               }
