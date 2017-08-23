@@ -27,7 +27,7 @@ export default class ClientTransport extends TransportBase {
         case this._events.response:
           if (requestId && this._requests.has(requestId)) {
             if (error) {
-              this._requests.get(requestId).reject(error);
+              this._requests.get(requestId).reject(new Error(error));
             } else {
               this._requests.get(requestId).resolve(result);
             }
@@ -40,7 +40,7 @@ export default class ClientTransport extends TransportBase {
   }
   async request({ payload }) {
     const requestId = uuid.v4();
-    const promise = new Promise((resolve, reject) => {
+    let promise = new Promise((resolve, reject) => {
       this._requests.set(requestId, {
         resolve,
         reject,
@@ -55,7 +55,7 @@ export default class ClientTransport extends TransportBase {
       timeout = null;
       this._requests.get(requestId).reject(new Error(this._events.timeout));
     }, this._timeout);
-    promise.then((result) => {
+    promise = promise.then((result) => {
       if (timeout) clearTimeout(timeout);
       this._requests.delete(requestId);
       return Promise.resolve(result);
