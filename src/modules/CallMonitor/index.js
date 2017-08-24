@@ -96,7 +96,7 @@ export default class CallMonitor extends RcModule {
                 webphoneStartTime = session.startTime || session.creationTime;
               }
               if (
-                Math.abs(callItem.startTime - webphoneStartTime) > 6000
+                Math.abs(callItem.startTime - webphoneStartTime) > 16000
               ) {
                 return false;
               }

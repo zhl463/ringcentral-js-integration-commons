@@ -18,6 +18,7 @@ import {
   isBrowerSupport,
   normalizeSession,
   isRing,
+  isOnHold,
 } from './webphoneHelper';
 import getWebphoneReducer, {
   getWebphoneCountsReducer,
@@ -150,6 +151,11 @@ export default class Webphone extends RcModule {
     this.addSelector('ringSessions',
       () => this.sessions,
       sessions => sessions.filter(session => isRing(session))
+    );
+
+    this.addSelector('onHoldSessions',
+      () => this.sessions,
+      sessions => sessions.filter(session => isOnHold(session))
     );
 
     if (this._contactMatcher) {
@@ -1030,6 +1036,7 @@ export default class Webphone extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.callStart,
       sessionId: session.id,
+      sessions: this.sessions,
     });
     if (this._contactMatcher) {
       this._contactMatcher.triggerMatch();
@@ -1044,11 +1051,12 @@ export default class Webphone extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.callRing,
       sessionId: session.id,
+      sessions: this.sessions,
     });
     if (this._contactMatcher) {
       this._contactMatcher.triggerMatch();
     }
-    if (this.activeSessionId) {
+    if (this.activeSession && !isOnHold(this.activeSession)) {
       this._webphone.userAgent.audioHelper.playIncoming(false);
     }
     if (typeof this._onCallRingFunc === 'function') {
@@ -1061,6 +1069,7 @@ export default class Webphone extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.callEnd,
       sessionId: session.id,
+      sessions: this.sessions,
     });
     if (typeof this._onCallEndFunc === 'function') {
       this._onCallEndFunc(session, this.activeSession);
@@ -1122,6 +1131,10 @@ export default class Webphone extends RcModule {
 
   get ringSessions() {
     return this._selectors.ringSessions();
+  }
+
+  get onHoldSessions() {
+    return this._selectors.onHoldSessions();
   }
 
   get videoElementPrepared() {
