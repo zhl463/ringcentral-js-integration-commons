@@ -148,6 +148,12 @@ export default class Call extends RcModule {
   }
 
   @proxify
+  async call(number) {
+    this.onToNumberChange(number);
+    await this.onCall();
+  }
+
+  @proxify
   async onCall() {
     if (this.isIdle) {
       // last number check
