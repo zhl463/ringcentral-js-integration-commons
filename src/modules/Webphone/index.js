@@ -17,6 +17,8 @@ import proxify from '../../lib/proxy/proxify';
 import {
   isBrowerSupport,
   normalizeSession,
+  isRing,
+  isOnHold,
 } from './webphoneHelper';
 import getWebphoneReducer, {
   getWebphoneCountsReducer,
@@ -144,6 +146,16 @@ export default class Webphone extends RcModule {
         );
         return activeSession;
       }
+    );
+
+    this.addSelector('ringSessions',
+      () => this.sessions,
+      sessions => sessions.filter(session => isRing(session))
+    );
+
+    this.addSelector('onHoldSessions',
+      () => this.sessions,
+      sessions => sessions.filter(session => isOnHold(session))
     );
 
     if (this._contactMatcher) {
@@ -554,6 +566,10 @@ export default class Webphone extends RcModule {
       console.log('Event: Rejected');
       this._onCallEnd(session);
     });
+    session.on('terminated', () => {
+      console.log('Event: Terminated');
+      this._onCallEnd(session);
+    });
     this._onCallRing(session);
   }
 
@@ -606,7 +622,10 @@ export default class Webphone extends RcModule {
       if (!validatedResult.result) {
         validatedResult.errors.forEach((error) => {
           this._alert.warning({
-            message: callErrors[error.type]
+            message: callErrors[error.type],
+            payload: {
+              phoneNumber: error.phoneNumber
+            }
           });
         });
         return false;
@@ -806,7 +825,10 @@ export default class Webphone extends RcModule {
       if (!validatedResult.result) {
         validatedResult.errors.forEach((error) => {
           this._alert.warning({
-            message: callErrors[error.type]
+            message: callErrors[error.type],
+            payload: {
+              phoneNumber: error.phoneNumber
+            }
           });
         });
         session.isOnTransfer = false;
@@ -1014,6 +1036,7 @@ export default class Webphone extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.callStart,
       sessionId: session.id,
+      sessions: this.sessions,
     });
     if (this._contactMatcher) {
       this._contactMatcher.triggerMatch();
@@ -1028,12 +1051,16 @@ export default class Webphone extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.callRing,
       sessionId: session.id,
+      sessions: this.sessions,
     });
     if (this._contactMatcher) {
       this._contactMatcher.triggerMatch();
     }
+    if (this.activeSession && !isOnHold(this.activeSession)) {
+      this._webphone.userAgent.audioHelper.playIncoming(false);
+    }
     if (typeof this._onCallRingFunc === 'function') {
-      this._onCallRingFunc(session, this.activeSession);
+      this._onCallRingFunc(session, this.ringSession);
     }
   }
 
@@ -1042,6 +1069,7 @@ export default class Webphone extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.callEnd,
       sessionId: session.id,
+      sessions: this.sessions,
     });
     if (typeof this._onCallEndFunc === 'function') {
       this._onCallEndFunc(session, this.activeSession);
@@ -1099,6 +1127,14 @@ export default class Webphone extends RcModule {
 
   get sessions() {
     return this.state.sessions;
+  }
+
+  get ringSessions() {
+    return this._selectors.ringSessions();
+  }
+
+  get onHoldSessions() {
+    return this._selectors.onHoldSessions();
   }
 
   get videoElementPrepared() {

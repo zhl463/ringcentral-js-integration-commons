@@ -1,6 +1,7 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import connectionStatus from './connectionStatus';
+import { isRing, isOnHold } from './webphoneHelper';
 
 export function getVideoElementPreparedReducer(types) {
   return (state = false, { type }) => {
@@ -73,15 +74,21 @@ export function getWebphoneCountsReducer(types) {
 }
 
 export function getActiveSessionIdReducer(types) {
-  return (state = null, { type, sessionId }) => {
+  return (state = null, { type, sessionId, sessions = [] }) => {
+    let onHoldSessions;
     switch (type) {
       case types.callStart:
         return sessionId;
       case types.callEnd:
-        if (sessionId === state) {
-          return null;
+        if (sessionId !== state) {
+          return state;
         }
-        return state;
+        onHoldSessions =
+          sessions.filter(session => isOnHold(session));
+        if (onHoldSessions && onHoldSessions[0]) {
+          return onHoldSessions[0].id;
+        }
+        return null;
       case types.disconnect:
         return null;
       default:
@@ -91,16 +98,22 @@ export function getActiveSessionIdReducer(types) {
 }
 
 export function getRingSessionIdReducer(types) {
-  return (state = null, { type, sessionId }) => {
+  return (state = null, { type, sessionId, sessions = [] }) => {
+    let ringSessions;
     switch (type) {
       case types.callRing:
         return sessionId;
       case types.callStart:
       case types.callEnd:
-        if (sessionId === state) {
-          return null;
+        if (sessionId !== state) {
+          return state;
         }
-        return state;
+        ringSessions =
+          sessions.filter(session => isRing(session));
+        if (ringSessions && ringSessions[0]) {
+          return ringSessions[0].id;
+        }
+        return null;
       case types.disconnect:
         return null;
       default:

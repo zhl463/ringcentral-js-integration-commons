@@ -13,6 +13,8 @@ import getWebphoneReducer, {
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
 import actionTypes from './actionTypes';
+import sessionStatus from './sessionStatus';
+import callDirections from '../../enums/callDirections';
 import connectionStatus from './connectionStatus';
 
 describe('Webphone :: getVideoElementPreparedReducer', () => {
@@ -225,6 +227,19 @@ describe('Webphone :: getActiveSessionIdReducer', () => {
       })).to.equal(null);
     });
 
+    it(`should return onHoldSessionId when actionTypes is callEnd
+        and sessionId is equal original state and there is one session on hold`, () => {
+      const originalState = '111';
+      expect(reducer(originalState, {
+        type: actionTypes.callEnd,
+        sessionId: '111',
+        sessions: [{
+          id: '123',
+          callStatus: sessionStatus.onHold,
+        }]
+      })).to.equal('123');
+    });
+
     it('should return null when actionTypes is disconnect', () => {
       const originalState = '111';
       expect(reducer(originalState, {
@@ -287,6 +302,25 @@ describe('Webphone :: getRingSessionIdReducer', () => {
           type,
           sessionId: '111',
         })).to.equal(null);
+      });
+    });
+
+    it(`should return null when actionTypes is callEnd and callStart
+        and sessionId is equal original state and there is another ring session`, () => {
+      [
+        actionTypes.callStart,
+        actionTypes.callEnd,
+      ].forEach((type) => {
+        const originalState = '111';
+        expect(reducer(originalState, {
+          type,
+          sessionId: '111',
+          sessions: [{
+            id: '123',
+            direction: callDirections.inbound,
+            callStatus: sessionStatus.connecting,
+          }],
+        })).to.equal('123');
       });
     });
 

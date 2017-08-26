@@ -16,7 +16,6 @@ export default class Subscription extends RcModule {
     client,
     storage,
     timeToRetry = DEFAULT_TIME_TO_RETRY,
-    connectivityMonitor,
     ...options
   }) {
     super({
@@ -27,7 +26,6 @@ export default class Subscription extends RcModule {
     this._client = client;
     this._storage = storage;
     this._timeToRetry = timeToRetry;
-    this._connectivityMonitor = connectivityMonitor;
     this._cacheStorageKey = 'cachedSubscription';
     this._reducer = getSubscriptionReducer(this.actionTypes);
     this._storage.registerReducer({
@@ -45,35 +43,19 @@ export default class Subscription extends RcModule {
       if (
         this._auth.loginStatus === loginStatus.loggedIn &&
         this._storage.ready &&
-        (!this._connectivityMonitor || this._connectivityMonitor.ready) &&
         this.status === moduleStatuses.pending
       ) {
         this.store.dispatch({
           type: this.actionTypes.initSuccess,
         });
-        if (this._connectivityMonitor) {
-          this._connectivity = this._connectivityMonitor.connectivity;
-        }
       } else if (
         (
           this._auth.loginStatus === loginStatus.notLoggedIn ||
-          !this._storage.ready ||
-          (!!this._connectivityMonitor && !this._connectivityMonitor.ready)
+          !this._storage.ready
         ) &&
         this.ready
       ) {
         this.reset();
-      } else if (
-        this.ready &&
-        this._connectivityMonitor &&
-        this._connectivityMonitor.ready &&
-        this._connectivity !== this._connectivityMonitor.connectivity
-      ) {
-        this._connectivity = this._connectivityMonitor.connectivity;
-        if (this._connectivity && this._subscription) {
-          await this.remove();
-          await this._subscribe();
-        }
       }
     });
     this._auth.addBeforeLogoutHandler(async () => {

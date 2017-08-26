@@ -39,7 +39,6 @@ export function getTargetReducer({ targetReducer, types }) {
   };
 }
 
-
 export default function getProxyClientReducer({ targetReducer, proxyReducer, types }) {
   return combineReducers({
     target: getTargetReducer({ targetReducer, types }),

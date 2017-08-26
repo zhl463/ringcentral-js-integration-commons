@@ -122,6 +122,60 @@ describe('CompostText :: getToNumbers', () => {
         })).to.deep.equal(expectState);
       });
     });
+    it('should return new array on addToNumber with not exist entity id', () => {
+      [
+        composeTextActionTypes.addToNumber,
+      ].forEach(type => {
+        const originalState = [
+          {
+            id: 'bbb',
+            phoneNumber: '123456',
+          }
+        ];
+        const expectState = [
+          {
+            id: 'bbb',
+            phoneNumber: '123456',
+          },
+          {
+            id: 'aaa',
+            phoneNumber: '12345678',
+          }
+        ];
+        expect(reducer(originalState, {
+          type,
+          number: {
+            id: 'aaa',
+            phoneNumber: '12345678',
+          }
+        })).to.deep.equal(expectState);
+      });
+    });
+    it('should replace the toNumber on addToNumber even the phoneNumber exist but new entity id', () => {
+      [
+        composeTextActionTypes.addToNumber,
+      ].forEach(type => {
+        const originalState = [
+          {
+            id: 'bbb',
+            phoneNumber: '123456',
+          }
+        ];
+        const expectState = [
+          {
+            id: 'aaa',
+            phoneNumber: '123456',
+          }
+        ];
+        expect(reducer(originalState, {
+          type,
+          number: {
+            id: 'aaa',
+            phoneNumber: '123456',
+          }
+        })).to.deep.equal(expectState);
+      });
+    });
     it('should return old array on addToNumber with phoneNumber exsit', () => {
       [
         composeTextActionTypes.addToNumber,

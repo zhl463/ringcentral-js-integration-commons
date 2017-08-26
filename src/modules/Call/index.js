@@ -148,6 +148,12 @@ export default class Call extends RcModule {
   }
 
   @proxify
+  async call(number) {
+    this.onToNumberChange(number);
+    await this.onCall();
+  }
+
+  @proxify
   async onCall() {
     if (this.isIdle) {
       // last number check
@@ -226,7 +232,10 @@ export default class Call extends RcModule {
     if (!validatedResult.result) {
       validatedResult.errors.forEach((error) => {
         this._alert.warning({
-          message: callErrors[error.type]
+          message: callErrors[error.type],
+          payload: {
+            phoneNumber: error.phoneNumber
+          }
         });
       });
       return null;

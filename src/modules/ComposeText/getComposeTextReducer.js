@@ -43,20 +43,31 @@ export function getToNumberEntityReducer(types) {
 
 export function getToNumbers(types) {
   return (state = [], { type, number }) => {
-    const newState = state;
-    let oldNumber = null;
+    const newState = state.slice();
     switch (type) {
       case types.addToNumber:
-        oldNumber = newState.find(item => (
-          number.phoneNumber === item.phoneNumber
-        ));
-        if (oldNumber) {
-          return newState;
+        // known entity id eg. from click2SMS
+        if (number.id) {
+          const idx = newState.findIndex(item => (
+            number.id === item.id || number.phoneNumber === item.phoneNumber
+          ));
+          if (idx > -1) {
+            // replace old one if found
+            newState[idx] = number;
+            return newState;
+          }
+        } else {
+          const oldNumber = newState.find(item => (
+            number.phoneNumber === item.phoneNumber
+          ));
+          if (oldNumber) {
+            return newState;
+          }
         }
         newState.push(number);
         return newState;
       case types.removeToNumber:
-        return state.filter((item) => (
+        return state.filter(item => (
           item.phoneNumber !== number.phoneNumber
         ));
       case types.clean:
