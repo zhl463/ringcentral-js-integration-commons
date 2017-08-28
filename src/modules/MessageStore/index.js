@@ -545,4 +545,8 @@ export default class MessageStore extends Pollable {
   get timeToRetry() {
     return this._timeToRetry;
   }
+
+  get timestamp() {
+    return this.syncTimestamp;
+  }
 }

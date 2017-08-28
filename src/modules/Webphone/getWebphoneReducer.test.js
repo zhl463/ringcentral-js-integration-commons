@@ -3,7 +3,6 @@ import getWebphoneReducer, {
   getVideoElementPreparedReducer,
   getConnectionStatusReducer,
   getConnectRetryCountsReducer,
-  getWebphoneCountsReducer,
   getActiveSessionIdReducer,
   getRingSessionIdReducer,
   getSessionsReducer,
@@ -131,52 +130,6 @@ describe('Webphone :: getConnectRetryCountsReducer', () => {
         expect(reducer('foo', {
           type,
         })).to.equal(0);
-      });
-    });
-  });
-});
-
-describe('Webphone :: getWebphoneCountsReducer', () => {
-  it('getWebphoneCountsReducer should be a function', () => {
-    expect(getWebphoneCountsReducer).to.be.a('function');
-  });
-  it('getWebphoneCountsReducer should return a reducer', () => {
-    expect(getWebphoneCountsReducer()).to.be.a('function');
-  });
-  describe('webphoneCountsReducer', () => {
-    const reducer = getWebphoneCountsReducer(actionTypes);
-    it('should have initial state of zero', () => {
-      expect(reducer(undefined, {})).to.equal(0);
-    });
-
-    it('should return original state when actionTypes is not recognized', () => {
-      const originalState = {};
-      expect(reducer(originalState, { type: 'foo' }))
-      .to.equal(originalState);
-    });
-
-    it('should return original state + 1 when actionTypes is reconnect or connect', () => {
-      [
-        actionTypes.reconnect,
-        actionTypes.connect,
-      ].forEach((type) => {
-        const originalState = 1;
-        expect(reducer(originalState, {
-          type,
-        })).to.equal(2);
-      });
-    });
-
-    it('should return original state - 1 when actionTypes is connectError, disconnect or registrationFailed', () => {
-      [
-        actionTypes.connectError,
-        actionTypes.disconnect,
-        actionTypes.registrationFailed,
-      ].forEach((type) => {
-        const originalState = 3;
-        expect(reducer(originalState, {
-          type,
-        })).to.equal(2);
       });
     });
   });
@@ -403,7 +356,6 @@ describe('getWebphoneReducer', () => {
     const videoElementPreparedReducer = getVideoElementPreparedReducer(actionTypes);
     const connectionStatusReducer = getConnectionStatusReducer(actionTypes);
     const connectRetryCountsReducer = getConnectRetryCountsReducer(actionTypes);
-    const webphoneCountsReducer = getWebphoneCountsReducer(actionTypes);
     const activeSessionIdReducer = getActiveSessionIdReducer(actionTypes);
     const ringSessionIdReducer = getRingSessionIdReducer(actionTypes);
     const sessionsReducer = getSessionsReducer(actionTypes);
@@ -413,7 +365,6 @@ describe('getWebphoneReducer', () => {
       videoElementPrepared: videoElementPreparedReducer(undefined, {}),
       connectionStatus: connectionStatusReducer(undefined, {}),
       connectRetryCounts: connectRetryCountsReducer(undefined, {}),
-      webphoneCounts: webphoneCountsReducer(undefined, {}),
       activeSessionId: activeSessionIdReducer(undefined, {}),
       ringSessionId: ringSessionIdReducer(undefined, {}),
       sessions: sessionsReducer(undefined, {}),

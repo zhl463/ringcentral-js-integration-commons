@@ -20,10 +20,7 @@ import {
   isRing,
   isOnHold,
 } from './webphoneHelper';
-import getWebphoneReducer, {
-  getWebphoneCountsReducer,
-  getUserMediaReducer,
-} from './getWebphoneReducer';
+import getWebphoneReducer, { getUserMediaReducer } from './getWebphoneReducer';
 
 const FIRST_THREE_RETRIES_DELAY = 10 * 1000;
 const FOURTH_RETRIES_DELAY = 30 * 1000;
@@ -85,7 +82,6 @@ export default class Webphone extends RcModule {
     this._storage = this::ensureExist(storage, 'storage');
     this._globalStorage = this::ensureExist(globalStorage, 'globalStorage');
     this._numberValidate = this::ensureExist(numberValidate, 'numberValidate');
-    this._storageWebphoneCountsKey = 'webphoneCounts';
     this._userMediaStorageKey = 'userMadia';
     this._contactMatcher = contactMatcher;
     this._onCallEndFunc = onCallEnd;
@@ -99,10 +95,6 @@ export default class Webphone extends RcModule {
 
     this._reducer = getWebphoneReducer(this.actionTypes);
 
-    storage.registerReducer({
-      key: this._storageWebphoneCountsKey,
-      reducer: getWebphoneCountsReducer(this.actionTypes),
-    });
     globalStorage.registerReducer({
       key: this._userMediaStorageKey,
       reducer: getUserMediaReducer(this.actionTypes),
@@ -290,7 +282,18 @@ export default class Webphone extends RcModule {
     return phoneLines;
   }
 
+  _removeWebphone() {
+    if (!this._webphone || !this._webphone.userAgent) {
+      return;
+    }
+    this._webphone.userAgent.stop();
+    this._webphone.userAgent.unregister();
+    this._webphone.userAgent.removeAllListeners();
+    this._webphone = null;
+  }
+
   _createWebphone(provisionData) {
+    this._removeWebphone();
     this._webphone = new RingCentralWebphone(provisionData, {
       appKey: this._appKey,
       appName: this._appName,
@@ -305,10 +308,10 @@ export default class Webphone extends RcModule {
     });
     this._isFirstRegister = true;
     const onRegistered = () => {
-      this.store.dispatch({
-        type: this.actionTypes.registered,
-      });
       if (this._isFirstRegister) {
+        this.store.dispatch({
+          type: this.actionTypes.registered,
+        });
         this._alert.info({
           message: webphoneErrors.connected,
         });
@@ -316,28 +319,33 @@ export default class Webphone extends RcModule {
       this._isFirstRegister = false;
     };
     const onUnregistered = () => {
+      this._isFirstRegister = true;
       this.store.dispatch({
         type: this.actionTypes.unregistered,
       });
     };
-    const onRegistrationFailed = (error) => {
-      let needToReconnect = true;
+    const onRegistrationFailed = (response, cause) => {
+      this._isFirstRegister = true;
       let errorCode;
-      console.error(error);
-      this._webphone.userAgent.removeAllListeners();
-      this._webphone = null;
-      if (error && error.status_code === 503) {
+      let needToReconnect = false;
+      console.error(response);
+      console.error(`webphone register failed: ${cause}`);
+      if (response && response.status_code === 503) {
         errorCode = webphoneErrors.webphoneCountOverLimit;
         this._alert.warning({
           message: errorCode,
         });
-        needToReconnect = false;
+        needToReconnect = true;
       }
       this.store.dispatch({
         type: this.actionTypes.registrationFailed,
         errorCode,
       });
+      if (cause === 'Request Timeout') {
+        needToReconnect = true;
+      }
       if (needToReconnect) {
+        this._removeWebphone();
         this._connect(needToReconnect);
       }
     };
@@ -356,6 +364,10 @@ export default class Webphone extends RcModule {
     try {
       if (reconnect) {
         await this._retrySleep();
+      }
+
+      if (!this._auth.loggedIn) {
+        return;
       }
 
       // do not connect if it is connecting
@@ -420,7 +432,7 @@ export default class Webphone extends RcModule {
   @proxify
   async connect() {
     if (
-      (await this._auth.checkIsLoggedIn()) &&
+      this._auth.loggedIn &&
       this.enabled &&
       this.connectionStatus === connectionStatus.disconnected
     ) {
@@ -473,11 +485,7 @@ export default class Webphone extends RcModule {
         this._sessions.forEach((session) => {
           this.hangup(session);
         });
-        if (this._webphone.userAgent) {
-          this._webphone.userAgent.stop();
-          this._webphone.userAgent.unregister();
-        }
-        this._webphone = null;
+        this._removeWebphone();
         this._sessions = new Map();
         this._updateSessions();
       }
@@ -1147,10 +1155,6 @@ export default class Webphone extends RcModule {
 
   get connectionStatus() {
     return this.state.connectionStatus;
-  }
-
-  get webphoneCounts() {
-    return this._storage.getItem(this._storageWebphoneCountsKey);
   }
 
   get userMedia() {

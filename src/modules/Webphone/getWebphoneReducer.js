@@ -37,6 +37,8 @@ export function getErrorCodeReducer(types) {
       case types.connectError:
       case types.registrationFailed:
         return errorCode;
+      case types.registered:
+        return null;
       default:
         return state;
     }
@@ -51,22 +53,6 @@ export function getConnectRetryCountsReducer(types) {
       case types.resetRetryCounts:
       case types.registered:
         return 0;
-      default:
-        return state;
-    }
-  };
-}
-
-export function getWebphoneCountsReducer(types) {
-  return (state = 0, { type }) => {
-    switch (type) {
-      case types.reconnect:
-      case types.connect:
-        return state + 1;
-      case types.connectError:
-      case types.disconnect:
-      case types.registrationFailed:
-        return state - 1;
       default:
         return state;
     }
@@ -153,7 +139,6 @@ export default function getWebphoneReducer(types) {
     connectionStatus: getConnectionStatusReducer(types),
     connectRetryCounts: getConnectRetryCountsReducer(types),
     errorCode: getErrorCodeReducer(types),
-    webphoneCounts: getWebphoneCountsReducer(types),
     activeSessionId: getActiveSessionIdReducer(types),
     ringSessionId: getRingSessionIdReducer(types),
     sessions: getSessionsReducer(types),
