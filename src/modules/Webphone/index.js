@@ -640,6 +640,7 @@ export default class Webphone extends RcModule {
       }
       const validPhoneNumber =
         validatedResult.numbers[0] && validatedResult.numbers[0].e164;
+      session.isForwarded = true;
       await session.forward(validPhoneNumber, this.acceptOptions);
       console.log('Forwarded');
       this._onCallEnd(session);
@@ -939,6 +940,7 @@ export default class Webphone extends RcModule {
       return;
     }
     try {
+      session.isToVoicemail = true;
       await session.toVoicemail();
     } catch (e) {
       console.error(e);
@@ -956,6 +958,7 @@ export default class Webphone extends RcModule {
       return;
     }
     try {
+      session.isReplied = true;
       await session.replyWithMessage(replyOptions);
     } catch (e) {
       console.error(e);
@@ -1041,24 +1044,26 @@ export default class Webphone extends RcModule {
 
   _onCallStart(session) {
     this._addSession(session);
+    const normalizedSession = normalizeSession(session);
     this.store.dispatch({
       type: this.actionTypes.callStart,
-      sessionId: session.id,
+      session: normalizedSession,
       sessions: this.sessions,
     });
     if (this._contactMatcher) {
       this._contactMatcher.triggerMatch();
     }
     if (typeof this._onCallStartFunc === 'function') {
-      this._onCallStartFunc(session, this.activeSession);
+      this._onCallStartFunc(normalizedSession, this.activeSession);
     }
   }
 
   _onCallRing(session) {
     this._addSession(session);
+    const normalizedSession = normalizeSession(session);
     this.store.dispatch({
       type: this.actionTypes.callRing,
-      sessionId: session.id,
+      session: normalizedSession,
       sessions: this.sessions,
     });
     if (this._contactMatcher) {
@@ -1068,19 +1073,20 @@ export default class Webphone extends RcModule {
       this._webphone.userAgent.audioHelper.playIncoming(false);
     }
     if (typeof this._onCallRingFunc === 'function') {
-      this._onCallRingFunc(session, this.ringSession);
+      this._onCallRingFunc(normalizedSession, this.ringSession);
     }
   }
 
   _onCallEnd(session) {
     this._removeSession(session);
+    const normalizedSession = normalizeSession(session);
     this.store.dispatch({
       type: this.actionTypes.callEnd,
-      sessionId: session.id,
+      session: normalizedSession,
       sessions: this.sessions,
     });
     if (typeof this._onCallEndFunc === 'function') {
-      this._onCallEndFunc(session, this.activeSession);
+      this._onCallEndFunc(normalizedSession, this.activeSession);
     }
   }
 
@@ -1143,6 +1149,10 @@ export default class Webphone extends RcModule {
 
   get onHoldSessions() {
     return this._selectors.onHoldSessions();
+  }
+
+  get lastEndedSessions() {
+    return this.state.lastEndedSessions;
   }
 
   get videoElementPrepared() {
