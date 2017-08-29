@@ -1,41 +1,47 @@
 #Creating Modules
 
-All integration modules are based on RcModule base class. Which is deeply tied to redux. Here we'll use the DialingPlan module as an example to walk through the basics of module creation. Please note that the code shown here may not be the latest implementation of DialingPlan module.
+All integration modules are based on RcModule base class. Which is deeply tied to redux. Here we'll use the Call module as an example to walk through the basics of module creation. Please note that the code shown here may not be the latest implementation of Call module.
 
 Typical Folder Structure
 ---
 ```
-    dialing-plan/
+    Call/
         - index.js => where the module class is written
-        - dialing-plan-actions.js => where the redux actions are defined
-        - dialing-plan-status.js => where the status definition of the module is
-        - dialing-plan-events.js => where all the events of the module is defined
-        - get-dialing-plan-reducer.js => where the reducer of the module is defined
+        - actionTypes.js => where the redux actions are defined
+        - callStatus.js => where the status definition of the module is
+        - callErrors.js => where all the errors of the module is defined
+        - getCallReducer.js => where the reducer of the module is written
+        - getCallReducer.test.js => where the test of the reducer is written
+        - index.test.js => where the unit test of index file is written
 ```
 
 Define Actions
 ---
 
-Here we defined all the redux action types for the module by using the ActionMap helper class.
+Here we defined all the redux action types for the module by using the Enum helper class.
+
+And we defined the module status related action types in moduleActionTypes enums.
 
 ```javascript
-import ActionMap from '../../lib/ActionMap';
+import Enum from '../../lib/Enum';
+import moduleActionTypes from '../../enums/moduleActionTypes';
 
-export default new ActionMap([
-  'ready',
-  'fetch',
-  'fetchSuccess',
-  'fetchError',
-  'reset',
-], 'dialing-plan'); // prefix the actions with the module name
+export default new Enum([
+  ...Object.keys(moduleActionTypes),
+  'connect',
+  'connectSuccess',
+  'connectError',
+], 'callActionTypes'); // prefix the actions with the module name
 
 /* the result is similar to:
 {
-    ready: 'dialing-plan-ready',
-    fetch: 'dialing-plan-fetch',
-    fetchSuccess: 'dialing-plan-fetchSuccess',
-    fetchError: 'dialing-plan-fetchError',
-    reset: 'dialing-plan-reset',
+    init: 'callActionTypes-init',
+    initSuccess: 'callActionTypes-initSuccess',
+    reset: 'callActionTypes-reset',
+    resetSuccess: 'callActionTypes-resetSuccess',
+    connect: 'callActionTypes-connect',
+    connectSuccess: 'callActionTypes-connectSuccess',
+    connectError: 'callActionTypes-connectError',
 }
 */
 
@@ -47,60 +53,32 @@ Define Reducers
 Reducers are the core of redux. It is what defines an redux application. In the modules design, we are not ruling the possibility of running multiple instances of phones in the same application. Therefore all the reducers needs to support prefixed actions.
 
 ```javascript
-import { prefixActions } from '../../lib/ActionMap';
-import dialingPlanActions from './dialingPlanActions';
-import dialingPlanStatus from './dialingPlanStatus';
+import { combineReducers } from 'redux';
+import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
+import callStatus from './callStatus';
 
-export default function getDialingPlanReducer(prefix) {
-  // get prefixed actions
-  const actions = prefixActions({
-    actions: dialingPlanActions,
-    prefix,
-  });
+export function getCallStatusReducer(types) {
+  return (state = callStatus.idle, { type }) => {
+    switch (type) {
+      case types.connect:
+        return callStatus.connecting;
 
-  //return the reducer
-  return (state, action) => {
-    // return initial state
-    if (!state) {
-      return {
-        status: dialingPlanStatus.pending,
-        error: null,
-      };
-    }
+      case types.connectSuccess:
+      case types.connectError:
+        return callStatus.idle;
 
-    // return original state if no action is given
-    if (!action) {
-      return state;
-    }
-
-    switch (action.type) {
-
-      /*
-       * It is very import that actions do not modify the original state object.
-       * Instead, it should always assemble a new state object with new values.
-       */
-      case actions.ready:
-        return {
-          status: dialingPlanStatus.ready,
-          error: null,
-        };
-        /*
-         * or return {
-         *   ...state,
-         *   status: dialingPlanStatus.ready,
-         *   error: null,
-         *  };
-         */
-
-      ... more cases ...
-
-      // always return original state for default
       default:
         return state;
     }
   };
 }
 
+export default function getCallReducer(types) {
+  return combineReducers({
+    status: getModuleStatusReducer(types),
+    callStatus: getCallStatusReducer(types),
+  });
+}
 ```
 
 The bottom line is that we should treat the state object as immutable object, even though it is not implemented as an immutable object.
@@ -109,185 +87,93 @@ The bottom line is that we should treat the state object as immutable object, ev
 The Module Definition
 ---
 
-Here we extend the RcModule class to create the DialingPlan module. There are some key points in module creation.
+Here we extend the RcModule class to create the Call module. There are some key points in module creation.
 
 ```javascript
-import SymbolMap from 'data-types/symbol-map';
-import HashMap from '../../lib/HashMap';
-import RcModule, { initFunction } from '../../lib/RcModule';
+import RcModule from '../../lib/RcModule';
+import callingModes from '../CallingSettings/callingModes';
+import moduleStatuses from '../../enums/moduleStatuses';
 import proxify from '../../lib/proxy/proxify';
-import fetchList from '../../lib/fetchList';
-import dialingPlanStatus from './dialingPlanStatus';
-import dialingPlanActions from './dialingPlanActions';
-import getDialingPlanReducer from './getDialingPlanReducer';
-import dialingPlanEvents from './dialingPlanEvents';
+import callActionTypes from './actionTypes';
+import getCallReducer, {
+  getLastCallNumberReducer,
+} from './getCallReducer';
 
-const keys = new HashMap({
-  storage: 'dialing-plan-data',
-});
+import callStatus from './callStatus';
+import callErrors from './callErrors';
+import ringoutErrors from '../Ringout/ringoutErrors';
 
-const DEFAULT_TTL = 30 * 60 * 1000;
 
-// SymbomMap helper class helps to organize all the symbols used.
-// This way we can bind properties to modules without fully exposing them.
-// They will mostly be visible to depending on actual implmementation of symbols.
-// But should behave more like private properties.
-const symbols = new SymbolMap([
-  'api',
-  'auth',
-  'storage',
-  'ttl',
-]);
-
-export default class DialingPlan extends RcModule {
-  constructor(options = {}) {
+export default class Call extends RcModule {
+  constructor({
+    alert,
+    client,
+    storage,
+    ...options
+  }) {
     super({
       ...options,
-      actions: dialingPlanActions,
+      actionTypes: callActionTypes,
       // remember to pass action definitions into super
-      // RcModule will automatically bind the prefixed result as this.actions
+      // RcModule will automatically bind the prefixed result as this.actionTypes
     });
-    const {
-      api,
-      auth,
-      storage,
-      ttl = DEFAULT_TTL,
-    } = options;
-    this[symbols.api] = api;
-    this[symbols.auth] = auth;
-    this[symbols.storage] = storage;
-    this[symbols.ttl] = ttl;
+    this._alert = alert;
+    this._client = client;
+    this._storage = storage;
+    this._storageKey = 'lastCallNumber';
+    // set reducers to this._reducer, this is required by RcModule
+    this._reducer = getCallReducer(this.actionTypes);
 
-    // A change in state will trigger a state-change event.
-    // Then we can compare old and new states and determine whether
-    // we need to fire events or not.
-    this.on('state-change', ({ oldState, newState }) => {
-      if (oldState) {
-        if (oldState.status !== newState.status) {
-          this.emit(dialingPlanEvents.statusChange, {
-            oldStatus: oldState.status,
-            newStatus: newState.status,
-          });
-        }
-        if (newState.error && newState.error !== oldState.error) {
-          this.emit(accountInfoEvents.error, newState.error);
-        }
-      }
+    // bind lastCallNumber state to storage
+    this._storage.registerReducer({
+      key: this._storageKey,
+      reducer: getLastCallNumberReducer(this.actionTypes),
     });
-    // The dialing plans are actually persisted in storage,
-    // and thus not part of the dialingPlan reducer.
-    // Here we can listen to data change events of the storage module
-    // and determine whether to fire dialingPlanChange event or not.
-    this[symbols.storage].on(
-      this[symbols.storage].storageEvents.dataChange,
-      ({ oldData, newData }) => {
-        const oldPlanData = oldData[keys.storage];
-        const newPlanData = newData[keys.storage];
-        if (!oldPlanData && !newPlanData) return;
-        if (
-          oldPlanData && !newPlanData ||
-          !oldPlanData && newPlanData ||
-          oldPlanData.dialingPlans.map(plan => plan.id).sort().join(',') !==
-          newPlanData.dialingPlans.map(plan => plan.id).sort().join(',')
-        ) {
-          this.emit(dialingPlanEvents.dialingPlanChange, newPlanData.dialingPlans);
-        }
-      },
-    );
   }
 
-  // The initFunction decorator tells RcModule that this function should only be
-  // called after the module has been initialized with a store.
-  // However, a proxied instance will skip this initFunction call.
-  // We'll talk about proxy modules in a different guide.
-  @initFunction
-  init() {
-    // The @initFunction will mark a function as the init function,
-    // regardless of the actual function name.
+  initialize() {
+    // subscribe state change.
+    this.store.subscribe(() => this._onStateChange());
+  }
 
-    // Any code that can only be run after the store has been created should be here.
-    // Later we'll also talk about how any code that should not be run in proxies
-    // should be placed here as well.
-
-    // For example, we want to start loading dialing plan data when storage module is ready.
-    this[symbols.storage].on(this[symbols.storage].storageEvents.ready, async () => {
-      await this.loadDialingPlans();
+  async _onStateChange() {
+    // update status on state change.
+    if (
+      this._alert.ready &&
+      this._storage.ready &&
+      this._client.ready &&
+      this.pending
+    ) {
       this.store.dispatch({
-        type: this.actions.ready,
+        type: this.actionTypes.init,
       });
-    });
-
-    // Don't forget to do clean up work if your module has to do something
-    // before or after the log out events
-    this[symbols.storage].on(this[symbols.storage].storageEvents.pending, () => {
+      await this._initCallModule();
       this.store.dispatch({
-        type: this.actions.reset,
+        type: this.actionTypes.initSuccess,
       });
-    });
+    } else if (
+      (
+        !this._alert.ready ||
+        !this._storage.ready ||
+        !this._client.ready
+      ) &&
+      this.ready
+    ) {
+      this.store.dispatch({
+        type: this.actionTypes.resetSuccess,
+      });
+    }
+  }
 
-    // Generally speaking, any handlers that would attempt to dispatch actions
-    // must be done after store is created and module is initialized.
+  // get last call number from storage
+  get lastCallNumber() {
+    return this._storage.getItem(this._storageKey) || '';
   }
-  get data() {
-    return this[symbols.storage].getItem(keys.storage);
-  }
+
   // The proxify decorator will be explained in the proxy guide.
   @proxify
-  async loadDialingPlans(options = {}) {
-    const {
-      force = false,
-    } = options;
-    let data = this[symbols.storage].getItem(keys.storage);
-    if (force || !data || Date.now() - data.timestamp > this[symbols.ttl]) {
-      try {
-        this.store.dispatch({
-          type: this.actions.fetch,
-        });
-        data = {
-          dialingPlans: await fetchList(params => (
-            this[symbols.api].account().dialingPlan().list(params)
-          )),
-          timestamp: Date.now(),
-        };
-        this[symbols.storage].setItem(keys.storage, data);
-        this.store.dispatch({
-          type: this.actions.fetchSuccess,
-        });
-      } catch (error) {
-        this.store.dispatch({
-          type: this.actions.fetchError,
-          error,
-        });
-        throw error;
-      }
-    }
-    return data;
-  }
-
-  // override the default reducer getter to return the correct reducer for the module
-  get reducer() {
-    return getDialingPlanReducer(this.prefix);
-  }
-
-  // Provide getters to the dialingPlanStatus definition for convenience
-  // We can easily do dialingPlan.on(dialingPlan.dialingPlanStatus.ready, fn)
-  // rather than to import the status definition into the code.
-  get dialingPlanStatus() {
-    return dialingPlanStatus;
-  }
-
-  // Sometimes is beneficial to bind a getter to status definitions
-  // on the constructor function itself.
-  static get dialingPlanStatus() {
-    return dialingPlanStatus;
-  }
-
-  // Similarly we provide getters to the dialingPlanEvents definition.
-  get dialingPlanEvents() {
-    return dialingPlanEvents;
-  }
-  static get dialingPlanEvents() {
-    return dialingPlanEvents;
+  async onCall() {
+    // do something on call
   }
 
   // Simple getters to state looks like this.
@@ -295,6 +181,19 @@ export default class DialingPlan extends RcModule {
   // Getters should not modify the state however.
   get status() {
     return this.state.status;
+  }
+
+  get ready() {
+    return this.state.status === moduleStatuses.ready;
+  }
+
+  get pending() {
+    return this.state.status === moduleStatuses.pending;
+  }
+
+  // Provide getters to the callStatus state
+  get callStatus() {
+    return this.state.callStatus;
   }
 }
 ```
@@ -305,64 +204,62 @@ Using Modules
 Let's go through some demo code to see how modules are used.
 
 ```javascript
+import SDK from 'ringcentral';
 import RingCentralClient from 'ringcentral-client';
 import { combineReducers, createStore } from 'redux';
-import SymbolMap from 'data-types/symbol-map';
-import RcModule, { addModule, initializeModule } from '../src/lib/RcModule';
+import RcModule  from '../src/lib/RcModule';
 
-import Auth from '../src/modules/Auth';
+import Alert from '../src/modules/Alert';
 import Storage from '../src/modules/Storage';
-import DialingPlan from '../src/modules/DialingPlan';
+import Call from '../src/modules/DialingPlan';
 
 import config from './config';
-
-const symbols = new SymbolMap([
-  'reducer',
-]);
 
 // Phone objects are actually RcModules as well. We want to reuse as much code as possible.
 class DemoPhone extends RcModule {
   constructor() {
     super();
 
+    const reducers = {};
     // addModule helper function binds the sub module object to the parent.
-    // the :: is the bind operator which is similar to
-    // addModule.call(this, 'moduleName', subModule).
-    this::addModule('api', new RingCentralClient({
-      ...config.api,
+    this.addModule('client', new RingCentralClient(new SDK({
+      ...config,
+    })));
+
+    this.addModule('alert', new Alert({
+      getState: () => this.state.alert,
     }));
-    this::addModule('auth', new Auth({
+    reducers.alert = this.alert.reducer;
+
+    this.addModule('auth', new Auth({
+      alert: this.alert,
+      client: this.client,
       getState: () => this.state.auth,
-      api: this.api,
     }));
-    this::addModule('storage', new Storage({
-      getState: () => this.state.storage,
+    reducers.auth = this.auth.reducer;
+
+    this.addModule('storage', new Storage({
       auth: this.auth,
+      reducers.storage = this.storage.reducer;
     }));
 
-    // Here we bind the dialingPlan module to the parent. We also pass in
+    // Here we bind the call module to the parent. We also pass in
     // the dependencies here.
     // It is import to note that the getState function is mandatory.
     // This function simply returns the part of the state that belongs to the sub module.
-    this::addModule('dialingPlan', new DialingPlan({
-      getState: () => this.state.dialingPlan,
-      api: this.api,
-      auth: this.auth,
+    this.addModule('call', new Call({
+      alert: this.alert,
+      client: this.client,
       storage: this.storage,
+      getState: () => this.state.call,
     }));
+    reducers.call = this.call.reducer;
 
     // Here we create the phone reducer by combining the reducers of sub modules.
     // We also bind it to the phone object with a symbol.
-    this[symbols.reducer] = combineReducers({
-      auth: this.auth.reducer,
-      storage: this.storage.reducer,
-      dialingPlan: this.dialingPlan.reducer,
+    this._reducer = combineReducers({
+      ...reducers,
     });
-  }
-
-  // Override the reducer getter to return the correct reducer.
-  get reducer() {
-    return this[symbols.reducer];
   }
 }
 
@@ -375,13 +272,13 @@ const phone = new DemoPhone();
 // states.
 const store = createStore(phone.reducer);
 
-// Use the initializeModule helper function to set the store into the modules and
+// Use the setStore helper function to set the store into the modules and
 // initialize them.
-phone::initializeModule(store);
+phone.setStore(store);
 
 // You can also use store's subscribe function to monitor every state change.
 store.subscribe(() => {
-  console.log(JSON.stringify(store.getState(), null, 2));
+  console.log(store.getState());
 });
 
 if (typeof window !== 'undefined') {
@@ -390,18 +287,12 @@ if (typeof window !== 'undefined') {
 
 // Here we demo how the phone instance is used
 (async () => {
-  phone.auth.on(phone.auth.authEvents.loggedIn, () => {
-    console.log('hello');
-  });
-  phone.dialingPlan.on(phone.dialingPlan.dialingPlanEvents.statusChange, status => {
-    console.log('check', status);
-  });
-  if (!await phone.auth.isLoggedIn()) {
+  if (!phone.auth.loggedIn) {
     await phone.auth.login({
       ...config.user,
     });
   }
-  console.log(await phone.dialingPlan.loadDialingPlans());
+  await phone.call.call('phoneNumber');
 })();
 
 ```
