@@ -122,9 +122,11 @@ export default class ComposeText extends RcModule {
 
   _alertWarning(message) {
     if (message) {
+      const ttlConfig = message !== messageSenderMessages.noAreaCode
+        ? { ttl: 0 } : null;
       this._alert.warning({
         message,
-        ttl: 0,
+        ...ttlConfig
       });
       return true;
     }
