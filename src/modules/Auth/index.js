@@ -1,4 +1,5 @@
 import url from 'url';
+import qs from 'qs';
 import RcModule from '../../lib/RcModule';
 import getAuthReducer from './getAuthReducer';
 import actionTypes from './actionTypes';
@@ -476,11 +477,18 @@ export default class Auth extends RcModule {
   @proxify
   openOAuthPage() {
     if (this.proxyLoaded) {
+      const extendedQuery = qs.stringify({
+        force: true,
+        localeId: this._locale.currentLocale,
+        ui_options: 'hide_remember_me hide_tos',
+      });
       this._proxyFrame.contentWindow.postMessage({
         oAuthUri: `${this.getLoginUrl({
           redirectUri: this.redirectUri,
           brandId: this._brand.id,
-        })}&force=true&localeId=${encodeURIComponent(this._locale.currentLocale)}`,
+          state: btoa(Date.now()),
+          display: 'page',
+        })}&${extendedQuery}`,
       }, '*');
     }
   }
