@@ -102,7 +102,9 @@ export default class CallLog extends Pollable {
         // TODO make sure removeDuplicateIntermediateCalls is necessary here
         removeInboundRingOutLegs(removeDuplicateIntermediateCalls(data.filter(call => (
           // [RCINT-3472] calls with result === 'stopped' seems to be useless
-          call.result !== callResults.stopped
+          call.result !== callResults.stopped &&
+          // [RCINT-51111] calls with result === 'busy'
+          call.result !== callResults.busy
         ))))
       ),
     );
