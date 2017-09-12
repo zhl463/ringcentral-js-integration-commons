@@ -3,7 +3,17 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import sleep from '../../lib/sleep';
 import proxify from '../../lib/proxy/proxify';
 
+/**
+ * @class
+ * @description Softphone module to call softphone
+ */
 export default class Softphone extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Brnad} params.brand - brand module instance
+   * @param {Bool} params.extensionMode - default false
+   */
   constructor({
     brand,
     extensionMode = false,

@@ -24,14 +24,28 @@ function addPhoneToContact(contact, phone, type) {
 }
 
 const DEFAULT_TTL = 30 * 60 * 1000;
+
+/**
+ * @class
+ * @description Contacts managing module
+ */
 export default class Contacts extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Client} params.client - client module instance
+   * @param {AddressBook} params.addressBook - addressBook module instance
+   * @param {AccountExtension} params.accountExtension - accountExtension module instance
+   * @param {AccountPhoneNumber} params.accountPhoneNumber - accountPhoneNumber module instance
+   * @param {Number} params.ttl - timestamp of local cache, default 30 mins
+   */
   constructor({
     client,
     addressBook,
     accountExtension,
     accountPhoneNumber,
     ttl = DEFAULT_TTL,
-    ...options,
+    ...options
   }) {
     super({
       ...options,

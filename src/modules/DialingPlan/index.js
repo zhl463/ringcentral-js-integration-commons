@@ -2,7 +2,16 @@ import fetchList from '../../lib/fetchList';
 import DataFetcher from '../../lib/DataFetcher';
 import moduleStatuses from '../../enums/moduleStatuses';
 
+/**
+ * @class
+ * @description Dial plan list managing module
+ */
 export default class DialingPlan extends DataFetcher {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Client} params.client - client module instance
+   */
   constructor({
     client,
     ...options

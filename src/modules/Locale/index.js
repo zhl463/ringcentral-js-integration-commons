@@ -45,7 +45,16 @@ function checkIntl() {
   });
 }
 
+/**
+ * @class
+ * @description Locale managing module
+ */
 export default class Locale extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {String} params.defaultLocale - default 'en-US'
+   */
   constructor({
     defaultLocale = DEFAULT_LOCALE,
     ...options

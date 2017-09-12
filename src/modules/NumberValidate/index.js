@@ -8,7 +8,19 @@ import proxify from '../../lib/proxy/proxify';
 import numberValidateActionTypes from './numberValidateActionTypes';
 import getNumberValidateReducer from './getNumberValidateReducer';
 
+/**
+ * @class
+ * @description Validate number with number parser api
+ */
 export default class NumberValidate extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Client} params.client - client module instance
+   * @param {AccountExtension} params.accountExtension - accountExtension module instance
+   * @param {RegionSettings} params.regionSettings - regionSettings module instance
+   * @param {AccountInfo} params.accountInfo - accountInfo module instance
+   */
   constructor({
     client,
     accountExtension,

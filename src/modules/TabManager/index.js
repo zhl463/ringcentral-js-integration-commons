@@ -4,7 +4,10 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getTabManagerReducer from './getTabManagerReducer';
 
-
+/**
+ * @class
+ * @description To handle data between different tabs
+ */
 export default class TabManager extends RcModule {
   constructor({
     ...options

@@ -10,7 +10,17 @@ const presenceRegExp = /\/presence\?detailedTelephonyState=true$/;
 const FETCH_DELAY = 1000;
 const DEFAULT_TTL = 5 * 60 * 1000;
 
+/**
+ * @class
+ * @description Active calls list manaing module
+ */
 export default class ActiveCalls extends DataFetcher {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Client} params.client - client module instance
+   * @param {Number} params.ttl - local cache timestamp, default 5 mins.
+   */
   constructor({
     client,
     tabManager, // do not pass tabManager to DataFetcher as data is not shared in localStorage

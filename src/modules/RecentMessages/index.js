@@ -8,9 +8,16 @@ import getDateFrom from '../../lib/getDateFrom';
 import concurrentExecute from '../../lib/concurrentExecute';
 
 /**
- * Retrieve all recent messages related to a specified contact.
+ * @class
+ * @description Retrieve all recent messages related to a specified contact.
  */
 export default class RecentMessages extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {MessageStore} params.messageStore - messageStore module instance
+   * @param {Client} params.client - client module instance
+   */
   constructor({
     client,
     messageStore,

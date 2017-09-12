@@ -8,9 +8,16 @@ import ensureExist from '../../lib/ensureExist';
 import concurrentExecute from '../../lib/concurrentExecute';
 
 /**
- * Retrieve all recent calls related to a specified contact.
+ * @class
+ * @description Retrieve all recent calls related to a specified contact.
  */
 export default class RecentCalls extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {CallHistory} params.callHistory - callHistory module instance
+   * @param {Client} params.client - client module instance
+   */
   constructor({
     client,
     callHistory,

@@ -41,7 +41,16 @@ function extractData(info) {
   return output;
 }
 
+/**
+ * @class
+ * @description Extension info module
+ */
 export default class ExtensionInfo extends DataFetcher {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Client} params.client - client module instance
+   */
   constructor({
     client,
     ...options
