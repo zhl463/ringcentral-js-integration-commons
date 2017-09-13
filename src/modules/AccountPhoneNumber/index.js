@@ -7,10 +7,19 @@ function simplifyPhoneNumber(number) {
   return removeUri(number);
 }
 
+/**
+ * @class
+ * @description Accound phone number module to get account phone number list
+ */
 export default class AccountPhoneNumber extends DataFetcher {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Client} params.client - client module instance
+   */
   constructor({
     client,
-    ...options,
+    ...options
   }) {
     super({
       name: 'accountPhoneNumber',

@@ -48,7 +48,11 @@ export function getSubscriptionStatusReducer(types) {
 
 export function getMessageReducer(types) {
   return (state = null, { type, message = state }) => {
-    if (type === types.notification) return message;
+    if (type === types.notification) {
+      return message;
+    } else if (type === types.resetSuccess) {
+      return null;
+    }
     return state;
   };
 }

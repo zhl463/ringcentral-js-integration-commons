@@ -8,7 +8,20 @@ import getCallHistoryReducer from './getCallHistoryReducer';
 import ensureExist from '../../lib/ensureExist';
 import normalizeNumber from '../../lib/normalizeNumber';
 
+/**
+ * @class
+ * @description Call history managing module
+ */
 export default class CallHistory extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {AccountInfo} params.accountInfo - accountInfo module instance
+   * @param {CallLog} params.callLog - callLog module instance
+   * @param {CallMonitor} params.callMonitor - callMonitor module instance
+   * @param {ActivityMatcher} params.activityMatcher - activityMatcher module instance
+   * @param {ContactMatcher} params.contactMatcher - contactMatcher module instance
+   */
   constructor({
     accountInfo,
     callLog,

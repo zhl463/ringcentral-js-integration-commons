@@ -7,7 +7,21 @@ import { getNumbersFromMessage, sortSearchResults } from '../../lib/messageHelpe
 import cleanNumber from '../../lib/cleanNumber';
 import proxify from '../../lib/proxy/proxify';
 
+/**
+ * @class
+ * @description Conversation list managing module
+ */
 export default class Messages extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {MessageStore} params.messageStore - messageStore module instance
+   * @param {ExtensionInfo} params.extensionInfo - extensionInfo module instance
+   * @param {ContactMatcher} params.contactMatcher - contactMatcher module instance
+   * @param {ConversationMatcher} params.conversationMatcher - conversationMatcher module instance
+   * @param {ConversationLogger} params.conversationLogger - conversationLogger module instance
+   * @param {Number} params.defaultPerPage - default numbers of perPage, default 20
+   */
   constructor({
     messageStore,
     extensionInfo,

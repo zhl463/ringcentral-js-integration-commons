@@ -49,7 +49,25 @@ export function getISODateTo(records) {
 // to not use $ at the end, presence with sipData has extra query parameters
 const presenceRegExp = /\/presence\?detailedTelephonyState=true/;
 
+/**
+ * @class
+ * @description Call log managing module
+ */
 export default class CallLog extends Pollable {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Auth} params.auth - auth module instance
+   * @param {Client} params.client - client module instance
+   * @param {Storage} params.storage - storage module instance
+   * @param {Subscription} params.subscription - subscription module instance
+   * @param {RolesAndPermissions} params.rolesAndPermissions - rolesAndPermissions module instance
+   * @param {Number} params.ttl - local cache timestamp
+   * @param {Number} params.tokenExpiresIn - time for token expire
+   * @param {Number} params.timeToRetry - waiting time to retry
+   * @param {Number} params.daySpan - day span of call log
+   * @param {Bool} params.polling - polling flag
+   */
   constructor({
     auth,
     client,
@@ -102,7 +120,9 @@ export default class CallLog extends Pollable {
         // TODO make sure removeDuplicateIntermediateCalls is necessary here
         removeInboundRingOutLegs(removeDuplicateIntermediateCalls(data.filter(call => (
           // [RCINT-3472] calls with result === 'stopped' seems to be useless
-          call.result !== callResults.stopped
+          call.result !== callResults.stopped &&
+          // [RCINT-51111] calls with result === 'busy'
+          call.result !== callResults.busy
         ))))
       ),
     );

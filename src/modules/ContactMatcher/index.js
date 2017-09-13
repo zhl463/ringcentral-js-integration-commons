@@ -1,7 +1,14 @@
 import DataMatcher from '../../lib/DataMatcher';
 import proxify from '../../lib/proxy/proxify';
 
+/**
+ * @class
+ * @description Contact matcher managing module
+ */
 export default class ContactMatcher extends DataMatcher {
+  /**
+   * @constructor
+   */
   constructor({
     ...options
   }) {

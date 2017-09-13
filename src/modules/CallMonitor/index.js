@@ -15,7 +15,64 @@ import {
 import ensureExist from '../../lib/ensureExist';
 import { isRing, isOnHold } from '../Webphone/webphoneHelper';
 
+function matchWephoneSessionWithAcitveCall(sessions, callItem) {
+  if (!sessions || !callItem.sipData) {
+    return undefined;
+  }
+  return sessions.find((session) => {
+    if (session.direction !== callItem.direction) {
+      return false;
+    }
+    if (
+      session.direction === callDirections.inbound &&
+      callItem.sipData.remoteUri.indexOf(session.from) === -1
+    ) {
+      return false;
+    }
+    if (
+      session.direction === callDirections.outbound &&
+      callItem.sipData.remoteUri.indexOf(session.to) === -1
+    ) {
+      return false;
+    }
+    let webphoneStartTime;
+    if (session.direction === callDirections.inbound) {
+      webphoneStartTime = session.creationTime;
+    } else {
+      webphoneStartTime = session.startTime || session.creationTime;
+    }
+    // 16000 is from experience in test.
+    // there is delay bettween active call created and webphone session created
+    // for example, the time delay is decided by when webphone get invite info
+    if (
+      Math.abs(callItem.startTime - webphoneStartTime) > 16000
+    ) {
+      return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * @class
+ * @description active calls monitor module
+ */
 export default class CallMonitor extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Call} params.call - call module instance
+   * @param {AccountInfo} params.accountInfo - accountInfo module instance
+   * @param {DetailedPresence} params.detailedPresence - detailedPresence module instance
+   * @param {ActivityMatcher} params.activityMatcher - activityMatcher module instance
+   * @param {ContactMatcher} params.contactMatcher - contactMatcher module instance
+   * @param {Webphone} params.webphone - webphone module instance
+   * @param {Storage} params.storage - storage module instance
+   * @param {Function} params.onRinging - function on ring
+   * @param {Function} params.onNewCall - function on new call
+   * @param {Function} params.onCallUpdated - function on call updated
+   * @param {Function} params.onCallEnded - function on call ended
+   */
   constructor({
     call,
     accountInfo,
@@ -70,40 +127,7 @@ export default class CallMonitor extends RcModule {
             phoneNumber: callItem.to && callItem.to.phoneNumber,
             countryCode,
           });
-          let webphoneSession;
-          if (sessions && callItem.sipData) {
-            webphoneSession = sessions.find((session) => {
-              // debugger;
-              if (session.direction !== callItem.direction) {
-                return false;
-              }
-              if (
-                session.direction === callDirections.inbound &&
-                callItem.sipData.remoteUri.indexOf(session.from) === -1
-              ) {
-                return false;
-              }
-              if (
-                session.direction === callDirections.outbound &&
-                callItem.sipData.remoteUri.indexOf(session.to) === -1
-              ) {
-                return false;
-              }
-              let webphoneStartTime;
-              if (session.direction === callDirections.inbound) {
-                webphoneStartTime = session.creationTime;
-              } else {
-                webphoneStartTime = session.startTime || session.creationTime;
-              }
-              if (
-                Math.abs(callItem.startTime - webphoneStartTime) > 16000
-              ) {
-                return false;
-              }
-              return true;
-            });
-          }
-
+          const webphoneSession = matchWephoneSessionWithAcitveCall(sessions, callItem);
           return {
             ...callItem,
             from: {
@@ -118,14 +142,6 @@ export default class CallMonitor extends RcModule {
             ),
             webphoneSession,
           };
-        }).filter((callItem) => {
-          if (!callItem.webphoneSession || !sessions) {
-            return true;
-          }
-          const session = sessions.find(
-            sessionItem => callItem.webphoneSession.id === sessionItem.id
-          );
-          return !!session;
         }).sort(sortByStartTime)
       ),
     );
@@ -179,9 +195,17 @@ export default class CallMonitor extends RcModule {
 
     this.addSelector('otherDeviceCalls',
       this._selectors.calls,
-      calls => calls.filter(callItem =>
-        !callItem.webphoneSession
-      )
+      () => this._webphone && this._webphone.lastEndedSessions,
+      (calls, lastEndedSessions) => calls.filter((callItem) => {
+        if (callItem.webphoneSession) {
+          return false;
+        }
+        if (!lastEndedSessions) {
+          return true;
+        }
+        const endCall = matchWephoneSessionWithAcitveCall(lastEndedSessions, callItem);
+        return !endCall;
+      })
     );
 
     this.addSelector('uniqueNumbers',

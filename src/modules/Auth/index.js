@@ -1,4 +1,5 @@
 import url from 'url';
+import qs from 'qs';
 import RcModule from '../../lib/RcModule';
 import getAuthReducer from './getAuthReducer';
 import actionTypes from './actionTypes';
@@ -32,6 +33,16 @@ function getDefaultProxyUri() {
 export default class Auth extends RcModule {
   /**
    * @constructor
+   * @param {Object} params - params object
+   * @param {Client} params.client - client module instance
+   * @param {Alert} params.alert - alert module instance
+   * @param {Brand} params.brand - brand module instance
+   * @param {Locale} params.locale - locale module instance
+   * @param {TabManager} params.tabManager - tabManager module instance
+   * @param {environment} params.Environment - environment module instance
+   * @param {String} params.redirectUri - redirect uri
+   * @param {String} params.proxyUri - proxyUri module instance
+   * @param {Number} params.defaultProxyRetry - default proxy retry time 5000
    */
   constructor({
     client,
@@ -476,11 +487,18 @@ export default class Auth extends RcModule {
   @proxify
   openOAuthPage() {
     if (this.proxyLoaded) {
+      const extendedQuery = qs.stringify({
+        force: true,
+        localeId: this._locale.currentLocale,
+        ui_options: 'hide_remember_me hide_tos',
+      });
       this._proxyFrame.contentWindow.postMessage({
         oAuthUri: `${this.getLoginUrl({
           redirectUri: this.redirectUri,
           brandId: this._brand.id,
-        })}&force=true&localeId=${encodeURIComponent(this._locale.currentLocale)}`,
+          state: btoa(Date.now()),
+          display: 'page',
+        })}&${extendedQuery}`,
       }, '*');
     }
   }

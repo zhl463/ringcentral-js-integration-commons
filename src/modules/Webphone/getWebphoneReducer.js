@@ -37,6 +37,8 @@ export function getErrorCodeReducer(types) {
       case types.connectError:
       case types.registrationFailed:
         return errorCode;
+      case types.registered:
+        return null;
       default:
         return state;
     }
@@ -57,34 +59,18 @@ export function getConnectRetryCountsReducer(types) {
   };
 }
 
-export function getWebphoneCountsReducer(types) {
-  return (state = 0, { type }) => {
-    switch (type) {
-      case types.reconnect:
-      case types.connect:
-        return state + 1;
-      case types.connectError:
-      case types.disconnect:
-      case types.registrationFailed:
-        return state - 1;
-      default:
-        return state;
-    }
-  };
-}
-
 export function getActiveSessionIdReducer(types) {
-  return (state = null, { type, sessionId, sessions = [] }) => {
+  return (state = null, { type, session = {}, sessions = [] }) => {
     let onHoldSessions;
     switch (type) {
       case types.callStart:
-        return sessionId;
+        return session.id;
       case types.callEnd:
-        if (sessionId !== state) {
+        if (session.id !== state) {
           return state;
         }
         onHoldSessions =
-          sessions.filter(session => isOnHold(session));
+          sessions.filter(sessionItem => isOnHold(sessionItem));
         if (onHoldSessions && onHoldSessions[0]) {
           return onHoldSessions[0].id;
         }
@@ -98,24 +84,51 @@ export function getActiveSessionIdReducer(types) {
 }
 
 export function getRingSessionIdReducer(types) {
-  return (state = null, { type, sessionId, sessions = [] }) => {
+  return (state = null, { type, session = {}, sessions = [] }) => {
     let ringSessions;
     switch (type) {
       case types.callRing:
-        return sessionId;
+        return session.id;
       case types.callStart:
       case types.callEnd:
-        if (sessionId !== state) {
+        if (session.id !== state) {
           return state;
         }
         ringSessions =
-          sessions.filter(session => isRing(session));
+          sessions.filter(sessionItem => isRing(sessionItem));
         if (ringSessions && ringSessions[0]) {
           return ringSessions[0].id;
         }
         return null;
       case types.disconnect:
         return null;
+      default:
+        return state;
+    }
+  };
+}
+
+export function getLastEndedSessionsReducer(types) {
+  return (state = [], { type, session = {} }) => {
+    let lastSessions;
+    switch (type) {
+      case types.callEnd:
+        if (
+          /**
+          * don't add incoming call that isn't relied by current app
+          *   to end sessions. this call can be answered by other apps
+          */
+          !session.startTime &&
+          !session.isToVoicemail &&
+          !session.isForwarded &&
+          !session.isReplied
+        ) {
+          return state;
+        }
+        lastSessions = [session].concat(
+          state.filter(sessionItem => sessionItem.id !== session.id)
+        );
+        return lastSessions.slice(0, 5);
       default:
         return state;
     }
@@ -153,9 +166,9 @@ export default function getWebphoneReducer(types) {
     connectionStatus: getConnectionStatusReducer(types),
     connectRetryCounts: getConnectRetryCountsReducer(types),
     errorCode: getErrorCodeReducer(types),
-    webphoneCounts: getWebphoneCountsReducer(types),
     activeSessionId: getActiveSessionIdReducer(types),
     ringSessionId: getRingSessionIdReducer(types),
     sessions: getSessionsReducer(types),
+    lastEndedSessions: getLastEndedSessionsReducer(types),
   });
 }

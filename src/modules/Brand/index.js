@@ -1,7 +1,19 @@
 import RcModule from '../../lib/RcModule';
 import moduleStatuses from '../../enums/moduleStatuses';
 
+/**
+ * @class
+ * @description Brand managing module
+ */
 export default class Brand extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {String} params.id - brand id
+   * @param {String} params.name - brand name
+   * @param {String} params.fullName - full brand name
+   * @param {String} params.application - application name
+   */
   constructor({ id, name, fullName, application, ...options }) {
     super(options);
     this._reducer = (state = {

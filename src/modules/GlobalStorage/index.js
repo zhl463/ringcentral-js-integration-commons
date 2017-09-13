@@ -7,8 +7,11 @@ import moduleStatuses from '../../enums/moduleStatuses';
  *  Allows registeration of reducers so that persisted states can be computed with reducers.
  */
 export default class GlobalStorage extends StorageBase {
+  /**
+   * @constructor
+   */
   constructor({
-    ...options,
+    ...options
   }) {
     super({
       name: 'globalStorage',

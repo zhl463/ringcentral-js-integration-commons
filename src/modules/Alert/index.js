@@ -13,7 +13,8 @@ import proxify from '../../lib/proxy/proxify';
 export default class Alert extends RcModule {
   /**
    * @constructor
-   * @param {Number} ttl - Default time-to-live for alert messages.
+   * @param {Object} params - params object
+   * @param {Number} params.ttl - Default time-to-live for alert messages.
    */
   constructor({
     ttl = 5000,

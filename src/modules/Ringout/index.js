@@ -9,7 +9,19 @@ import proxify from '../../lib/proxy/proxify';
 const DEFAULT_MONITOR_INTERVAL = 2500;
 const DEFAULT_TIME_BETWEEN_CALLS = 10000;
 
+/**
+ * @class
+ * @description Ringout managing module
+ */
 export default class Ringout extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Client} params.client - client module instance
+   * @param {Auth} params.auth - auth module instance
+   * @param {Number} params.monitorInterval - monitor interval, default 2500
+   * @param {Number} params.timeBetweenCalls - time between calls, default 10000
+   */
   constructor({
     auth,
     client,

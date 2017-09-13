@@ -36,7 +36,7 @@ export function getDataReducer(types) {
           if (!existingCall) {
             const normalizedCall = normalizeStartTime(normalizeFromTo(activeCall));
             const startTime = normalizedCall.startTime || timestamp;
-            const offset = Math.min(startTime - timestamp, 0);
+            const offset = Math.min(timestamp - startTime, 0);
             return {
               ...normalizedCall,
               startTime,

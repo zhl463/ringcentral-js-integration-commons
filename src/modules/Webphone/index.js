@@ -20,10 +20,7 @@ import {
   isRing,
   isOnHold,
 } from './webphoneHelper';
-import getWebphoneReducer, {
-  getWebphoneCountsReducer,
-  getUserMediaReducer,
-} from './getWebphoneReducer';
+import getWebphoneReducer, { getUserMediaReducer } from './getWebphoneReducer';
 
 const FIRST_THREE_RETRIES_DELAY = 10 * 1000;
 const FOURTH_RETRIES_DELAY = 30 * 1000;
@@ -31,25 +28,30 @@ const FIFTH_RETRIES_DELAY = 60 * 1000;
 const MAX_RETRIES_DELAY = 2 * 60 * 1000;
 
 /**
- * Web phone module to handle phone interaction with WebRTC.
- * @param {appKey} appKey
- * @param {appName} appName
- * @param {appVersion} appVersion
- * @param {webphoneLogLevel} log Level
- * @param {alert} alert module instance
- * @param {auth} auth module instance
- * @param {client} client module instance
- * @param {rolesAndPermissions} rolesAndPermissions module instance
- * @param {storage} storage module instance
- * @param {globalStorage} globalStorage module instance
- * @param {extensionDevice} extensionDevice module instance
- * @param {numberValidate} numberValidate module instance
- * @param {contactMatcher} contactMatcher module instance, optional
- * @param {onCallEnd} callback on a call end
- * @param {onCallRing} callback on a call ring
- * @param {onCallStart} callback on a call start
+ * @constructor
+ * @description Web phone module to handle phone interaction with WebRTC.
  */
 export default class Webphone extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {String} params.appKey - app key
+   * @param {String} params.appName - app name
+   * @param {String} params.appVersion - app version
+   * @param {Number} params.webphoneLogLevel - log Level
+   * @param {Alert} params.alert - alert module instance
+   * @param {Auth} params.auth - auth module instance
+   * @param {Client} params.client - client module instance
+   * @param {RolesAndPermissions} params.rolesAndPermissions - rolesAndPermissions module instance
+   * @param {Storage} params.storage - storage module instance
+   * @param {GlobalStorage} params.globalStorage - globalStorage module instance
+   * @param {ExtensionDevice} params.extensionDevice - extensionDevice module instance
+   * @param {NumberValidate} params.numberValidate - numberValidate module instance
+   * @param {ContactMatcher} params.contactMatcher - contactMatcher module instance, optional
+   * @param {Function} params.onCallEnd - callback on a call end
+   * @param {Function} params.onCallRing - callback on a call ring
+   * @param {Function} params.onCallStart - callback on a call start
+   */
   constructor({
     appKey,
     appName,
@@ -67,7 +69,7 @@ export default class Webphone extends RcModule {
     onCallEnd,
     onCallRing,
     onCallStart,
-    ...options,
+    ...options
   }) {
     super({
       ...options,
@@ -85,7 +87,6 @@ export default class Webphone extends RcModule {
     this._storage = this::ensureExist(storage, 'storage');
     this._globalStorage = this::ensureExist(globalStorage, 'globalStorage');
     this._numberValidate = this::ensureExist(numberValidate, 'numberValidate');
-    this._storageWebphoneCountsKey = 'webphoneCounts';
     this._userMediaStorageKey = 'userMadia';
     this._contactMatcher = contactMatcher;
     this._onCallEndFunc = onCallEnd;
@@ -99,10 +100,6 @@ export default class Webphone extends RcModule {
 
     this._reducer = getWebphoneReducer(this.actionTypes);
 
-    storage.registerReducer({
-      key: this._storageWebphoneCountsKey,
-      reducer: getWebphoneCountsReducer(this.actionTypes),
-    });
     globalStorage.registerReducer({
       key: this._userMediaStorageKey,
       reducer: getUserMediaReducer(this.actionTypes),
@@ -290,7 +287,18 @@ export default class Webphone extends RcModule {
     return phoneLines;
   }
 
+  _removeWebphone() {
+    if (!this._webphone || !this._webphone.userAgent) {
+      return;
+    }
+    this._webphone.userAgent.stop();
+    this._webphone.userAgent.unregister();
+    this._webphone.userAgent.removeAllListeners();
+    this._webphone = null;
+  }
+
   _createWebphone(provisionData) {
+    this._removeWebphone();
     this._webphone = new RingCentralWebphone(provisionData, {
       appKey: this._appKey,
       appName: this._appName,
@@ -305,10 +313,10 @@ export default class Webphone extends RcModule {
     });
     this._isFirstRegister = true;
     const onRegistered = () => {
-      this.store.dispatch({
-        type: this.actionTypes.registered,
-      });
       if (this._isFirstRegister) {
+        this.store.dispatch({
+          type: this.actionTypes.registered,
+        });
         this._alert.info({
           message: webphoneErrors.connected,
         });
@@ -316,28 +324,33 @@ export default class Webphone extends RcModule {
       this._isFirstRegister = false;
     };
     const onUnregistered = () => {
+      this._isFirstRegister = true;
       this.store.dispatch({
         type: this.actionTypes.unregistered,
       });
     };
-    const onRegistrationFailed = (error) => {
-      let needToReconnect = true;
+    const onRegistrationFailed = (response, cause) => {
+      this._isFirstRegister = true;
       let errorCode;
-      console.error(error);
-      this._webphone.userAgent.removeAllListeners();
-      this._webphone = null;
-      if (error && error.status_code === 503) {
+      let needToReconnect = false;
+      console.error(response);
+      console.error(`webphone register failed: ${cause}`);
+      if (response && response.status_code === 503) {
         errorCode = webphoneErrors.webphoneCountOverLimit;
         this._alert.warning({
           message: errorCode,
         });
-        needToReconnect = false;
+        needToReconnect = true;
       }
       this.store.dispatch({
         type: this.actionTypes.registrationFailed,
         errorCode,
       });
+      if (cause === 'Request Timeout') {
+        needToReconnect = true;
+      }
       if (needToReconnect) {
+        this._removeWebphone();
         this._connect(needToReconnect);
       }
     };
@@ -356,6 +369,10 @@ export default class Webphone extends RcModule {
     try {
       if (reconnect) {
         await this._retrySleep();
+      }
+
+      if (!this._auth.loggedIn) {
+        return;
       }
 
       // do not connect if it is connecting
@@ -420,7 +437,7 @@ export default class Webphone extends RcModule {
   @proxify
   async connect() {
     if (
-      (await this._auth.checkIsLoggedIn()) &&
+      this._auth.loggedIn &&
       this.enabled &&
       this.connectionStatus === connectionStatus.disconnected
     ) {
@@ -473,11 +490,7 @@ export default class Webphone extends RcModule {
         this._sessions.forEach((session) => {
           this.hangup(session);
         });
-        if (this._webphone.userAgent) {
-          this._webphone.userAgent.stop();
-          this._webphone.userAgent.unregister();
-        }
-        this._webphone = null;
+        this._removeWebphone();
         this._sessions = new Map();
         this._updateSessions();
       }
@@ -632,6 +645,7 @@ export default class Webphone extends RcModule {
       }
       const validPhoneNumber =
         validatedResult.numbers[0] && validatedResult.numbers[0].e164;
+      session.isForwarded = true;
       await session.forward(validPhoneNumber, this.acceptOptions);
       console.log('Forwarded');
       this._onCallEnd(session);
@@ -931,6 +945,7 @@ export default class Webphone extends RcModule {
       return;
     }
     try {
+      session.isToVoicemail = true;
       await session.toVoicemail();
     } catch (e) {
       console.error(e);
@@ -948,6 +963,7 @@ export default class Webphone extends RcModule {
       return;
     }
     try {
+      session.isReplied = true;
       await session.replyWithMessage(replyOptions);
     } catch (e) {
       console.error(e);
@@ -1033,24 +1049,26 @@ export default class Webphone extends RcModule {
 
   _onCallStart(session) {
     this._addSession(session);
+    const normalizedSession = normalizeSession(session);
     this.store.dispatch({
       type: this.actionTypes.callStart,
-      sessionId: session.id,
+      session: normalizedSession,
       sessions: this.sessions,
     });
     if (this._contactMatcher) {
       this._contactMatcher.triggerMatch();
     }
     if (typeof this._onCallStartFunc === 'function') {
-      this._onCallStartFunc(session, this.activeSession);
+      this._onCallStartFunc(normalizedSession, this.activeSession);
     }
   }
 
   _onCallRing(session) {
     this._addSession(session);
+    const normalizedSession = normalizeSession(session);
     this.store.dispatch({
       type: this.actionTypes.callRing,
-      sessionId: session.id,
+      session: normalizedSession,
       sessions: this.sessions,
     });
     if (this._contactMatcher) {
@@ -1060,19 +1078,20 @@ export default class Webphone extends RcModule {
       this._webphone.userAgent.audioHelper.playIncoming(false);
     }
     if (typeof this._onCallRingFunc === 'function') {
-      this._onCallRingFunc(session, this.ringSession);
+      this._onCallRingFunc(normalizedSession, this.ringSession);
     }
   }
 
   _onCallEnd(session) {
     this._removeSession(session);
+    const normalizedSession = normalizeSession(session);
     this.store.dispatch({
       type: this.actionTypes.callEnd,
-      sessionId: session.id,
+      session: normalizedSession,
       sessions: this.sessions,
     });
     if (typeof this._onCallEndFunc === 'function') {
-      this._onCallEndFunc(session, this.activeSession);
+      this._onCallEndFunc(normalizedSession, this.activeSession);
     }
   }
 
@@ -1137,6 +1156,10 @@ export default class Webphone extends RcModule {
     return this._selectors.onHoldSessions();
   }
 
+  get lastEndedSessions() {
+    return this.state.lastEndedSessions;
+  }
+
   get videoElementPrepared() {
     return this.state.videoElementPrepared;
   }
@@ -1147,10 +1170,6 @@ export default class Webphone extends RcModule {
 
   get connectionStatus() {
     return this.state.connectionStatus;
-  }
-
-  get webphoneCounts() {
-    return this._storage.getItem(this._storageWebphoneCountsKey);
   }
 
   get userMedia() {

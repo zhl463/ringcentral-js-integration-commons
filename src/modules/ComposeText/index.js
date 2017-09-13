@@ -8,8 +8,21 @@ import getCacheReducer from './getCacheReducer';
 
 import messageSenderMessages from '../MessageSender/messageSenderMessages';
 import proxify from '../../lib/proxy/proxify';
-
+/**
+ * @class
+ * @description Compose text managing module
+ */
 export default class ComposeText extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Alert} params.alert - alert module instance
+   * @param {Auth} params.auth - auth module instance
+   * @param {Storage} params.storage - storage module instance
+   * @param {MessageSender} params.messageSender - messageSender module instance
+   * @param {NumberValidate} params.numberValidate - numberValidate module instance
+   * @param {ContactSearch} params.contactSearch - contactSearch module instance
+   */
   constructor({
     alert,
     auth,
@@ -122,9 +135,11 @@ export default class ComposeText extends RcModule {
 
   _alertWarning(message) {
     if (message) {
+      const ttlConfig = message !== messageSenderMessages.noAreaCode
+        ? { ttl: 0 } : null;
       this._alert.warning({
         message,
-        ttl: 0,
+        ...ttlConfig
       });
       return true;
     }

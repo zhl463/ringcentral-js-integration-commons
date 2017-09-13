@@ -3,8 +3,6 @@ import ensureExist from '../../lib/ensureExist';
 import getIntlDateTimeFormatter from '../../lib/getIntlDateTimeFormatter';
 import actionTypes from './actionTypes';
 import getDateTimeFormatReducer from './getDateTimeFormatReducer';
-import moduleStatuses from '../../enums/moduleStatuses';
-import proxify from '../../lib/proxy/proxify';
 import getProxyReducer from './getProxyReducer';
 
 /**
@@ -12,9 +10,14 @@ import getProxyReducer from './getProxyReducer';
  * @description Simple date and time formatting manager.
  */
 export default class DateTimeFormat extends RcModule {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Locale} params.locale - locale module instance
+   */
   constructor({
     locale,
-    ...options,
+    ...options
   }) {
     super({
       ...options,

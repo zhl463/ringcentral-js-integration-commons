@@ -5,7 +5,10 @@ import getAnalyticsReducer from './getAnalyticsReducer';
 
 import { Segment } from '../../lib/Analytics';
 
-
+/**
+ * @class
+ * @description Analytics module.
+ */
 export default class Analytics extends RcModule {
   constructor({
     auth,

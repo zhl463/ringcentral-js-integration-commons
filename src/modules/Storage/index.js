@@ -8,9 +8,14 @@ import moduleStatuses from '../../enums/moduleStatuses';
  *  Allows registeration of reducers so that persisted states can be computed with reducers.
  */
 export default class Storage extends StorageBase {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Auth} params.auth - auth module instance
+   */
   constructor({
     auth,
-    ...options,
+    ...options
   }) {
     super({
       name: 'storage',

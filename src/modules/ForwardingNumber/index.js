@@ -1,10 +1,19 @@
 import DataFetcher from '../../lib/DataFetcher';
 import fetchList from '../..//lib/fetchList';
 
+/**
+ * @class
+ * @description Extension forwarding number list module
+ */
 export default class ForwardingNumber extends DataFetcher {
+  /**
+   * @constructor
+   * @param {Object} params - params object
+   * @param {Client} params.client - client module instance
+   */
   constructor({
     client,
-    ...options,
+    ...options
   }) {
     super({
       name: 'forwardingNumber',
