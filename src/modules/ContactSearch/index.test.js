@@ -6,6 +6,7 @@ import getContactSearchReducer from './getContactSearchReducer';
 import getCacheReducer from './getCacheReducer';
 import actionTypes from './actionTypes';
 import loginStatus from '../../modules/Auth/loginStatus';
+import sleep from '../../lib/sleep';
 
 describe('ContactSearch Unit Test', () => {
   let contactSearch;
@@ -18,6 +19,7 @@ describe('ContactSearch Unit Test', () => {
     }));
     contactSearch._store = store;
     contactSearch._actionTypes = actionTypes;
+    contactSearch._minimalSearchLength = 3;
     [
       '_onStateChange',
       '_shouldInit',

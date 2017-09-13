@@ -2,8 +2,11 @@ import RcModule from '../../lib/RcModule';
 import isBlank from '../../lib/isBlank';
 import normalizeNumber from '../../lib/normalizeNumber';
 import ensureExist from '../../lib/ensureExist';
+import { batchGetApi } from '../../lib/batchApiHelper';
 import actionTypes from './actionTypes';
 import getContactsReducer from './getContactsReducer';
+
+const MaximumBatchGetPresence = 30;
 
 function addPhoneToContact(contact, phone, type) {
   const phoneNumber = normalizeNumber({ phoneNumber: phone });
@@ -45,7 +48,7 @@ export default class Contacts extends RcModule {
     accountExtension,
     accountPhoneNumber,
     ttl = DEFAULT_TTL,
-    ...options
+    ...options,
   }) {
     super({
       ...options,
@@ -218,26 +221,111 @@ export default class Contacts extends RcModule {
         this.profileImages[imageId] &&
         (Date.now() - this.profileImages[imageId].timestamp < this._ttl)
       ) {
-        return this.profileImages[imageId].url;
+        return this.profileImages[imageId].imageUrl;
       }
       try {
         const response = await this._client.account().extension(contact.id).profileImage().get();
         const imageUrl = URL.createObjectURL(await response._response.blob());
-        const image = {
-          id: imageId,
-          url: imageUrl,
-        };
         this.store.dispatch({
           type: this.actionTypes.fetchImageSuccess,
-          image,
+          imageId,
+          imageUrl,
         });
-        return image.url;
+        return imageUrl;
       } catch (e) {
         console.error(e);
         return null;
       }
     }
     return null;
+  }
+
+  getPresence(contact) {
+    return new Promise((resolve) => {
+      if (!contact || !contact.id || contact.type !== 'company') {
+        resolve(null);
+        return;
+      }
+
+      const presenceId = `${contact.type}${contact.id}`;
+      if (
+        this.contactPresences[presenceId] &&
+        (Date.now() - this.contactPresences[presenceId].timestamp < this._ttl)
+      ) {
+        const presence = this.contactPresences[presenceId].presence;
+        resolve(presence);
+        return;
+      }
+
+      if (!this._getPresenceContexts) {
+        this._getPresenceContexts = [];
+      }
+      this._getPresenceContexts.push({
+        contact,
+        resolve,
+      });
+
+      clearTimeout(this.enqueueTimeoutId);
+      if (this._getPresenceContexts.length === MaximumBatchGetPresence) {
+        this._processQueryPresences(this._getPresenceContexts);
+        this._getPresenceContexts = null;
+      } else {
+        this.enqueueTimeoutId = setTimeout(() => {
+          this._processQueryPresences(this._getPresenceContexts);
+          this._getPresenceContexts = null;
+        }, 200);
+      }
+    });
+  }
+
+  async _processQueryPresences(getPresenceContexts) {
+    const contacts = getPresenceContexts.map(x => x.contact);
+    const responses = await this._batchQueryPresences(contacts);
+    getPresenceContexts.forEach((ctx) => {
+      const response = responses[ctx.contact.id];
+      if (!response) {
+        ctx.resolve(null);
+        return;
+      }
+      const { dndStatus, presenceStatus, telephonyStatus, userStatus } = response;
+      const presence = {
+        dndStatus,
+        presenceStatus,
+        telephonyStatus,
+        userStatus,
+      };
+      const presenceId = `${ctx.contact.type}${ctx.contact.id}`;
+      this.store.dispatch({
+        type: this.actionTypes.fetchPresenceSuccess,
+        presenceId,
+        presence,
+      });
+      ctx.resolve(presence);
+    });
+  }
+
+  async _batchQueryPresences(contacts) {
+    const presenceSet = {};
+    try {
+      if (contacts.length === 1) {
+        const id = contacts[0].id;
+        const response = await this._client.account().extension(id).presence().get();
+        presenceSet[id] = response;
+      } else if (contacts.length > 1) {
+        const ids = contacts.map(x => x.id).join(',');
+        const multipartResponse = await batchGetApi({
+          platform: this._client.service.platform(),
+          url: `/account/~/extension/${ids}/presence?detailedTelephonyState=true&sipData=true`,
+        });
+        const responses = multipartResponse.map(x => x.json());
+        responses.forEach((item) => {
+          presenceSet[item.extension.id] = item;
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return presenceSet;
   }
 
   get status() {
@@ -254,5 +342,9 @@ export default class Contacts extends RcModule {
 
   get profileImages() {
     return this.state.profileImages;
+  }
+
+  get contactPresences() {
+    return this.state.contactPresences;
   }
 }

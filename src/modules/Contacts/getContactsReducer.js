@@ -1,16 +1,28 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
-export function getProfileImages(types) {
-  return (state = {}, { type, image }) => {
-    let newState;
+export function getProfileImagesReducer(types) {
+  return (state = {}, { type, imageId, imageUrl }) => {
     switch (type) {
       case types.fetchImageSuccess:
-        newState = {
+        return {
           ...state,
+          [imageId]: { imageUrl, timestamp: Date.now() },
         };
-        newState[image.id] = { timestamp: Date.now(), url: image.url };
-        return newState;
+      default:
+        return state;
+    }
+  };
+}
+
+export function getContactPresencesReducer(types) {
+  return (state = {}, { type, presenceId, presence }) => {
+    switch (type) {
+      case types.fetchPresenceSuccess:
+        return {
+          ...state,
+          [presenceId]: { presence, timestamp: Date.now() },
+        };
       default:
         return state;
     }
@@ -20,6 +32,7 @@ export function getProfileImages(types) {
 export default function getContactsReducer(types) {
   return combineReducers({
     status: getModuleStatusReducer(types),
-    profileImages: getProfileImages(types),
+    profileImages: getProfileImagesReducer(types),
+    contactPresences: getContactPresencesReducer(types),
   });
 }

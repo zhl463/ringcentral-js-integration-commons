@@ -69,6 +69,24 @@ describe('ContactSearch :: Cache :: getContactSearchReducer', () => {
         })).to.deep.equal({});
       });
     });
+
+    it('should remove timeout entities on cleanSearchCache', () => {
+      [
+        actionTypes.cleanSearchCache,
+      ].forEach((type) => {
+        const now = Date.now();
+        const originalState = {
+          data: {
+            entities: [],
+            timestamp: now - 2,
+          },
+        };
+        expect(reducer(originalState, {
+          type,
+          ttl: 1,
+        })).to.deep.equal({});
+      });
+    });
   });
 });
 
