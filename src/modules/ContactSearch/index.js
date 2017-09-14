@@ -7,7 +7,8 @@ import getContactSearchReducer from './getContactSearchReducer';
 import getCacheReducer from './getCacheReducer';
 
 export const AllContactSourceName = 'all';
-export const ContactListPageSize = 30;
+export const DefaultMinimalSearchLength = 3;
+export const DefaultContactListPageSize = 10;
 
 export function uniqueContactItemsById(result) {
   const items = result || [];
@@ -75,7 +76,8 @@ export default class ContactSearch extends RcModule {
     auth,
     storage,
     storageKey = 'contactSearchCache',
-    minimalSearchLength = 3,
+    minimalSearchLength = DefaultMinimalSearchLength,
+    contactListPageSize = DefaultContactListPageSize,
     ttl = 5 * 60 * 1000, // 5 minutes
     ...options,
   }) {
@@ -87,6 +89,7 @@ export default class ContactSearch extends RcModule {
     this._storage = storage;
     this._storageKey = storageKey;
     this._minimalSearchLength = minimalSearchLength;
+    this._contactListPageSize = contactListPageSize;
     this._ttl = ttl;
     this._searchSources = new Map();
     this._searchSourcesFormat = new Map();
@@ -119,7 +122,7 @@ export default class ContactSearch extends RcModule {
       'contactGroups',
       () => this.searching && this.searching.result,
       (result) => {
-        const pageSize = ContactListPageSize;
+        const pageSize = this._contactListPageSize;
         const pageNumber = this.searchCriteria.pageNumber || 1;
         const count = pageNumber * pageSize;
         let items = uniqueContactItemsById(result);
