@@ -8,7 +8,7 @@ import getCacheReducer from './getCacheReducer';
 
 export const AllContactSourceName = 'all';
 export const DefaultMinimalSearchLength = 3;
-export const DefaultContactListPageSize = 10;
+export const DefaultContactListPageSize = 20;
 
 export function uniqueContactItemsById(result) {
   const items = result || [];
