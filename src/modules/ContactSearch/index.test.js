@@ -1,7 +1,12 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { createStore } from 'redux';
-import ContactSearch, { AllContactSourceName } from './index';
+import ContactSearch, {
+  AllContactSourceName,
+  uniqueContactItemsById,
+  sortContactItemsByName,
+  groupByFirstLetterOfName,
+} from './index';
 import getContactSearchReducer from './getContactSearchReducer';
 import getCacheReducer from './getCacheReducer';
 import actionTypes from './actionTypes';
@@ -801,6 +806,56 @@ describe('ContactSearch Unit Test', () => {
       });
       const result = cs.contactSourceNames;
       expect(result).to.deep.equal([AllContactSourceName, 'source1']);
+    });
+  });
+
+  describe('UniqueContactItemsById', () => {
+    it('should return contact items uniqued by contact id', () => {
+      const contacts = [{
+        id: '1',
+        name: 'User2',
+      }, {
+        id: '1',
+        name: 'User1',
+      }];
+      const result = uniqueContactItemsById(contacts);
+      expect(result).to.deep.equal([{
+        id: '1',
+        name: 'User2',
+      }]);
+    });
+  });
+
+  describe('SortContactItemsByName', () => {
+    it('should return contact items sorted by contact name', () => {
+      const contacts = [{
+        id: '2',
+        name: 'User2',
+      }, {
+        id: '1',
+        name: 'User1',
+      }];
+      const result = sortContactItemsByName(contacts);
+      expect(result[0].id).to.equal('1');
+      expect(result[1].id).to.equal('2');
+    });
+  });
+
+  describe('GroupByFirstLetterOfName', () => {
+    it('should return contact groups grouped by first letter of contact name', () => {
+      const contacts = [{
+        id: '2',
+        name: 'User2',
+      }, {
+        id: '1',
+        name: 'User1',
+      }];
+      const result = groupByFirstLetterOfName(contacts);
+      expect(result).to.deep.equal([{
+        contacts,
+        caption: 'U',
+        id: 'U',
+      }]);
     });
   });
 });

@@ -9,7 +9,7 @@ import getCacheReducer from './getCacheReducer';
 export const AllContactSourceName = 'all';
 export const ContactListPageSize = 30;
 
-function uniqueContactItemsById(result) {
+export function uniqueContactItemsById(result) {
   const items = result || [];
   const hash = {};
   const unique = [];
@@ -22,7 +22,7 @@ function uniqueContactItemsById(result) {
   return unique;
 }
 
-function sortContactItemsByName(result) {
+export function sortContactItemsByName(result) {
   let items = result || [];
   items = items.filter((value, index, arr) => arr.indexOf(value) === index);
   items.sort((a, b) => {
@@ -36,7 +36,7 @@ function sortContactItemsByName(result) {
   return items;
 }
 
-function groupByFirstLetterOfName(contactItems) {
+export function groupByFirstLetterOfName(contactItems) {
   const groups = [];
   if (contactItems && contactItems.length) {
     let group;
