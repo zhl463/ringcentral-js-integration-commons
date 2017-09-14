@@ -3,10 +3,9 @@ import { combineReducers } from 'redux';
 export function getContactSearchReducer(types) {
   return (state = {}, { type, entities, sourceName, searchString, ttl }) => {
     const data = {};
-    let key = null;
     switch (type) {
-      case types.save:
-        key = `${sourceName}-${searchString}`;
+      case types.save: {
+        const key = `${sourceName}-${searchString}`;
         data[key] = {
           entities,
           timestamp: Date.now(),
@@ -15,6 +14,7 @@ export function getContactSearchReducer(types) {
           ...state,
           ...data,
         };
+      }
       case types.cleanSearchCache:
         Object.keys(state).forEach((key) => {
           if (Date.now() - state[key].timestamp < ttl) {

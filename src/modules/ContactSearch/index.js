@@ -6,7 +6,8 @@ import actionTypes from './actionTypes';
 import getContactSearchReducer from './getContactSearchReducer';
 import getCacheReducer from './getCacheReducer';
 
-const ContactListPageSize = 30;
+export const AllContactSourceName = 'all';
+export const ContactListPageSize = 30;
 
 function uniqueContactItemsById(result) {
   const items = result || [];
@@ -106,8 +107,7 @@ export default class ContactSearch extends RcModule {
       'contactSourceNames',
       () => this._searchSources.size,
       () => {
-        const allContactSourceName = '';
-        const names = [allContactSourceName];
+        const names = [AllContactSourceName];
         for (const sourceName of this._searchSources.keys()) {
           names.push(sourceName);
         }
@@ -241,7 +241,9 @@ export default class ContactSearch extends RcModule {
 
     clearTimeout(this._searchTimeoutId);
     this._searchTimeoutId = setTimeout(async () => {
-      const searchOnSources = sourceName ? [sourceName] : Array.from(this._searchSources.keys());
+      const searchOnSources = (!sourceName || sourceName === AllContactSourceName) ?
+        Array.from(this._searchSources.keys()) :
+        [sourceName];
       for (const source of searchOnSources) {
         await this._searchSource({
           searchOnSources,
