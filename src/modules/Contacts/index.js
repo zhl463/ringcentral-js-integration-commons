@@ -26,7 +26,9 @@ function addPhoneToContact(contact, phone, type) {
   }
 }
 
-const DEFAULT_TTL = 30 * 60 * 1000;
+const DEFAULT_TTL = 30 * 60 * 1000; // 30 mins
+const DEFAULT_PRESENCETTL = 10 * 60 * 1000; // 5 mins
+const DEFAULT_AVATARTTL = 2 * 60 * 60 * 1000; // 2 hour
 
 /**
  * @class
@@ -41,6 +43,8 @@ export default class Contacts extends RcModule {
    * @param {AccountExtension} params.accountExtension - accountExtension module instance
    * @param {AccountPhoneNumber} params.accountPhoneNumber - accountPhoneNumber module instance
    * @param {Number} params.ttl - timestamp of local cache, default 30 mins
+   * @param {Number} params.avatarTtl - timestamp of avatar local cache, default 2 hour
+   * @param {Number} params.presenceTtl - timestamp of presence local cache, default 10 mins
    */
   constructor({
     client,
@@ -48,6 +52,8 @@ export default class Contacts extends RcModule {
     accountExtension,
     accountPhoneNumber,
     ttl = DEFAULT_TTL,
+    avatarTtl = DEFAULT_AVATARTTL,
+    presenceTtl = DEFAULT_PRESENCETTL,
     ...options,
   }) {
     super({
@@ -60,6 +66,8 @@ export default class Contacts extends RcModule {
     this._client = this::ensureExist(client, 'client');
     this._reducer = getContactsReducer(this.actionTypes);
     this._ttl = ttl;
+    this._avatarTtl = avatarTtl;
+    this._presenceTtl = presenceTtl;
 
     this.addSelector(
       'companyContacts',
@@ -219,7 +227,7 @@ export default class Contacts extends RcModule {
       const imageId = `${contact.type}${contact.id}`;
       if (
         this.profileImages[imageId] &&
-        (Date.now() - this.profileImages[imageId].timestamp < this._ttl)
+        (Date.now() - this.profileImages[imageId].timestamp < this._avatarTtl)
       ) {
         return this.profileImages[imageId].imageUrl;
       }
@@ -230,6 +238,7 @@ export default class Contacts extends RcModule {
           type: this.actionTypes.fetchImageSuccess,
           imageId,
           imageUrl,
+          ttl: this._avatarTtl,
         });
         return imageUrl;
       } catch (e) {
@@ -250,7 +259,7 @@ export default class Contacts extends RcModule {
       const presenceId = `${contact.type}${contact.id}`;
       if (
         this.contactPresences[presenceId] &&
-        (Date.now() - this.contactPresences[presenceId].timestamp < this._ttl)
+        (Date.now() - this.contactPresences[presenceId].timestamp < this._presenceTtl)
       ) {
         const presence = this.contactPresences[presenceId].presence;
         resolve(presence);
@@ -299,6 +308,7 @@ export default class Contacts extends RcModule {
         type: this.actionTypes.fetchPresenceSuccess,
         presenceId,
         presence,
+        ttl: this._presenceTtl,
       });
       ctx.resolve(presence);
     });
