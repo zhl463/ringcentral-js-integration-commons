@@ -597,6 +597,9 @@ export default class Webphone extends RcModule {
       this._onAccepted(session, 'inbound');
       await session.accept(this.acceptOptions);
       this._onCallStart(session);
+      this.store.dispatch({ // for track
+        type: this.actionTypes.callAnswer,
+      });
     } catch (e) {
       console.log('Accept failed');
       console.error(e);
@@ -1204,6 +1207,9 @@ export default class Webphone extends RcModule {
         }
       }
     };
+  }
+  get isOnTransfer() {
+    return this.activeSession && this.activeSession.isOnTransfer;
   }
 
   get errorCode() {

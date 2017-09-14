@@ -16,6 +16,7 @@ export default new Enum([
   'callStart',
   'callEnd',
   'callRing',
+  'callAnswer',
   'toggleMinimized',
   'resetMinimized',
   'videoElementPrepared',

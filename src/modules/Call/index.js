@@ -192,7 +192,8 @@ export default class Call extends RcModule {
           if (validatedNumbers) {
             await this._makeCall(validatedNumbers);
             this.store.dispatch({
-              type: this.actionTypes.connectSuccess
+              type: this.actionTypes.connectSuccess,
+              callSettingMode: this._callSettingMode // for Track
             });
           } else {
             this.store.dispatch({
