@@ -3,6 +3,7 @@ import isBlank from '../../lib/isBlank';
 import normalizeNumber from '../../lib/normalizeNumber';
 import ensureExist from '../../lib/ensureExist';
 import { batchGetApi } from '../../lib/batchApiHelper';
+import sleep from '../../lib/sleep';
 import actionTypes from './actionTypes';
 import getContactsReducer from './getContactsReducer';
 
@@ -29,6 +30,7 @@ function addPhoneToContact(contact, phone, type) {
 const DEFAULT_TTL = 30 * 60 * 1000; // 30 mins
 const DEFAULT_PRESENCETTL = 10 * 60 * 1000; // 5 mins
 const DEFAULT_AVATARTTL = 2 * 60 * 60 * 1000; // 2 hour
+const DEFAULT_AVATARQUERYINTERVAL = 2 * 1000; // 2 seconds
 
 /**
  * @class
@@ -45,6 +47,7 @@ export default class Contacts extends RcModule {
    * @param {Number} params.ttl - timestamp of local cache, default 30 mins
    * @param {Number} params.avatarTtl - timestamp of avatar local cache, default 2 hour
    * @param {Number} params.presenceTtl - timestamp of presence local cache, default 10 mins
+   * @param {Number} params.avatarQueryInterval - interval of query avatar, default 2 seconds
    */
   constructor({
     client,
@@ -54,6 +57,7 @@ export default class Contacts extends RcModule {
     ttl = DEFAULT_TTL,
     avatarTtl = DEFAULT_AVATARTTL,
     presenceTtl = DEFAULT_PRESENCETTL,
+    avatarQueryInterval = DEFAULT_AVATARQUERYINTERVAL,
     ...options,
   }) {
     super({
@@ -68,6 +72,7 @@ export default class Contacts extends RcModule {
     this._ttl = ttl;
     this._avatarTtl = avatarTtl;
     this._presenceTtl = presenceTtl;
+    this._avatarQueryInterval = avatarQueryInterval;
 
     this.addSelector(
       'companyContacts',
@@ -189,9 +194,9 @@ export default class Contacts extends RcModule {
       }
       const name =
         `${
-          contact.firstName ? contact.firstName : ''
+        contact.firstName ? contact.firstName : ''
         } ${
-          contact.lastName ? contact.lastName : ''
+        contact.lastName ? contact.lastName : ''
         }`;
       const matchedContact = {
         ...contact,
@@ -222,31 +227,62 @@ export default class Contacts extends RcModule {
     return result;
   }
 
-  async getImageProfile(contact) {
-    if (contact.type === 'company' && contact.id && contact.hasProfileImage) {
+  getImageProfile(contact) {
+    return new Promise((resolve) => {
+      if (!contact || !contact.id || contact.type !== 'company' || !contact.hasProfileImage) {
+        resolve(null);
+        return;
+      }
+
       const imageId = `${contact.type}${contact.id}`;
       if (
         this.profileImages[imageId] &&
         (Date.now() - this.profileImages[imageId].timestamp < this._avatarTtl)
       ) {
-        return this.profileImages[imageId].imageUrl;
+        const image = this.profileImages[imageId].imageUrl;
+        resolve(image);
+        return;
       }
-      try {
-        const response = await this._client.account().extension(contact.id).profileImage().get();
-        const imageUrl = URL.createObjectURL(await response._response.blob());
-        this.store.dispatch({
-          type: this.actionTypes.fetchImageSuccess,
-          imageId,
-          imageUrl,
-          ttl: this._avatarTtl,
-        });
-        return imageUrl;
-      } catch (e) {
-        console.error(e);
-        return null;
+
+      if (!this._getAvatarContexts) {
+        this._getAvatarContexts = [];
       }
+      this._getAvatarContexts.push({
+        contact,
+        resolve,
+      });
+
+      if (!this._queryingAvatar) {
+        this._queryingAvatar = true;
+        this._processQueryAvatar(this._getAvatarContexts);
+      }
+    });
+  }
+
+  async _processQueryAvatar(getAvatarContexts) {
+    const ctx = getAvatarContexts[0];
+    const imageId = `${ctx.contact.type}${ctx.contact.id}`;
+    let imageUrl = null;
+    try {
+      const response = await this._client.account().extension(ctx.contact.id).profileImage().get();
+      imageUrl = URL.createObjectURL(await response._response.blob());
+      this.store.dispatch({
+        type: this.actionTypes.fetchImageSuccess,
+        imageId,
+        imageUrl,
+        ttl: this._avatarTtl,
+      });
+    } catch (e) {
+      console.error(e);
     }
-    return null;
+    ctx.resolve(imageUrl);
+    getAvatarContexts.splice(0, 1);
+    if (getAvatarContexts.length) {
+      await sleep(this._avatarQueryInterval);
+      this._processQueryAvatar(getAvatarContexts);
+    } else {
+      this._queryingAvatar = false;
+    }
   }
 
   getPresence(contact) {
@@ -282,7 +318,7 @@ export default class Contacts extends RcModule {
         this.enqueueTimeoutId = setTimeout(() => {
           this._processQueryPresences(this._getPresenceContexts);
           this._getPresenceContexts = null;
-        }, 200);
+        }, 1000);
       }
     });
   }
