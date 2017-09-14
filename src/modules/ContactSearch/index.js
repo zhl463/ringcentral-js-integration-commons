@@ -269,7 +269,6 @@ export default class ContactSearch extends RcModule {
       type: this.actionTypes.search,
     });
     try {
-      this._cleanSearchCache();
       let entities = null;
       entities = this._searchFromCache({ sourceName, searchString });
       if (entities) {
@@ -285,13 +284,6 @@ export default class ContactSearch extends RcModule {
     } catch (error) {
       this._onSearchError();
     }
-  }
-
-  _cleanSearchCache() {
-    this.store.dispatch({
-      type: this.actionTypes.cleanSearchCache,
-      ttl: this._ttl,
-    });
   }
 
   _searchFromCache({ sourceName, searchString }) {
@@ -334,6 +326,7 @@ export default class ContactSearch extends RcModule {
       sourceName,
       searchString,
       entities,
+      ttl: this._ttl,
     });
   }
 

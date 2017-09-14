@@ -2,26 +2,21 @@ import { combineReducers } from 'redux';
 
 export function getContactSearchReducer(types) {
   return (state = {}, { type, entities, sourceName, searchString, ttl }) => {
-    const data = {};
     switch (type) {
       case types.save: {
-        const key = `${sourceName}-${searchString}`;
-        data[key] = {
-          entities,
-          timestamp: Date.now(),
-        };
-        return {
-          ...state,
-          ...data,
-        };
-      }
-      case types.cleanSearchCache:
+        const data = {};
         Object.keys(state).forEach((key) => {
           if (Date.now() - state[key].timestamp < ttl) {
             data[key] = state[key];
           }
         });
+        const key = `${sourceName}-${searchString}`;
+        data[key] = {
+          entities,
+          timestamp: Date.now(),
+        };
         return data;
+      }
       case types.initSuccess:
       case types.cleanUp:
         return {};

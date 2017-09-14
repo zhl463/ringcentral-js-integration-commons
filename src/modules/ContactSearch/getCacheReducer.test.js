@@ -24,12 +24,18 @@ describe('ContactSearch :: Cache :: getContactSearchReducer', () => {
     });
 
     it('should return data with searchString and searceSource as key on save', () => {
-      const originalState = { 'dynamics-111': {} };
+      const now = Date.now();
+      const originalState = {
+        'dynamics-111': {
+          timestamp: now,
+        }
+      };
       expect(reducer(originalState, {
         type: actionTypes.save,
         entities: [],
         sourceName: 'dynamics',
         searchString: 'searchString',
+        ttl: 10,
       })).to.include.keys('dynamics-111', 'dynamics-searchString');
     });
     it('should return data with entities on save', () => {
@@ -70,21 +76,24 @@ describe('ContactSearch :: Cache :: getContactSearchReducer', () => {
       });
     });
 
-    it('should remove timeout entities on cleanSearchCache', () => {
+    it('should remove timeout entities on save', () => {
       [
-        actionTypes.cleanSearchCache,
+        actionTypes.save,
       ].forEach((type) => {
         const now = Date.now();
         const originalState = {
-          data: {
+          'dynamics-timeouted': {
             entities: [],
             timestamp: now - 2,
           },
         };
         expect(reducer(originalState, {
           type,
+          entities: [],
+          sourceName: 'dynamics',
+          searchString: 'searchString',
           ttl: 1,
-        })).to.deep.equal({});
+        })).to.not.have.key('dynamics-timeouted');
       });
     });
   });
