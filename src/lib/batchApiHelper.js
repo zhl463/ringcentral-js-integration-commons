@@ -23,3 +23,12 @@ export async function batchPutApi({ platform, url, query, body }) {
   const result = await platform.put(url, body, query, options);
   return result.multipart();
 }
+
+export async function batchGetApi({ platform, url, query }) {
+  const boundry = `Boundary_${uuid()}`;
+  const options = { headers: {} };
+  options.headers[ApiResponse._contentType]
+    = `${ApiResponse._multipartContentType}; boundary=${boundry}`;
+  const result = await platform.get(url, query, options);
+  return result.multipart();
+}

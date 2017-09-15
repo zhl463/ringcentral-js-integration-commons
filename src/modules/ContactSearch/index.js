@@ -1,11 +1,62 @@
 import RcModule from '../../lib/RcModule';
 import loginStatus from '../../modules/Auth/loginStatus';
-import moduleStatuses from '../../enums/moduleStatuses';
+import proxify from '../../lib/proxy/proxify';
 
 import actionTypes from './actionTypes';
 import getContactSearchReducer from './getContactSearchReducer';
 import getCacheReducer from './getCacheReducer';
-import proxify from '../../lib/proxy/proxify';
+
+export const AllContactSourceName = 'all';
+export const DefaultMinimalSearchLength = 3;
+export const DefaultContactListPageSize = 20;
+
+export function uniqueContactItemsById(result) {
+  const items = result || [];
+  const hash = {};
+  const unique = [];
+  items.forEach((item) => {
+    if (!hash[item.id]) {
+      hash[item.id] = 1;
+      unique.push(item);
+    }
+  });
+  return unique;
+}
+
+export function sortContactItemsByName(result) {
+  let items = result || [];
+  items = items.filter((value, index, arr) => arr.indexOf(value) === index);
+  items.sort((a, b) => {
+    const name1 = (a.name || '').toLowerCase().replace(/^\s\s*/, ''); // trim start
+    const name2 = (b.name || '').toLowerCase().replace(/^\s\s*/, ''); // trim start
+    if (/^[0-9]/.test(name1)) {
+      return 1;
+    }
+    return name1.localeCompare(name2);
+  });
+  return items;
+}
+
+export function groupByFirstLetterOfName(contactItems) {
+  const groups = [];
+  if (contactItems && contactItems.length) {
+    let group;
+    contactItems.forEach((contact) => {
+      const name = (contact.name || '').replace(/^\s\s*/, ''); // trim start
+      const letter = (name[0] || '');
+      if (!group || group.caption !== letter) {
+        group = {
+          contacts: [],
+          caption: letter,
+          id: letter,
+        };
+        groups.push(group);
+      }
+      group.contacts.push(contact);
+    });
+  }
+  return groups;
+}
 
 /**
  * @class
@@ -17,28 +68,35 @@ export default class ContactSearch extends RcModule {
    * @param {Object} params - params object
    * @param {Auth} params.auth - auth module instance
    * @param {Storage} params.storage - storage module instance
-   * @param {Number} params.ttl - timestamp of local cache, default 30 mins
+   * @param {String} params.storageKey - storage key for storage module default "contactSearchCache"
+   * @param {Number} params.minimalSearchLength - minimal search text length, default 3 characters
+   * @param {Number} params.ttl - timestamp of local cache, default 5 mins
    */
   constructor({
     auth,
     storage,
-    ttl = 30 * 60 * 1000,
-    ...options
+    storageKey = 'contactSearchCache',
+    minimalSearchLength = DefaultMinimalSearchLength,
+    contactListPageSize = DefaultContactListPageSize,
+    ttl = 5 * 60 * 1000, // 5 minutes
+    ...options,
   }) {
     super({
       ...options,
       actionTypes,
     });
     this._auth = auth;
-    this._storageKey = 'contactSearchCache';
     this._storage = storage;
+    this._storageKey = storageKey;
+    this._minimalSearchLength = minimalSearchLength;
+    this._contactListPageSize = contactListPageSize;
     this._ttl = ttl;
     this._searchSources = new Map();
     this._searchSourcesFormat = new Map();
     this._searchSourcesCheck = new Map();
     if (this._storage) {
       this._reducer = getContactSearchReducer(this.actionTypes);
-      storage.registerReducer({
+      this._storage.registerReducer({
         key: this._storageKey,
         reducer: getCacheReducer(this.actionTypes)
       });
@@ -47,6 +105,33 @@ export default class ContactSearch extends RcModule {
         cache: getCacheReducer(this.actionTypes),
       });
     }
+
+    this.addSelector(
+      'contactSourceNames',
+      () => this._searchSources.size,
+      () => {
+        const names = [AllContactSourceName];
+        for (const sourceName of this._searchSources.keys()) {
+          names.push(sourceName);
+        }
+        return names;
+      }
+    );
+
+    this.addSelector(
+      'contactGroups',
+      () => this.searching && this.searching.result,
+      (result) => {
+        const pageSize = this._contactListPageSize;
+        const pageNumber = this.searchCriteria.pageNumber || 1;
+        const count = pageNumber * pageSize;
+        let items = uniqueContactItemsById(result);
+        items = sortContactItemsByName(items);
+        items = items.slice(0, count);
+        const groups = groupByFirstLetterOfName(items);
+        return groups;
+      }
+    );
   }
   initialize() {
     this.store.subscribe(() => this._onStateChange());
@@ -120,28 +205,66 @@ export default class ContactSearch extends RcModule {
 
   @proxify
   async search({ searchString }) {
-    if (!this.ready || (searchString.length < 3)) {
+    if (!this.ready || (searchString.length < this._minimalSearchLength)) {
       this.store.dispatch({
         type: this.actionTypes.prepareSearch,
       });
-      return null;
+      return;
     }
 
     if (this.searching.searchString === searchString) {
-      return null;
+      return;
     }
 
-    for (const sourceName of this._searchSources.keys()) {
+    const searchOnSources = Array.from(this._searchSources.keys());
+    for (const sourceName of searchOnSources) {
       await this._searchSource({
+        searchOnSources,
         sourceName,
         searchString,
       });
     }
-    return null;
   }
 
   @proxify
-  async _searchSource({ sourceName, searchString }) {
+  async searchPlus({ sourceName, searchText, pageNumber }) {
+    if (!this.ready) {
+      this.store.dispatch({
+        type: this.actionTypes.prepareSearch,
+      });
+      return;
+    }
+
+    this.store.dispatch({
+      type: this.actionTypes.updateSearchCriteria,
+      sourceName,
+      searchText,
+      pageNumber,
+    });
+
+    clearTimeout(this._searchTimeoutId);
+    this._searchTimeoutId = setTimeout(async () => {
+      const searchOnSources = (!sourceName || sourceName === AllContactSourceName) ?
+        Array.from(this._searchSources.keys()) :
+        [sourceName];
+      for (const source of searchOnSources) {
+        await this._searchSource({
+          searchOnSources,
+          sourceName: source,
+          searchString: searchText,
+        });
+      }
+    }, 100);
+  }
+
+  findContactItem({ contactId }) {
+    // TODO: move to Contacts module?
+    const items = this.searching.result || [];
+    return items.find(x => x.id === contactId);
+  }
+
+  @proxify
+  async _searchSource({ searchOnSources, sourceName, searchString }) {
     this.store.dispatch({
       type: this.actionTypes.search,
     });
@@ -149,19 +272,18 @@ export default class ContactSearch extends RcModule {
       let entities = null;
       entities = this._searchFromCache({ sourceName, searchString });
       if (entities) {
-        this._loadSearching({ searchString, entities });
-        return null;
+        this._loadSearching({ searchOnSources, searchString, entities });
+        return;
       }
       entities = await this._searchSources.get(sourceName)({
         searchString,
       });
       entities = this._searchSourcesFormat.get(sourceName)(entities);
-      this._loadSearching({ searchString, entities });
+      this._loadSearching({ searchOnSources, searchString, entities });
       this._saveSearching({ sourceName, searchString, entities });
     } catch (error) {
       this._onSearchError();
     }
-    return null;
   }
 
   _searchFromCache({ sourceName, searchString }) {
@@ -189,11 +311,12 @@ export default class ContactSearch extends RcModule {
     });
   }
 
-  _loadSearching({ searchString, entities }) {
+  _loadSearching({ searchOnSources, searchString, entities }) {
     this.store.dispatch({
       type: this.actionTypes.searchSuccess,
-      entities,
+      searchOnSources,
       searchString,
+      entities,
     });
   }
 
@@ -203,6 +326,7 @@ export default class ContactSearch extends RcModule {
       sourceName,
       searchString,
       entities,
+      ttl: this._ttl,
     });
   }
 
@@ -228,7 +352,15 @@ export default class ContactSearch extends RcModule {
     return this.searching ? this.searching.result : [];
   }
 
-  get ready() {
-    return this.status === moduleStatuses.ready;
+  get searchCriteria() {
+    return this.state.searchCriteria;
+  }
+
+  get contactSourceNames() {
+    return this._selectors.contactSourceNames();
+  }
+
+  get contactGroups() {
+    return this._selectors.contactGroups();
   }
 }

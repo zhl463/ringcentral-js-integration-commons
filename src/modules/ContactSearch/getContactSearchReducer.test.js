@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import getContactSearchReducer, {
   getContactSearchStatusReducer,
   getSearchingReducer,
+  getSearchCriteriaReducer,
 } from './getContactSearchReducer';
 
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
@@ -24,7 +25,7 @@ describe('ContactSearch :: getContactSearchStatusReducer', () => {
     it('should return original state of actionTypes is not recognized', () => {
       const originalState = {};
       expect(reducer(originalState, { type: 'foo' }))
-      .to.equal(originalState);
+        .to.equal(originalState);
     });
     it('should return searching status on search', () => {
       [
@@ -58,26 +59,26 @@ describe('getSearchingReducer', () => {
   });
   describe('searchingReducer', () => {
     const reducer = getSearchingReducer(actionTypes);
-    const initialState = { searchString: '', result: [] };
+    const initialState = { searchOnSources: [], searchString: '', result: [] };
     it('should have initial state of null', () => {
       expect(reducer(undefined, {})).to.deep.equal(initialState);
     });
     it('should return original state of actionTypes is not recognized', () => {
       const originalState = {};
       expect(reducer(originalState, { type: 'foo' }))
-      .to.equal(originalState);
+        .to.equal(originalState);
     });
     it('should return original state on search', () => {
       const originalState = {};
       expect(reducer(originalState, { type: 'search' }))
-      .to.equal(originalState);
+        .to.equal(originalState);
     });
     it('should return initial state on prepareSearch, reset and searchError', () => {
       [
         actionTypes.prepareSearch,
         actionTypes.reset,
         actionTypes.searchError,
-      ].forEach(type => {
+      ].forEach((type) => {
         expect(reducer('foo', {
           type,
         })).to.deep.equal(initialState);
@@ -117,6 +118,7 @@ describe('getSearchingReducer', () => {
     });
     it('should return data with result concat with same searchString', () => {
       const originalState = {
+        searchOnSources: ['testSource'],
         searchString: 'test',
         result: [{
           entityType: 'contact',
@@ -151,6 +153,7 @@ describe('getSearchingReducer', () => {
       ];
       expect(reducer(originalState, {
         type: actionTypes.searchSuccess,
+        searchOnSources: ['testSource'],
         searchString: 'test',
         entities,
       }).result).to.deep.equal(expectResult);
@@ -170,10 +173,12 @@ describe('getContactSearchReducer', () => {
     const statusReducer = getModuleStatusReducer(actionTypes);
     const searchStatusReducer = getContactSearchStatusReducer(actionTypes);
     const searchingReducer = getSearchingReducer(actionTypes);
+    const searchCriteriaReducer = getSearchCriteriaReducer(actionTypes);
     expect(reducer(undefined, {})).to.deep.equal({
       status: statusReducer(undefined, {}),
       searchStatus: searchStatusReducer(undefined, {}),
       searching: searchingReducer(undefined, {}),
+      searchCriteria: searchCriteriaReducer(undefined, {}),
     });
   });
 });

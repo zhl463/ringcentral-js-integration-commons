@@ -20,17 +20,30 @@ export function getContactSearchStatusReducer(types) {
 }
 
 export function getSearchingReducer(types) {
-  const initialState = { searchString: '', result: [] };
-  return (state = initialState, { type, searchString, entities }) => {
+  const initialState = {
+    searchOnSources: [],
+    searchString: '',
+    result: [],
+  };
+  return (state = initialState, {
+    type,
+    searchOnSources,
+    searchString,
+    entities,
+  }) => {
     switch (type) {
       case types.searchSuccess:
-        if (state.searchString === searchString) {
+        if (
+          state.searchString === searchString &&
+          state.searchOnSources.join(',') === searchOnSources.join(',')
+        ) {
           return {
             ...state,
             result: state.result.concat(entities)
           };
         }
         return {
+          searchOnSources,
           searchString,
           result: entities
         };
@@ -45,11 +58,39 @@ export function getSearchingReducer(types) {
   };
 }
 
+export function getSearchCriteriaReducer(types) {
+  const initialState = {
+    sourceName: '',
+    searchText: '',
+    pageNumber: 1
+  };
+  return (state = initialState, { type, sourceName, searchText, pageNumber }) => {
+    switch (type) {
+      case types.updateSearchCriteria:
+        if (
+          state.sourceName !== sourceName ||
+          state.searchText !== searchText ||
+          state.pageNumber !== pageNumber
+        ) {
+          return {
+            sourceName,
+            searchText,
+            pageNumber,
+          };
+        }
+        return state;
+      default:
+        return state;
+    }
+  };
+}
+
 export default function getContactSearchReducer(types, reducers = {}) {
   return combineReducers({
     ...reducers,
     status: getModuleStatusReducer(types),
     searchStatus: getContactSearchStatusReducer(types),
     searching: getSearchingReducer(types),
+    searchCriteria: getSearchCriteriaReducer(types),
   });
 }

@@ -1,11 +1,17 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { createStore } from 'redux';
-import ContactSearch from './index';
+import ContactSearch, {
+  AllContactSourceName,
+  uniqueContactItemsById,
+  sortContactItemsByName,
+  groupByFirstLetterOfName,
+} from './index';
 import getContactSearchReducer from './getContactSearchReducer';
 import getCacheReducer from './getCacheReducer';
 import actionTypes from './actionTypes';
 import loginStatus from '../../modules/Auth/loginStatus';
+import sleep from '../../lib/sleep';
 
 describe('ContactSearch Unit Test', () => {
   let contactSearch;
@@ -18,6 +24,7 @@ describe('ContactSearch Unit Test', () => {
     }));
     contactSearch._store = store;
     contactSearch._actionTypes = actionTypes;
+    contactSearch._minimalSearchLength = 3;
     [
       '_onStateChange',
       '_shouldInit',
@@ -26,6 +33,7 @@ describe('ContactSearch Unit Test', () => {
       '_resetModuleStatus',
       'addSearchSource',
       'search',
+      'searchPlus',
       '_searchSource',
       '_readyCheck',
       '_loadSearching',
@@ -638,6 +646,50 @@ describe('ContactSearch Unit Test', () => {
     });
   });
 
+  describe('searchPlus', () => {
+    it('should not call _searchSource if contactSearch is not ready', async () => {
+      contactSearch._searchSources = new Map();
+      contactSearch._searchSources.set('source1', () => null);
+      sinon.stub(contactSearch, 'ready', { get: () => false });
+      sinon.stub(contactSearch, '_searchSource');
+      await contactSearch.searchPlus({ searchString: '123', pageNumber: 1 });
+      await sleep(200); // there is 100ms timeout for calling the _searchSource in searchPlus
+      sinon.assert.notCalled(contactSearch._searchSource);
+    });
+
+    it('should call _searchSource if searchString length is less than 3', async () => {
+      contactSearch._searchSources = new Map();
+      contactSearch._searchSources.set('source1', () => null);
+      sinon.stub(contactSearch, 'ready', { get: () => true });
+      sinon.stub(contactSearch, '_searchSource');
+      await contactSearch.searchPlus({ searchString: '123', pageNumber: 1 });
+      await sleep(200); // there is 100ms timeout for calling the _searchSource in searchPlus
+      sinon.assert.calledOnce(contactSearch._searchSource);
+    });
+
+    it('should call _searchSource twice if there are 2 sources', async () => {
+      contactSearch._searchSources = new Map();
+      contactSearch._searchSources.set('source1', () => null);
+      contactSearch._searchSources.set('source2', () => null);
+      sinon.stub(contactSearch, 'ready', { get: () => true });
+      sinon.stub(contactSearch, '_searchSource');
+      await contactSearch.searchPlus({ searchString: '123', pageNumber: 1 });
+      await sleep(200); // there is 100ms timeout for calling the _searchSource in searchPlus
+      sinon.assert.calledTwice(contactSearch._searchSource);
+    });
+
+    it('should call _searchSource once if source name specified', async () => {
+      contactSearch._searchSources = new Map();
+      contactSearch._searchSources.set('source1', () => null);
+      contactSearch._searchSources.set('source2', () => null);
+      sinon.stub(contactSearch, 'ready', { get: () => true });
+      sinon.stub(contactSearch, '_searchSource');
+      await contactSearch.searchPlus({ sourceName: 'source1', searchString: '123', pageNumber: 1 });
+      await sleep(200); // there is 100ms timeout for calling the _searchSource in searchPlus
+      sinon.assert.calledOnce(contactSearch._searchSource);
+    });
+  });
+
   describe('_searchSource', () => {
     it('should call _loadSearching and not call _saveSearching if searchFromCache return result', async () => {
       sinon.stub(contactSearch, '_searchFromCache').callsFake(() => ['123']);
@@ -740,6 +792,70 @@ describe('ContactSearch Unit Test', () => {
       contactSearch._searchSourcesCheck.set('test1', () => false);
       const result = contactSearch._readyCheck();
       expect(result).to.deep.equal(false);
+    });
+  });
+
+  describe('contactSourceNames', () => {
+    it('should return registered contact source names', () => {
+      const cs = new ContactSearch({});
+      cs.addSearchSource({
+        sourceName: 'source1',
+        searchFn: () => ([]),
+        readyCheckFn: () => true,
+        formatFn: items => items,
+      });
+      const result = cs.contactSourceNames;
+      expect(result).to.deep.equal([AllContactSourceName, 'source1']);
+    });
+  });
+
+  describe('UniqueContactItemsById', () => {
+    it('should return contact items uniqued by contact id', () => {
+      const contacts = [{
+        id: '1',
+        name: 'User2',
+      }, {
+        id: '1',
+        name: 'User1',
+      }];
+      const result = uniqueContactItemsById(contacts);
+      expect(result).to.deep.equal([{
+        id: '1',
+        name: 'User2',
+      }]);
+    });
+  });
+
+  describe('SortContactItemsByName', () => {
+    it('should return contact items sorted by contact name', () => {
+      const contacts = [{
+        id: '2',
+        name: 'User2',
+      }, {
+        id: '1',
+        name: 'User1',
+      }];
+      const result = sortContactItemsByName(contacts);
+      expect(result[0].id).to.equal('1');
+      expect(result[1].id).to.equal('2');
+    });
+  });
+
+  describe('GroupByFirstLetterOfName', () => {
+    it('should return contact groups grouped by first letter of contact name', () => {
+      const contacts = [{
+        id: '2',
+        name: 'User2',
+      }, {
+        id: '1',
+        name: 'User1',
+      }];
+      const result = groupByFirstLetterOfName(contacts);
+      expect(result).to.deep.equal([{
+        contacts,
+        caption: 'U',
+        id: 'U',
+      }]);
     });
   });
 });

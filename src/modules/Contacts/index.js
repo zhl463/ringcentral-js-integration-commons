@@ -2,8 +2,12 @@ import RcModule from '../../lib/RcModule';
 import isBlank from '../../lib/isBlank';
 import normalizeNumber from '../../lib/normalizeNumber';
 import ensureExist from '../../lib/ensureExist';
+import { batchGetApi } from '../../lib/batchApiHelper';
+import sleep from '../../lib/sleep';
 import actionTypes from './actionTypes';
 import getContactsReducer from './getContactsReducer';
+
+const MaximumBatchGetPresence = 30;
 
 function addPhoneToContact(contact, phone, type) {
   const phoneNumber = normalizeNumber({ phoneNumber: phone });
@@ -23,7 +27,10 @@ function addPhoneToContact(contact, phone, type) {
   }
 }
 
-const DEFAULT_TTL = 30 * 60 * 1000;
+const DEFAULT_TTL = 30 * 60 * 1000; // 30 mins
+const DEFAULT_PRESENCETTL = 10 * 60 * 1000; // 5 mins
+const DEFAULT_AVATARTTL = 2 * 60 * 60 * 1000; // 2 hour
+const DEFAULT_AVATARQUERYINTERVAL = 2 * 1000; // 2 seconds
 
 /**
  * @class
@@ -38,6 +45,9 @@ export default class Contacts extends RcModule {
    * @param {AccountExtension} params.accountExtension - accountExtension module instance
    * @param {AccountPhoneNumber} params.accountPhoneNumber - accountPhoneNumber module instance
    * @param {Number} params.ttl - timestamp of local cache, default 30 mins
+   * @param {Number} params.avatarTtl - timestamp of avatar local cache, default 2 hour
+   * @param {Number} params.presenceTtl - timestamp of presence local cache, default 10 mins
+   * @param {Number} params.avatarQueryInterval - interval of query avatar, default 2 seconds
    */
   constructor({
     client,
@@ -45,7 +55,10 @@ export default class Contacts extends RcModule {
     accountExtension,
     accountPhoneNumber,
     ttl = DEFAULT_TTL,
-    ...options
+    avatarTtl = DEFAULT_AVATARTTL,
+    presenceTtl = DEFAULT_PRESENCETTL,
+    avatarQueryInterval = DEFAULT_AVATARQUERYINTERVAL,
+    ...options,
   }) {
     super({
       ...options,
@@ -57,6 +70,9 @@ export default class Contacts extends RcModule {
     this._client = this::ensureExist(client, 'client');
     this._reducer = getContactsReducer(this.actionTypes);
     this._ttl = ttl;
+    this._avatarTtl = avatarTtl;
+    this._presenceTtl = presenceTtl;
+    this._avatarQueryInterval = avatarQueryInterval;
 
     this.addSelector(
       'companyContacts',
@@ -178,9 +194,9 @@ export default class Contacts extends RcModule {
       }
       const name =
         `${
-          contact.firstName ? contact.firstName : ''
+        contact.firstName ? contact.firstName : ''
         } ${
-          contact.lastName ? contact.lastName : ''
+        contact.lastName ? contact.lastName : ''
         }`;
       const matchedContact = {
         ...contact,
@@ -211,33 +227,151 @@ export default class Contacts extends RcModule {
     return result;
   }
 
-  async getImageProfile(contact) {
-    if (contact.type === 'company' && contact.id && contact.hasProfileImage) {
+  getImageProfile(contact) {
+    return new Promise((resolve) => {
+      if (!contact || !contact.id || contact.type !== 'company' || !contact.hasProfileImage) {
+        resolve(null);
+        return;
+      }
+
       const imageId = `${contact.type}${contact.id}`;
       if (
         this.profileImages[imageId] &&
-        (Date.now() - this.profileImages[imageId].timestamp < this._ttl)
+        (Date.now() - this.profileImages[imageId].timestamp < this._avatarTtl)
       ) {
-        return this.profileImages[imageId].url;
+        const image = this.profileImages[imageId].imageUrl;
+        resolve(image);
+        return;
       }
-      try {
-        const response = await this._client.account().extension(contact.id).profileImage().get();
-        const imageUrl = URL.createObjectURL(await response._response.blob());
-        const image = {
-          id: imageId,
-          url: imageUrl,
-        };
-        this.store.dispatch({
-          type: this.actionTypes.fetchImageSuccess,
-          image,
-        });
-        return image.url;
-      } catch (e) {
-        console.error(e);
-        return null;
+
+      if (!this._getAvatarContexts) {
+        this._getAvatarContexts = [];
       }
+      this._getAvatarContexts.push({
+        contact,
+        resolve,
+      });
+
+      if (!this._queryingAvatar) {
+        this._queryingAvatar = true;
+        this._processQueryAvatar(this._getAvatarContexts);
+      }
+    });
+  }
+
+  async _processQueryAvatar(getAvatarContexts) {
+    const ctx = getAvatarContexts[0];
+    const imageId = `${ctx.contact.type}${ctx.contact.id}`;
+    let imageUrl = null;
+    try {
+      const response = await this._client.account().extension(ctx.contact.id).profileImage().get();
+      imageUrl = URL.createObjectURL(await response._response.blob());
+      this.store.dispatch({
+        type: this.actionTypes.fetchImageSuccess,
+        imageId,
+        imageUrl,
+        ttl: this._avatarTtl,
+      });
+    } catch (e) {
+      console.error(e);
     }
-    return null;
+    ctx.resolve(imageUrl);
+    getAvatarContexts.splice(0, 1);
+    if (getAvatarContexts.length) {
+      await sleep(this._avatarQueryInterval);
+      this._processQueryAvatar(getAvatarContexts);
+    } else {
+      this._queryingAvatar = false;
+    }
+  }
+
+  getPresence(contact) {
+    return new Promise((resolve) => {
+      if (!contact || !contact.id || contact.type !== 'company') {
+        resolve(null);
+        return;
+      }
+
+      const presenceId = `${contact.type}${contact.id}`;
+      if (
+        this.contactPresences[presenceId] &&
+        (Date.now() - this.contactPresences[presenceId].timestamp < this._presenceTtl)
+      ) {
+        const presence = this.contactPresences[presenceId].presence;
+        resolve(presence);
+        return;
+      }
+
+      if (!this._getPresenceContexts) {
+        this._getPresenceContexts = [];
+      }
+      this._getPresenceContexts.push({
+        contact,
+        resolve,
+      });
+
+      clearTimeout(this.enqueueTimeoutId);
+      if (this._getPresenceContexts.length === MaximumBatchGetPresence) {
+        this._processQueryPresences(this._getPresenceContexts);
+        this._getPresenceContexts = null;
+      } else {
+        this.enqueueTimeoutId = setTimeout(() => {
+          this._processQueryPresences(this._getPresenceContexts);
+          this._getPresenceContexts = null;
+        }, 1000);
+      }
+    });
+  }
+
+  async _processQueryPresences(getPresenceContexts) {
+    const contacts = getPresenceContexts.map(x => x.contact);
+    const responses = await this._batchQueryPresences(contacts);
+    getPresenceContexts.forEach((ctx) => {
+      const response = responses[ctx.contact.id];
+      if (!response) {
+        ctx.resolve(null);
+        return;
+      }
+      const { dndStatus, presenceStatus, telephonyStatus, userStatus } = response;
+      const presence = {
+        dndStatus,
+        presenceStatus,
+        telephonyStatus,
+        userStatus,
+      };
+      const presenceId = `${ctx.contact.type}${ctx.contact.id}`;
+      this.store.dispatch({
+        type: this.actionTypes.fetchPresenceSuccess,
+        presenceId,
+        presence,
+        ttl: this._presenceTtl,
+      });
+      ctx.resolve(presence);
+    });
+  }
+
+  async _batchQueryPresences(contacts) {
+    const presenceSet = {};
+    try {
+      if (contacts.length === 1) {
+        const id = contacts[0].id;
+        const response = await this._client.account().extension(id).presence().get();
+        presenceSet[id] = response;
+      } else if (contacts.length > 1) {
+        const ids = contacts.map(x => x.id).join(',');
+        const multipartResponse = await batchGetApi({
+          platform: this._client.service.platform(),
+          url: `/account/~/extension/${ids}/presence?detailedTelephonyState=true&sipData=true`,
+        });
+        const responses = multipartResponse.map(x => x.json());
+        responses.forEach((item) => {
+          presenceSet[item.extension.id] = item;
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return presenceSet;
   }
 
   get status() {
@@ -254,5 +388,9 @@ export default class Contacts extends RcModule {
 
   get profileImages() {
     return this.state.profileImages;
+  }
+
+  get contactPresences() {
+    return this.state.contactPresences;
   }
 }
