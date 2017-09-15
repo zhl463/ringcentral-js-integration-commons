@@ -227,6 +227,19 @@ export default class Contacts extends RcModule {
     return result;
   }
 
+  findContactItem({ contactType, contactId }) {
+    const contact = (
+      this.companyContacts.find(x =>
+        x.id.toString() === contactId && (!contactType || x.type === contactType)
+      )
+      ||
+      this.personalContacts.find(x =>
+        x.id.toString() === contactId && (!contactType || x.type === contactType)
+      )
+    );
+    return contact;
+  }
+
   getImageProfile(contact) {
     return new Promise((resolve) => {
       if (!contact || !contact.id || contact.type !== 'company' || !contact.hasProfileImage) {

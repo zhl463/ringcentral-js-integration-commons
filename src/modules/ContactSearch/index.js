@@ -261,12 +261,6 @@ export default class ContactSearch extends RcModule {
     }, 100);
   }
 
-  findContactItem({ contactId }) {
-    // TODO: move to Contacts module?
-    const items = this.searching.result || [];
-    return items.find(x => x.id === contactId);
-  }
-
   @proxify
   async _searchSource({ searchOnSources, sourceName, searchString }) {
     this.store.dispatch({
