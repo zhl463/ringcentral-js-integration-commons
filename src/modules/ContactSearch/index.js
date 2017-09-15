@@ -10,8 +10,13 @@ export const AllContactSourceName = 'all';
 export const DefaultMinimalSearchLength = 3;
 export const DefaultContactListPageSize = 20;
 
-export function uniqueContactItemsById(result) {
-  const items = result || [];
+export function uniqueContactItems(result) {
+  let items = result || [];
+  // remove duplicated referencing
+  items = items.filter((value, index, arr) =>
+    arr.indexOf(value) === index
+  );
+  // remove duplicated items by id
   const hash = {};
   const unique = [];
   items.forEach((item) => {
@@ -24,8 +29,7 @@ export function uniqueContactItemsById(result) {
 }
 
 export function sortContactItemsByName(result) {
-  let items = result || [];
-  items = items.filter((value, index, arr) => arr.indexOf(value) === index);
+  const items = result || [];
   items.sort((a, b) => {
     const name1 = (a.name || '').toLowerCase().replace(/^\s\s*/, ''); // trim start
     const name2 = (b.name || '').toLowerCase().replace(/^\s\s*/, ''); // trim start
@@ -125,7 +129,7 @@ export default class ContactSearch extends RcModule {
         const pageSize = this._contactListPageSize;
         const pageNumber = this.searchCriteria.pageNumber || 1;
         const count = pageNumber * pageSize;
-        let items = uniqueContactItemsById(result);
+        let items = uniqueContactItems(result);
         items = sortContactItemsByName(items);
         items = items.slice(0, count);
         const groups = groupByFirstLetterOfName(items);
