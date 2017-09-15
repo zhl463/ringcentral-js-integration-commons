@@ -28,7 +28,7 @@ function addPhoneToContact(contact, phone, type) {
 }
 
 const DEFAULT_TTL = 30 * 60 * 1000; // 30 mins
-const DEFAULT_PRESENCETTL = 10 * 60 * 1000; // 5 mins
+const DEFAULT_PRESENCETTL = 10 * 60 * 1000; // 10 mins
 const DEFAULT_AVATARTTL = 2 * 60 * 60 * 1000; // 2 hour
 const DEFAULT_AVATARQUERYINTERVAL = 2 * 1000; // 2 seconds
 
@@ -225,6 +225,19 @@ export default class Contacts extends RcModule {
       result[phoneNumber] = this.matchPhoneNumber(phoneNumber);
     });
     return result;
+  }
+
+  findContactItem({ contactType, contactId }) {
+    const contact = (
+      this.companyContacts.find(x =>
+        x.id.toString() === contactId && (!contactType || x.type === contactType)
+      )
+      ||
+      this.personalContacts.find(x =>
+        x.id.toString() === contactId && (!contactType || x.type === contactType)
+      )
+    );
+    return contact;
   }
 
   getImageProfile(contact) {

@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { createStore } from 'redux';
 import ContactSearch, {
   AllContactSourceName,
-  uniqueContactItemsById,
+  uniqueContactItems,
   sortContactItemsByName,
   groupByFirstLetterOfName,
 } from './index';
@@ -809,20 +809,29 @@ describe('ContactSearch Unit Test', () => {
     });
   });
 
-  describe('UniqueContactItemsById', () => {
+  describe('uniqueContactItems', () => {
     it('should return contact items uniqued by contact id', () => {
-      const contacts = [{
+      const contact1 = {
         id: '1',
         name: 'User2',
-      }, {
-        id: '1',
+      };
+      const contact2 = {
+        id: contact1.id,
         name: 'User1',
-      }];
-      const result = uniqueContactItemsById(contacts);
-      expect(result).to.deep.equal([{
+      };
+      const contacts = [contact1, contact2];
+      const result = uniqueContactItems(contacts);
+      expect(result).to.deep.equal([contact1]);
+    });
+
+    it('should return contact items uniqued by contact object reference', () => {
+      const contact = {
         id: '1',
         name: 'User2',
-      }]);
+      };
+      const contacts = [contact, contact];
+      const result = uniqueContactItems(contacts);
+      expect(result).to.deep.equal([contact]);
     });
   });
 

@@ -10,8 +10,13 @@ export const AllContactSourceName = 'all';
 export const DefaultMinimalSearchLength = 3;
 export const DefaultContactListPageSize = 20;
 
-export function uniqueContactItemsById(result) {
-  const items = result || [];
+export function uniqueContactItems(result) {
+  let items = result || [];
+  // remove duplicated referencing
+  items = items.filter((value, index, arr) =>
+    arr.indexOf(value) === index
+  );
+  // remove duplicated items by id
   const hash = {};
   const unique = [];
   items.forEach((item) => {
@@ -24,13 +29,17 @@ export function uniqueContactItemsById(result) {
 }
 
 export function sortContactItemsByName(result) {
-  let items = result || [];
-  items = items.filter((value, index, arr) => arr.indexOf(value) === index);
+  const items = result || [];
   items.sort((a, b) => {
     const name1 = (a.name || '').toLowerCase().replace(/^\s\s*/, ''); // trim start
     const name2 = (b.name || '').toLowerCase().replace(/^\s\s*/, ''); // trim start
-    if (/^[0-9]/.test(name1)) {
-      return 1;
+    const isNumber1 = /^[0-9]/.test(name1);
+    const isNumber2 = /^[0-9]/.test(name2);
+    if (isNumber1 && isNumber2) {
+      return name1.localeCompare(name2);
+    } else if (isNumber1 || isNumber2) {
+      // put number name at last
+      return -name1.localeCompare(name2);
     }
     return name1.localeCompare(name2);
   });
@@ -125,7 +134,7 @@ export default class ContactSearch extends RcModule {
         const pageSize = this._contactListPageSize;
         const pageNumber = this.searchCriteria.pageNumber || 1;
         const count = pageNumber * pageSize;
-        let items = uniqueContactItemsById(result);
+        let items = uniqueContactItems(result);
         items = sortContactItemsByName(items);
         items = items.slice(0, count);
         const groups = groupByFirstLetterOfName(items);
@@ -255,12 +264,6 @@ export default class ContactSearch extends RcModule {
         });
       }
     }, 100);
-  }
-
-  findContactItem({ contactId }) {
-    // TODO: move to Contacts module?
-    const items = this.searching.result || [];
-    return items.find(x => x.id === contactId);
   }
 
   @proxify
