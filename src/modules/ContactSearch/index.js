@@ -33,8 +33,13 @@ export function sortContactItemsByName(result) {
   items.sort((a, b) => {
     const name1 = (a.name || '').toLowerCase().replace(/^\s\s*/, ''); // trim start
     const name2 = (b.name || '').toLowerCase().replace(/^\s\s*/, ''); // trim start
-    if (/^[0-9]/.test(name1)) {
-      return 1;
+    const isNumber1 = /^[0-9]/.test(name1);
+    const isNumber2 = /^[0-9]/.test(name2);
+    if (isNumber1 && isNumber2) {
+      return name1.localeCompare(name2);
+    } else if (isNumber1 || isNumber2) {
+      // put number name at last
+      return -name1.localeCompare(name2);
     }
     return name1.localeCompare(name2);
   });
