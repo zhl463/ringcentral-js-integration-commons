@@ -1,3 +1,4 @@
+import 'whatwg-fetch';
 import SDK from 'ringcentral';
 import RingCentralClient from 'ringcentral-client';
 import { combineReducers } from 'redux';
@@ -119,6 +120,9 @@ export default class Phone extends RcModule {
       alert: this.alert,
       client: this.client,
       environment: this.environment,
+      checkConnectionFunc: async () => {
+        await fetch('//pubsub.pubnub.com/time/0');
+      },
       getState: () => this.state.connectivityMonitor,
     }));
     reducers.connectivityMonitor = this.connectivityMonitor.reducer;
