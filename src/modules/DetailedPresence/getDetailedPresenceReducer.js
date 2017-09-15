@@ -19,7 +19,13 @@ export function getDataReducer(types) {
   const removeIntermediateCall = R.reduce((result, activeCall) => {
     if (
       !isIntermediateCall(activeCall) &&
-      !R.find(item => item.sessionId === activeCall.sessionId, result)
+      !R.find(
+        item => (
+          item.sessionId === activeCall.sessionId &&
+          item.direction === activeCall.direction
+        ),
+        result
+      )
     ) {
       result.push(activeCall);
     }

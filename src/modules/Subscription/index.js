@@ -194,8 +194,10 @@ export default class Subscription extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.subscribe,
       });
-      this._subscription.setEventFilters(this.filters);
-      this._subscription.register();
+      if (this._subscription) {
+        this._subscription.setEventFilters(this.filters);
+        this._subscription.register();
+      }
     }, 2000);
   }
 

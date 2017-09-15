@@ -61,6 +61,13 @@ export function isIntermediateCall(call = {}) {
   return call.terminationType === terminationTypes.intermediate;
 }
 
+export function isSelfCall(call = {}) {
+  if (call.to && call.from) {
+    return call.to.phoneNumber === call.from.phoneNumber;
+  }
+  return false;
+}
+
 /* sort functions */
 
 export function sortBySessionId(a, b) {
@@ -211,6 +218,26 @@ export function removeDuplicateIntermediateCalls(calls) {
       resultCalls.push(call);
     } else if (!isIntermediate) {
       indexMap[call.sessionId].isIntermediate = false;
+      resultCalls[indexMap[call.sessionId].index] = call;
+    }
+  });
+  return resultCalls;
+}
+
+// there are two active calls with same sessionId when user call self.
+export function removeDuplicateSelfCalls(calls) {
+  const resultCalls = [];
+  const indexMap = {};
+  calls.forEach((call) => {
+    const isSelf = isSelfCall(call);
+    if (!indexMap[call.sessionId]) {
+      indexMap[call.sessionid] = {
+        index: resultCalls.length,
+        isSelf,
+      };
+      resultCalls.push(call);
+    } else if (!isSelf) {
+      indexMap[call.sessionId].isSelf = false;
       resultCalls[indexMap[call.sessionId].index] = call;
     }
   });

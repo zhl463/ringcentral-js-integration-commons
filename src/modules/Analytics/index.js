@@ -4,6 +4,7 @@ import actionTypes from './actionTypes';
 import getAnalyticsReducer from './getAnalyticsReducer';
 
 import { Segment } from '../../lib/Analytics';
+import callingModes from '../CallingSettings/callingModes';
 
 /**
  * @class
@@ -100,6 +101,8 @@ export default class Analytics extends RcModule {
           '_editCallLog',
           '_editSMSLog',
           '_navigate',
+          '_inboundCall',
+          '_coldTransfer',
         ].forEach((key) => {
           this[key](action);
         });
@@ -129,15 +132,25 @@ export default class Analytics extends RcModule {
 
   _callAttempt(action) {
     if (this._call && this._call.actionTypes.connect === action.type) {
-      this.track('Call Attempt', {
-        callSettingMode: action.callSettingMode
-      });
+      if (action.callSettingMode === callingModes.webphone) {
+        this.track('Call Attempt WebRTC');
+      } else {
+        this.track('Call Attempt', {
+          callSettingMode: action.callSettingMode
+        });
+      }
     }
   }
 
   _callConnected(action) {
     if (this._call && this._call.actionTypes.connectSuccess === action.type) {
-      this.track('Outbound Call Connected');
+      if (action.callSettingMode === callingModes.webphone) {
+        this.track('Outbound WebRTC Call Connected');
+      } else {
+        this.track('Outbound Call Connected', {
+          callSettingMode: action.callSettingMode
+        });
+      }
     }
   }
 
@@ -219,6 +232,22 @@ export default class Analytics extends RcModule {
     }
   }
 
+  _inboundCall(action) {
+    if (this._webphone && this._webphone.actionTypes.callAnswer === action.type) {
+      this.track('Inbound WebRTC Call Connected');
+    }
+  }
+
+  _coldTransfer(action) {
+    if (this._webphone
+      && this._webphone.isOnTransfer === true
+      && this._webphone.actionTypes.updateSessions === action.type
+    ) {
+      this.track('Cold Transfer Call');
+    }
+  }
+
+
   _getTrackTarget(path) {
     if (path) {
       const routes = path.split('/');
@@ -242,6 +271,12 @@ export default class Analytics extends RcModule {
       }, {
         eventPostfix: 'Settings',
         router: '/settings',
+      }, {
+        eventPostfix: 'Conference',
+        router: '/conference',
+      }, {
+        eventPostfix: 'Meeting',
+        router: '/meeting',
       }];
       return targets.find(target => firstRoute === target.router);
     }
