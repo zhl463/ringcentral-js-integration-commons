@@ -3,15 +3,15 @@ import messageStatus from './messageStatus';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
 export function getContactsReducer(types) {
-  return (state = {}, { type, contact }) => {
+  return (state = {}, { type, contact, sessionId }) => {
     const contactId = String(contact && contact.id);
     if (type === types.loadSuccess) {
       return {
         ...state,
-        [contactId]: contact
+        [sessionId ? `${contactId}-${sessionId}` : contactId]: contact
       };
     } else if (type === types.loadReset) {
-      const { [contactId]: _, ...rest } = state;
+      const { [sessionId ? `${contactId}-${sessionId}` : contactId]: _, ...rest } = state;
       return rest;
     }
     return state;
@@ -19,15 +19,15 @@ export function getContactsReducer(types) {
 }
 
 export function getMessagesReducer(types) {
-  return (state = {}, { type, contact, messages }) => {
+  return (state = {}, { type, contact, messages, sessionId }) => {
     const contactId = String(contact && contact.id);
     if (type === types.loadSuccess) {
       return {
         ...state,
-        [contactId]: messages
+        [sessionId ? `${contactId}-${sessionId}` : contactId]: messages
       };
     } else if (type === types.loadReset) {
-      const { [contactId]: _, ...rest } = state;
+      const { [sessionId ? `${contactId}-${sessionId}` : contactId]: _, ...rest } = state;
       return rest;
     }
     return state;

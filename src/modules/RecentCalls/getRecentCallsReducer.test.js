@@ -26,15 +26,28 @@ describe('RecentCalls :: getCallsReducer', () => {
         .to.equal(originalState);
     });
 
-    it('should return all calls when new call is passed in', () => {
+    it('should return all calls when new contact is passed in and user is not on a call', () => {
       const state = { '181': [] };
       expect(reducer(state, {
         type: actionTypes.loadSuccess,
         calls: [],
-        contact: { id: '171' }
+        contact: { id: '171' },
       })).to.deep.equal({
         '181': [],
         '171': []
+      });
+    });
+
+    it('should return all calls when new contact is passed in and user is on a call', () => {
+      const state = { '181': [] };
+      expect(reducer(state, {
+        type: actionTypes.loadSuccess,
+        calls: [],
+        contact: { id: '171' },
+        sessionId: '191',
+      })).to.deep.equal({
+        '181': [],
+        '171-191': []
       });
     });
 
@@ -44,7 +57,18 @@ describe('RecentCalls :: getCallsReducer', () => {
       };
       expect(reducer(state, {
         type: actionTypes.loadReset,
-        contact: { id: '171' }
+        contact: { id: '171' },
+      })).to.deep.equal({});
+    });
+
+    it('call should be removed when reset and user is on a call', () => {
+      const state = {
+        '171-191': []
+      };
+      expect(reducer(state, {
+        type: actionTypes.loadReset,
+        contact: { id: '171' },
+        sessionId: '191'
       })).to.deep.equal({});
     });
 
