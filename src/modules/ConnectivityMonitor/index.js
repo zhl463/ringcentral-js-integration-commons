@@ -1,4 +1,4 @@
-import 'whatwg-fetch';
+import 'isomorphic-fetch';
 import RcModule from '../../lib/RcModule';
 import actionTypes from './actionTypes';
 import moduleStatuses from '../../enums/moduleStatuses';
