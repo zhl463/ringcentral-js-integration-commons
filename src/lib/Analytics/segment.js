@@ -1,6 +1,6 @@
 export default function init() {
   let analytics = [];
-  if (window !== undefined) {
+  if (typeof window !== 'undefined') {
     analytics = window.analytics = window.analytics || [];
     if (analytics.initialize) {
       if (window.console && console.log) {

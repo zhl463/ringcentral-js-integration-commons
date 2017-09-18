@@ -1,3 +1,4 @@
+import 'whatwg-fetch';
 import RcModule from '../../lib/RcModule';
 import actionTypes from './actionTypes';
 import moduleStatuses from '../../enums/moduleStatuses';
@@ -8,6 +9,9 @@ import proxify from '../../lib/proxy/proxify';
 
 export const DEFAULT_TIME_TO_RETRY = 5 * 1000;
 export const DEFAULT_HEART_BEAT_INTERVAL = 60 * 1000;
+
+const DEFAULT_CHECK_URI
+  = 'https://dnyg0s5c46.execute-api.us-west-1.amazonaws.com/Prod/getnetworkstatus';
 
 /**
  * @class
@@ -22,6 +26,7 @@ export default class ConnectivityMonitor extends RcModule {
    * @param {Environment} params.environment - environment module instance
    * @param {Number} params.timeToRetry - time to Retry
    * @param {Number} params.heartBeatInterval - heart beat interval
+   * @param {Function} params.checkConnectionFunc - function to check network
    */
   constructor({
     alert,
@@ -29,6 +34,7 @@ export default class ConnectivityMonitor extends RcModule {
     environment,
     timeToRetry = DEFAULT_TIME_TO_RETRY,
     heartBeatInterval = DEFAULT_HEART_BEAT_INTERVAL,
+    checkConnectionFunc,
     ...options
   }) {
     super({
@@ -48,17 +54,33 @@ export default class ConnectivityMonitor extends RcModule {
     this._beforeRequestHandler = this::this._beforeRequestHandler;
     this._requestSuccessHandler = this::this._requestSuccessHandler;
     this._requestErrorHandler = this::this._requestErrorHandler;
+
+    this._checkConnectionFunc = async () => {
+      try {
+        if (typeof checkConnectionFunc === 'function') {
+          await checkConnectionFunc();
+        } else {
+          await fetch(DEFAULT_CHECK_URI);
+        }
+        this._requestSuccessHandler();
+      } catch (error) {
+        this._requestErrorHandler(error);
+      }
+    };
   }
+
   _shouldInit() {
     return !!(this.pending &&
       (!this._environment || this._environment.ready));
   }
+
   _shouldRebindHandlers() {
     return !!(this.ready &&
       this._environment &&
       this._environment.ready &&
       this._environment.changeCounter !== this._lastEnvironmentCounter);
   }
+
   _onStateChange() {
     if (this._shouldInit()) {
       this._bindHandlers();
@@ -71,12 +93,15 @@ export default class ConnectivityMonitor extends RcModule {
       this._bindHandlers();
     }
   }
+
   initialize() {
     this.store.subscribe(() => this._onStateChange());
   }
+
   _beforeRequestHandler() {
     this._clearTimeout();
   }
+
   _requestSuccessHandler() {
     if (!this.connectivity) {
       this.store.dispatch({
@@ -94,6 +119,7 @@ export default class ConnectivityMonitor extends RcModule {
     }
     this._retry();
   }
+
   @proxify
   async showAlert() {
     if (!this.connectivity && this._alert) {
@@ -103,6 +129,7 @@ export default class ConnectivityMonitor extends RcModule {
       });
     }
   }
+
   _requestErrorHandler(error) {
     if (
       !error.apiResponse ||
@@ -117,6 +144,7 @@ export default class ConnectivityMonitor extends RcModule {
       this._retry();
     }
   }
+
   _bindHandlers() {
     if (this._unbindHandlers) {
       this._unbindHandlers();
@@ -124,27 +152,35 @@ export default class ConnectivityMonitor extends RcModule {
     const client = this._client.service.platform().client();
     client.on(client.events.requestSuccess, this._requestSuccessHandler);
     client.on(client.events.requestError, this._requestErrorHandler);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('offline', this._requestErrorHandler);
+    }
     this._unbindHandlers = () => {
       client.removeListener(client.events.requestSuccess, this._requestSuccessHandler);
       client.removeListener(client.events.requestError, this._requestErrorHandler);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('offline', this._requestErrorHandler);
+      }
       this._unbindHandlers = null;
     };
   }
+
   @proxify
   async _checkConnection() {
     try {
-      // query api info as a test of connectivity
-      await this._client.service.platform().get('', null, { skipAuthCheck: true });
+      await this._checkConnectionFunc();
     } catch (error) {
-      /* falls through */
+      // catch error
     }
   }
+
   _clearTimeout() {
     if (this._retryTimeoutId) {
       clearTimeout(this._retryTimeoutId);
       this._retryTimeoutId = null;
     }
   }
+
   _retry(t = (this.connectivity ? this._heartBeatInterval : this._timeToRetry)) {
     this._clearTimeout();
     this._retryTimeoutId = setTimeout(() => {
