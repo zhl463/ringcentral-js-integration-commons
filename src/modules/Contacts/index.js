@@ -277,7 +277,11 @@ export default class Contacts extends RcModule {
     const imageId = `${ctx.contact.type}${ctx.contact.id}`;
     let imageUrl = null;
     try {
-      const response = await this._client.account().extension(ctx.contact.id).profileImage().get();
+      const response = await this._client
+        .account()
+        .extension(ctx.contact.id)
+        .profileImage('90x90')
+        .get();
       imageUrl = URL.createObjectURL(await response._response.blob());
       this.store.dispatch({
         type: this.actionTypes.fetchImageSuccess,
