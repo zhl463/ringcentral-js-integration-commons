@@ -52,7 +52,7 @@ export function groupByFirstLetterOfName(contactItems) {
     let group;
     contactItems.forEach((contact) => {
       const name = (contact.name || '').replace(/^\s\s*/, ''); // trim start
-      const letter = (name[0] || '');
+      const letter = (name[0] || '').toLocaleUpperCase();
       if (!group || group.caption !== letter) {
         group = {
           contacts: [],
