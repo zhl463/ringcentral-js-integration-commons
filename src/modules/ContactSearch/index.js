@@ -151,6 +151,7 @@ export default class ContactSearch extends RcModule {
       this._initModuleStatus();
     } else if (this._shouldReset()) {
       this._resetModuleStatus();
+      this._clearStateCache();
     }
   }
 
@@ -176,6 +177,12 @@ export default class ContactSearch extends RcModule {
   _initModuleStatus() {
     this.store.dispatch({
       type: this.actionTypes.initSuccess,
+    });
+  }
+
+  _clearStateCache() {
+    this.store.dispatch({
+      type: this.actionTypes.cleanUp,
     });
   }
 
