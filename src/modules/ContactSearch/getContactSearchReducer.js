@@ -48,7 +48,6 @@ export function getSearchingReducer(types) {
           result: entities
         };
       case types.resetSuccess:
-        return {};
       case types.prepareSearch:
       case types.reset:
       case types.searchError:
