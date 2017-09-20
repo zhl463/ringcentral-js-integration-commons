@@ -52,7 +52,7 @@ export function groupByFirstLetterOfName(contactItems) {
     let group;
     contactItems.forEach((contact) => {
       const name = (contact.name || '').replace(/^\s\s*/, ''); // trim start
-      const letter = (name[0] || '');
+      const letter = (name[0] || '').toLocaleUpperCase();
       if (!group || group.caption !== letter) {
         group = {
           contacts: [],
@@ -151,6 +151,7 @@ export default class ContactSearch extends RcModule {
       this._initModuleStatus();
     } else if (this._shouldReset()) {
       this._resetModuleStatus();
+      this._clearStateCache();
     }
   }
 
@@ -176,6 +177,12 @@ export default class ContactSearch extends RcModule {
   _initModuleStatus() {
     this.store.dispatch({
       type: this.actionTypes.initSuccess,
+    });
+  }
+
+  _clearStateCache() {
+    this.store.dispatch({
+      type: this.actionTypes.cleanUp,
     });
   }
 

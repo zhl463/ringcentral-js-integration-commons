@@ -73,8 +73,9 @@ describe('getSearchingReducer', () => {
       expect(reducer(originalState, { type: 'search' }))
         .to.equal(originalState);
     });
-    it('should return initial state on prepareSearch, reset and searchError', () => {
+    it('should return initial state on resetSuccess, prepareSearch, reset and searchError', () => {
       [
+        actionTypes.resetSuccess,
         actionTypes.prepareSearch,
         actionTypes.reset,
         actionTypes.searchError,
