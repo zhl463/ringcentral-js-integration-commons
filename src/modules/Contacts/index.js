@@ -228,16 +228,15 @@ export default class Contacts extends RcModule {
   }
 
   findContactItem({ contactType, contactId }) {
-    const contact = (
-      this.companyContacts.find(x =>
-        x.id.toString() === contactId && (!contactType || x.type === contactType)
-      )
-      ||
-      this.personalContacts.find(x =>
-        x.id.toString() === contactId && (!contactType || x.type === contactType)
-      )
-    );
-    return contact;
+    const id = (contactId || '').toString();
+    switch (contactType) {
+      case 'company':
+        return this.companyContacts.find(x => x.id.toString() === id);
+      case 'personal':
+        return this.personalContacts.find(x => x.id.toString() === id);
+      default:
+        return null;
+    }
   }
 
   getImageProfile(contact) {
