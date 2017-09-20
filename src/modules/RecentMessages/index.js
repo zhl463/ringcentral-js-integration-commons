@@ -69,8 +69,16 @@ export default class RecentMessages extends RcModule {
       // Listen to messageStore state changes
       if (this._messageStore.updatedTimestamp !== this._prevMessageStoreTimestamp) {
         this._prevMessageStoreTimestamp = this._messageStore.updatedTimestamp;
-        for (const contact of Object.values(this.contacts)) {
-          this.getMessages(contact, false, true);
+        // for (const contact of Object.values(this.contacts)) {
+        //   this.getMessages(contact, false, true);
+        // }
+        for (const key of Object.keys(this.contacts)) {
+          this.getMessages({
+            currentContact: this.contacts[key],
+            sessionId: key.indexOf('-') > -1 ? key.split('-')[1] : null,
+            fromLocale: false,
+            forceUpdate: true
+          });
         }
       }
     }
@@ -93,14 +101,15 @@ export default class RecentMessages extends RcModule {
   }
 
   @proxify
-  async getMessages(currentContact, fromLocal = false, forceUpdate = false) {
+  async getMessages({ currentContact, sessionId = null, fromLocal = false, forceUpdate = false }) {
     // No need to calculate recent messages of the same contact repeatly
     if (!currentContact) {
       return;
     }
+    const contactId = currentContact.id;
     if (
       !forceUpdate &&
-      !!this.messages[currentContact.id]
+      !!this.messages[sessionId ? `${contactId}-${sessionId}` : contactId]
     ) {
       return;
     }
@@ -116,14 +125,16 @@ export default class RecentMessages extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.loadSuccess,
       messages,
-      contact: currentContact
+      contact: currentContact,
+      sessionId,
     });
   }
 
-  cleanUpMessages(contact) {
+  cleanUpMessages({contact, sessionId = null }) {
     this.store.dispatch({
       type: this.actionTypes.loadReset,
-      contact
+      contact,
+      sessionId
     });
   }
 

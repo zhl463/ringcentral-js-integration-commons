@@ -1,4 +1,4 @@
-import 'whatwg-fetch';
+import 'isomorphic-fetch';
 import SDK from 'ringcentral';
 import RingCentralClient from 'ringcentral-client';
 import { combineReducers } from 'redux';

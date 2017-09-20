@@ -14,13 +14,21 @@ export default class Brand extends RcModule {
    * @param {String} params.fullName - full brand name
    * @param {String} params.application - application name
    */
-  constructor({ id, name, fullName, application, ...options }) {
+  constructor({
+    id,
+    name,
+    fullName,
+    application,
+    code,
+    ...options
+   }) {
     super(options);
     this._reducer = (state = {
       id,
       name,
       fullName,
       application,
+      code,
     }) => state;
   }
   get id() {
@@ -35,6 +43,11 @@ export default class Brand extends RcModule {
   get application() {
     return this.state.application;
   }
+
+  get code() {
+    return this.state.code;
+  }
+
   // eslint-disable-next-line class-methods-use-this
   get status() {
     return moduleStatuses.ready;
