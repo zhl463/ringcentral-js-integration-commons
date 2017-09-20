@@ -80,6 +80,8 @@ export function getSearchCriteriaReducer(types) {
           };
         }
         return state;
+      case types.restSearchCriteria:
+        return initialState;
       default:
         return state;
     }
