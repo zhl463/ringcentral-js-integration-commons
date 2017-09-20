@@ -20,8 +20,9 @@ export function uniqueContactItems(result) {
   const hash = {};
   const unique = [];
   items.forEach((item) => {
-    if (!hash[item.id]) {
-      hash[item.id] = 1;
+    const itemId = `${item.type}${item.id}`;
+    if (!hash[itemId]) {
+      hash[itemId] = 1;
       unique.push(item);
     }
   });
