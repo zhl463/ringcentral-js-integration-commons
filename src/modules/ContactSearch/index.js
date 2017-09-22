@@ -200,6 +200,12 @@ export default class ContactSearch extends RcModule {
     });
   }
 
+  resetSearchStatus() {
+    this.store.dispatch({
+      type: this.actionTypes.reset,
+    });
+  }
+
   addSearchSource({ sourceName, searchFn, readyCheckFn, formatFn }) {
     if (!sourceName) {
       throw new Error('ContactSearch: "sourceName" is required.');

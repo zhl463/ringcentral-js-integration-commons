@@ -13,6 +13,13 @@ import getAddressBookReducer, {
 const CONTACTS_PER_PAGE = 250;
 const DEFAULT_TTL = 30 * 60 * 1000;
 const DEFAULT_TIME_TO_RETRY = 62 * 1000;
+const REGX_DECODE = /&\w+;/g;
+const DECODE = {
+  "&amp;": "&",
+  "&bsol;": "\\",
+  "&sol;": "/",
+  "&apos;": "'"
+};
 
 function getSyncParams(syncToken, pageId) {
   const query = {
@@ -207,7 +214,32 @@ export default class AddressBook extends Pollable {
       .extension()
       .addressBookSync()
       .list(params);
+    this._decodeAddressBook(updateRequest);
     return updateRequest;
+  }
+
+  _decode(text) {
+    return text.replace(REGX_DECODE, ($0) => {
+      let handleText = $0;
+      if (DECODE[$0]) {
+        handleText = DECODE[$0];
+      }
+      return handleText;
+    });
+  }
+
+  _decodeAddressBook(origin) {
+    if (origin && origin.records && Array.isArray(origin.records)) {
+      origin.records.map((record) => {
+        if (record.firstName) {
+          record.firstName = this._decode(record.firstName);
+        }
+        if (record.lastName) {
+          record.lastName = this._decode(record.lastName);
+        }
+        return record;
+      });
+    }
   }
 
   _cleanUp() {
