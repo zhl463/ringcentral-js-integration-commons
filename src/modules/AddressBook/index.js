@@ -230,14 +230,13 @@ export default class AddressBook extends Pollable {
 
   _decodeAddressBook(origin) {
     if (origin && origin.records && Array.isArray(origin.records)) {
-      origin.records.map((record) => {
+      origin.records.forEach((record) => {
         if (record.firstName) {
           record.firstName = this._decode(record.firstName);
         }
         if (record.lastName) {
           record.lastName = this._decode(record.lastName);
         }
-        return record;
       });
     }
   }
