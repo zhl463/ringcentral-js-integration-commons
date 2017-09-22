@@ -15,10 +15,10 @@ const DEFAULT_TTL = 30 * 60 * 1000;
 const DEFAULT_TIME_TO_RETRY = 62 * 1000;
 const REGX_DECODE = /&\w+;/g;
 const DECODE = {
-  "&amp;": "&",
-  "&bsol;": "\\",
-  "&sol;": "/",
-  "&apos;": "'"
+  '&amp;': '&',
+  '&bsol;': '\\',
+  '&sol;': '/',
+  '&apos;': '\''
 };
 
 function getSyncParams(syncToken, pageId) {
