@@ -1,6 +1,7 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import contactSearchStatus from './contactSearchStatus';
+import { AllContactSourceName } from './index';
 
 export function getContactSearchStatusReducer(types) {
   return (state = contactSearchStatus.idle, { type }) => {
@@ -61,7 +62,7 @@ export function getSearchingReducer(types) {
 
 export function getSearchCriteriaReducer(types) {
   const initialState = {
-    sourceName: '',
+    sourceName: AllContactSourceName,
     searchText: '',
     pageNumber: 1
   };
@@ -80,6 +81,8 @@ export function getSearchCriteriaReducer(types) {
           };
         }
         return state;
+      case types.restSearchCriteria:
+        return initialState;
       default:
         return state;
     }

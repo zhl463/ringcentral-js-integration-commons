@@ -153,6 +153,7 @@ export default class ContactSearch extends RcModule {
     } else if (this._shouldReset()) {
       this._resetModuleStatus();
       this._clearStateCache();
+      this._restSearchCriteria();
     }
   }
 
@@ -187,9 +188,21 @@ export default class ContactSearch extends RcModule {
     });
   }
 
+  _restSearchCriteria() {
+    this.store.dispatch({
+      type: this.actionTypes.restSearchCriteria,
+    });
+  }
+
   _resetModuleStatus() {
     this.store.dispatch({
       type: this.actionTypes.resetSuccess,
+    });
+  }
+
+  resetSearchStatus() {
+    this.store.dispatch({
+      type: this.actionTypes.reset,
     });
   }
 
