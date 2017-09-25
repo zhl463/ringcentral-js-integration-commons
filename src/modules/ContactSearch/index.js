@@ -304,6 +304,24 @@ export default class ContactSearch extends RcModule {
     }
   }
 
+  _quickSort({ result = [], searchString = '' }) {
+    const list = [...result];
+    if (searchString === '') {
+      return list;
+    }
+    return list.sort((current, next) => {
+      const currentName = current.name || '';
+      const currentPhoneNumber = current.phoneNumber || '';
+      const nextName = next.name || '';
+      const nextPhoneNumber = next.phoneNumber || '';
+      const isSort = (
+        currentName.indexOf(searchString) < nextName.indexOf(searchString) ||
+        currentPhoneNumber.indexOf(searchString) < nextPhoneNumber.indexOf(searchString)
+      );
+      return isSort;
+    });
+  }
+
   _searchFromCache({ sourceName, searchString }) {
     const key = `${sourceName}-${searchString}`;
     const searching = this.cache && this.cache.contactSearch && this.cache.contactSearch[key];
@@ -380,5 +398,9 @@ export default class ContactSearch extends RcModule {
 
   get contactGroups() {
     return this._selectors.contactGroups();
+  }
+
+  get sortedResult() {
+    return this._quickSort(this.searching);
   }
 }
