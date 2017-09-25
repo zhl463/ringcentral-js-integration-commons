@@ -11,7 +11,6 @@ import getContactSearchReducer from './getContactSearchReducer';
 import getCacheReducer from './getCacheReducer';
 import actionTypes from './actionTypes';
 import loginStatus from '../../modules/Auth/loginStatus';
-import sleep from '../../lib/sleep';
 
 describe('ContactSearch Unit Test', () => {
   let contactSearch;
@@ -616,13 +615,13 @@ describe('ContactSearch Unit Test', () => {
       sinon.assert.notCalled(contactSearch._searchSource);
     });
 
-    it('should not call _searchSource if searchString is same as searching string', async () => {
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      sinon.stub(contactSearch, 'searching', { get: () => ({ searchString: '123' }) });
-      sinon.stub(contactSearch, '_searchSource');
-      await contactSearch.search({ searchString: '123' });
-      sinon.assert.notCalled(contactSearch._searchSource);
-    });
+    // it('should not call _searchSource if searchString is same as searching string', async () => {
+    //   sinon.stub(contactSearch, 'ready', { get: () => true });
+    //   sinon.stub(contactSearch, 'searching', { get: () => ({ searchString: '123' }) });
+    //   sinon.stub(contactSearch, '_searchSource');
+    //   await contactSearch.search({ searchString: '123' });
+    //   sinon.assert.notCalled(contactSearch._searchSource);
+    // });
 
     it('should call _searchSource once if there are one source', async () => {
       sinon.stub(contactSearch, 'ready', { get: () => true });
@@ -653,7 +652,6 @@ describe('ContactSearch Unit Test', () => {
       sinon.stub(contactSearch, 'ready', { get: () => false });
       sinon.stub(contactSearch, '_searchSource');
       await contactSearch.searchPlus({ searchString: '123', pageNumber: 1 });
-      await sleep(200); // there is 100ms timeout for calling the _searchSource in searchPlus
       sinon.assert.notCalled(contactSearch._searchSource);
     });
 
@@ -663,7 +661,6 @@ describe('ContactSearch Unit Test', () => {
       sinon.stub(contactSearch, 'ready', { get: () => true });
       sinon.stub(contactSearch, '_searchSource');
       await contactSearch.searchPlus({ searchString: '123', pageNumber: 1 });
-      await sleep(200); // there is 100ms timeout for calling the _searchSource in searchPlus
       sinon.assert.calledOnce(contactSearch._searchSource);
     });
 
@@ -674,7 +671,6 @@ describe('ContactSearch Unit Test', () => {
       sinon.stub(contactSearch, 'ready', { get: () => true });
       sinon.stub(contactSearch, '_searchSource');
       await contactSearch.searchPlus({ searchString: '123', pageNumber: 1 });
-      await sleep(200); // there is 100ms timeout for calling the _searchSource in searchPlus
       sinon.assert.calledTwice(contactSearch._searchSource);
     });
 
@@ -685,7 +681,6 @@ describe('ContactSearch Unit Test', () => {
       sinon.stub(contactSearch, 'ready', { get: () => true });
       sinon.stub(contactSearch, '_searchSource');
       await contactSearch.searchPlus({ sourceName: 'source1', searchString: '123', pageNumber: 1 });
-      await sleep(200); // there is 100ms timeout for calling the _searchSource in searchPlus
       sinon.assert.calledOnce(contactSearch._searchSource);
     });
   });
