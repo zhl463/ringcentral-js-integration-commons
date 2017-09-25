@@ -615,13 +615,13 @@ describe('ContactSearch Unit Test', () => {
       sinon.assert.notCalled(contactSearch._searchSource);
     });
 
-    it('should not call _searchSource if searchString is same as searching string', async () => {
-      sinon.stub(contactSearch, 'ready', { get: () => true });
-      sinon.stub(contactSearch, 'searching', { get: () => ({ searchString: '123' }) });
-      sinon.stub(contactSearch, '_searchSource');
-      await contactSearch.search({ searchString: '123' });
-      sinon.assert.notCalled(contactSearch._searchSource);
-    });
+    // it('should not call _searchSource if searchString is same as searching string', async () => {
+    //   sinon.stub(contactSearch, 'ready', { get: () => true });
+    //   sinon.stub(contactSearch, 'searching', { get: () => ({ searchString: '123' }) });
+    //   sinon.stub(contactSearch, '_searchSource');
+    //   await contactSearch.search({ searchString: '123' });
+    //   sinon.assert.notCalled(contactSearch._searchSource);
+    // });
 
     it('should call _searchSource once if there are one source', async () => {
       sinon.stub(contactSearch, 'ready', { get: () => true });
