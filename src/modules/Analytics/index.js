@@ -3,7 +3,7 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getAnalyticsReducer from './getAnalyticsReducer';
 
-import { Segment } from '../../lib/Analytics';
+import { Segment } from '../../lib/analytics';
 import callingModes from '../CallingSettings/callingModes';
 
 /**
@@ -42,12 +42,11 @@ export default class Analytics extends RcModule {
     this._brandCode = brandCode;
     this._reducer = getAnalyticsReducer(this.actionTypes);
     this._segment = Segment();
-    this._segment.load(this._analyticsKey);
-    this._segment.page();
   }
 
   initialize() {
     this.store.subscribe(() => this._onStateChange());
+    this._segment.load(this._analyticsKey);
   }
 
   identify({
