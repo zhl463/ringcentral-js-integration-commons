@@ -242,10 +242,6 @@ export default class ContactSearch extends RcModule {
       return;
     }
 
-    if (this.searching.searchString === searchString) {
-      return;
-    }
-
     const searchOnSources = Array.from(this._searchSources.keys());
     for (const sourceName of searchOnSources) {
       await this._searchSource({
@@ -257,7 +253,7 @@ export default class ContactSearch extends RcModule {
   }
 
   @proxify
-  async searchPlus({ sourceName, searchText, pageNumber }) {
+  async searchPlus({ sourceName, searchString, pageNumber }) {
     if (!this.ready) {
       this.store.dispatch({
         type: this.actionTypes.prepareSearch,
@@ -268,23 +264,21 @@ export default class ContactSearch extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.updateSearchCriteria,
       sourceName,
-      searchText,
+      searchString,
       pageNumber,
     });
 
-    clearTimeout(this._searchTimeoutId);
-    this._searchTimeoutId = setTimeout(async () => {
-      const searchOnSources = (!sourceName || sourceName === AllContactSourceName) ?
-        Array.from(this._searchSources.keys()) :
-        [sourceName];
-      for (const source of searchOnSources) {
-        await this._searchSource({
-          searchOnSources,
-          sourceName: source,
-          searchString: searchText,
-        });
-      }
-    }, 100);
+    const searchOnSources = (!sourceName || sourceName === AllContactSourceName) ?
+      Array.from(this._searchSources.keys()) :
+      [sourceName];
+
+    for (const source of searchOnSources) {
+      await this._searchSource({
+        searchOnSources,
+        sourceName: source,
+        searchString,
+      });
+    }
   }
 
   @proxify

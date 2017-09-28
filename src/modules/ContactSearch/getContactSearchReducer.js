@@ -63,20 +63,20 @@ export function getSearchingReducer(types) {
 export function getSearchCriteriaReducer(types) {
   const initialState = {
     sourceName: AllContactSourceName,
-    searchText: '',
+    searchString: '',
     pageNumber: 1
   };
-  return (state = initialState, { type, sourceName, searchText, pageNumber }) => {
+  return (state = initialState, { type, sourceName, searchString, pageNumber }) => {
     switch (type) {
       case types.updateSearchCriteria:
         if (
           state.sourceName !== sourceName ||
-          state.searchText !== searchText ||
+          state.searchString !== searchString ||
           state.pageNumber !== pageNumber
         ) {
           return {
             sourceName,
-            searchText,
+            searchString,
             pageNumber,
           };
         }
