@@ -280,7 +280,7 @@ export default class ContactSearch extends RcModule {
       });
     }
   }
-
+  // TODO Need to refactor, remove cache, and update data in real time.
   @proxify
   async _searchSource({ searchOnSources, sourceName, searchString }) {
     this.store.dispatch({

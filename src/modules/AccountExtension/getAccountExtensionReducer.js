@@ -2,7 +2,9 @@ export function getDataReducer(types) {
   return (state = null, { type, data, id, }) => {
     switch (type) {
       case types.fetchSuccess:
-        return data;
+        return Array.isArray(data) ?
+          data.filter(item => item.status !== 'Disabled') :
+          data;
       case types.add:
         return Array.isArray(state) ?
           [...state, data] :
