@@ -3,7 +3,7 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getAnalyticsReducer from './getAnalyticsReducer';
 
-import { Segment } from '../../lib/analytics';
+import { Segment } from '../../lib/Analytics';
 import callingModes from '../CallingSettings/callingModes';
 
 /**
