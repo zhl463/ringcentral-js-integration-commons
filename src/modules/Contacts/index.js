@@ -6,6 +6,7 @@ import { batchGetApi } from '../../lib/batchApiHelper';
 import sleep from '../../lib/sleep';
 import actionTypes from './actionTypes';
 import getContactsReducer from './getContactsReducer';
+import contactsMessages from './contactsMessages';
 
 const MaximumBatchGetPresence = 30;
 
@@ -54,6 +55,7 @@ export default class Contacts extends RcModule {
     addressBook,
     accountExtension,
     accountPhoneNumber,
+    alert,
     ttl = DEFAULT_TTL,
     avatarTtl = DEFAULT_AVATARTTL,
     presenceTtl = DEFAULT_PRESENCETTL,
@@ -68,6 +70,7 @@ export default class Contacts extends RcModule {
     this._accountExtension = this::ensureExist(accountExtension, 'accountExtension');
     this._accountPhoneNumber = this::ensureExist(accountPhoneNumber, 'accountPhoneNumber');
     this._client = this::ensureExist(client, 'client');
+    this._alert = this::ensureExist(alert, 'alert');
     this._reducer = getContactsReducer(this.actionTypes);
     this._ttl = ttl;
     this._avatarTtl = avatarTtl;
@@ -175,6 +178,14 @@ export default class Contacts extends RcModule {
     this.store.dispatch({
       type: this.actionTypes.resetSuccess,
     });
+  }
+
+  async showAlert() {
+    if (this._alert) {
+      this._alert.warning({
+        message: contactsMessages.inexistence,
+      });
+    }
   }
 
   matchPhoneNumber(phone) {
