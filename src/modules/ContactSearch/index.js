@@ -241,7 +241,12 @@ export default class ContactSearch extends RcModule {
       });
       return;
     }
-
+    this._clearTimeout();
+    this._timeoutId = setTimeout(async ()=>{
+      const searching = {...this.state.searching};
+      await this.search({searchString:undefined});
+      await this.search(searching);
+    },this._ttl);
     const searchOnSources = Array.from(this._searchSources.keys());
     for (const sourceName of searchOnSources) {
       await this._searchSource({
@@ -249,6 +254,12 @@ export default class ContactSearch extends RcModule {
         sourceName,
         searchString,
       });
+    }
+  }
+
+  _clearTimeout() {
+    if (this._timeoutId) {
+      clearTimeout(this._timeoutId);
     }
   }
 
@@ -260,7 +271,12 @@ export default class ContactSearch extends RcModule {
       });
       return;
     }
-
+    this._clearTimeout();
+    this._timeoutId = setTimeout(async ()=>{
+      const searchCriteria = {...this.state.searchCriteria};
+      await this.searchPlus({...this.state.searchCriteria,searchString:undefined});
+      await this.searchPlus(searchCriteria);
+    },this._ttl);
     this.store.dispatch({
       type: this.actionTypes.updateSearchCriteria,
       sourceName,
