@@ -85,7 +85,7 @@ export default class Contacts extends RcModule {
         const newExtensions = [];
         extensions.forEach((extension) => {
           if (!(extension.status === 'Enabled' &&
-            ['DigitalUser', 'User'].indexOf(extension.type) >= 0)) {
+            ['DigitalUser', 'User', 'Department'].indexOf(extension.type) >= 0)) {
             return;
           }
           const contact = {

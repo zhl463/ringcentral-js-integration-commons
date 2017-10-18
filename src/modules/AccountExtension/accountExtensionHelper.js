@@ -8,7 +8,7 @@ export function isEssential(ext) {
   return ext.extensionNumber &&
     ext.extensionNumber !== '' &&
     ext.status === 'Enabled' &&
-    (ext.type === 'DigitalUser' || ext.type === 'User');
+    ['DigitalUser', 'User', 'Department'].indexOf(ext.type) >= 0;
 }
 /**
  * @function

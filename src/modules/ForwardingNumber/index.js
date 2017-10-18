@@ -1,5 +1,5 @@
 import DataFetcher from '../../lib/DataFetcher';
-import fetchList from '../..//lib/fetchList';
+import fetchList from '../../lib/fetchList';
 
 /**
  * @class
