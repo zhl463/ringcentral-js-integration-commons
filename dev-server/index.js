@@ -4,7 +4,24 @@ import ReactDOM from 'react-dom';
 import { connect, Provider } from 'react-redux';
 import JSONTree from 'react-json-tree';
 
-import Phone from './Phone';
+import { ModuleFactory } from '../src/lib/di';
+import RcPhone from '../src/modules/RcPhone';
+import config from './config';
+
+@ModuleFactory({
+  providers: [
+    { provide: 'Config', useValue: config, private: true }
+  ]
+})
+class Phone extends RcPhone {}
+const phone = Phone.create();
+global.phone = phone;
+const store = createStore(phone.reducer);
+phone.setStore(store);
+
+store.subscribe(() => {
+  console.log(store.getState());
+});
 
 const DemoView = connect(state => ({
   data: state,
@@ -12,15 +29,6 @@ const DemoView = connect(state => ({
 }), () => ({
   shouldExpandNode: (keyName, data, level) => level < 2,
 }))(JSONTree);
-
-
-const phone = new Phone();
-const store = createStore(phone.reducer);
-store.subscribe(() => {
-  console.log(store.getState());
-});
-phone.setStore(store);
-global.phone = phone;
 
 ReactDOM.render((
   <Provider store={store}>
