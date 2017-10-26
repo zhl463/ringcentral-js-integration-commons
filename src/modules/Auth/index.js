@@ -450,9 +450,9 @@ export default class Auth extends RcModule {
    * @param {Function} onLogin - Function to be called when user successfully logged in
    *  through oAuth.
    */
-  @proxify
   async setupProxyFrame(onLogin) {
     if (
+      !this._transport && // skip on proxy instance
       typeof window !== 'undefined' &&
       typeof document !== 'undefined' &&
       this._proxyUri &&
@@ -482,7 +482,6 @@ export default class Auth extends RcModule {
     this._callbackHandler = null;
   }
 
-  @proxify
   async clearProxyFrame() {
     if (this._proxyFrame) {
       if (this._retryTimeoutId) {

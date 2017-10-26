@@ -1,5 +1,6 @@
 import RcModule from '../../lib/RcModule';
 import { Module } from '../../lib/di';
+import sleep from '../../lib/sleep';
 import moduleStatuses from '../../enums/moduleStatuses';
 import actionTypes from './actionTypes';
 import getAnalyticsReducer from './getAnalyticsReducer';
@@ -94,7 +95,13 @@ export default class Analytics extends RcModule {
   }
 
   async _onStateChange() {
-    if (this.ready) {
+    if (this.ready && this.lastActions.length && !this._promise) {
+      this._promise = this._processActions();
+    }
+  }
+  async _processActions() {
+    if (this.lastActions.length) {
+      await sleep(300);
       this.lastActions.forEach((action) => {
         [
           '_authentication',
@@ -119,11 +126,10 @@ export default class Analytics extends RcModule {
           this[key](action);
         });
       });
-      if (this.lastActions.length !== 0) {
-        this.store.dispatch({
-          type: this.actionTypes.clear,
-        });
-      }
+      this._promise = null;
+      this.store.dispatch({
+        type: this.actionTypes.clear,
+      });
     }
   }
 

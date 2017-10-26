@@ -98,6 +98,9 @@ export default function getProxyClient(Target) {
       }
     }
     async initialize() {
+      // initialize the instance before sync to avoid history object from
+      // becoming out of sync
+      this._initialize(this._target);
       this._transport.on(this._transport.events.push, async (payload) => {
         if (payload.type === this.actionTypes.action) {
           if (this._syncPromise) await this._syncPromise;
@@ -112,7 +115,6 @@ export default function getProxyClient(Target) {
         }
       });
       await this.sync();
-      this._initialize(this._target);
     }
   };
 }
