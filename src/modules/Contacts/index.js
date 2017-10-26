@@ -70,6 +70,8 @@ export default class Contacts extends RcModule {
     avatarTtl = DEFAULT_AVATARTTL,
     presenceTtl = DEFAULT_PRESENCETTL,
     avatarQueryInterval = DEFAULT_AVATARQUERYINTERVAL,
+    readyCheckFn,
+    addContactsSources = [],
     ...options,
   }) {
     super({
@@ -86,7 +88,8 @@ export default class Contacts extends RcModule {
     this._avatarTtl = avatarTtl;
     this._presenceTtl = presenceTtl;
     this._avatarQueryInterval = avatarQueryInterval;
-
+    this._addContactsSources = addContactsSources;
+    this._readyCheckFn = readyCheckFn;
     this.addSelector(
       'companyContacts',
       () => this._accountExtension.availableExtensions,
@@ -150,6 +153,13 @@ export default class Contacts extends RcModule {
     );
   }
 
+  _handlerContactsSources() {
+    this._addContactsSources.forEach(({ addSelector, sourcesName }) => {
+      this.__defineGetter__(sourcesName, () => this._selectors[sourcesName]());
+      this.addSelector(...addSelector);
+    });
+  }
+
   initialize() {
     this.store.subscribe(() => this._onStateChange());
   }
@@ -159,6 +169,7 @@ export default class Contacts extends RcModule {
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
+      this._handlerContactsSources();
     } else if (this._shouldReset()) {
       this._resetModuleStatus();
     }
@@ -169,6 +180,7 @@ export default class Contacts extends RcModule {
       this._addressBook.ready &&
       this._accountExtension.ready &&
       this._accountPhoneNumber.ready &&
+      (!this._readyCheckFn || this._readyCheckFn()) &&
       this.pending
     );
   }
@@ -178,6 +190,7 @@ export default class Contacts extends RcModule {
       (
         !this._addressBook.ready ||
         !this._accountExtension.ready ||
+        (this._readyCheckFn && !this._readyCheckFn()) ||
         !this._accountPhoneNumber.ready
       ) &&
       this.ready
@@ -250,6 +263,11 @@ export default class Contacts extends RcModule {
 
   findContactItem({ contactType, contactId }) {
     const id = (contactId || '').toString();
+    for (const contactsSources of this._addContactsSources) {
+      if (contactsSources.contactType === contactType) {
+        return this[contactsSources.sourcesName].find(x => x.id.toString() === id);
+      }
+    }
     switch (contactType) {
       case 'company':
         return this.companyContacts.find(x => x.id.toString() === id);
