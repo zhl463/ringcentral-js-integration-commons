@@ -155,10 +155,12 @@ export default class Contacts extends RcModule {
 
   _handlerContactsSources() {
     this._addContactsSources.forEach(({ addSelector, sourcesName }) => {
-      Object.defineProperty(this, sourcesName, {
-        get: () => this._selectors[sourcesName]()
-      });
-      this.addSelector(...addSelector);
+      if (!this[sourcesName]) {
+        Object.defineProperty(this, sourcesName, {
+          get: () => this._selectors[sourcesName]()
+        });
+        this.addSelector(...addSelector);
+      }
     });
   }
 
