@@ -41,6 +41,7 @@ const DEFAULT_AVATARQUERYINTERVAL = 2 * 1000; // 2 seconds
 @Module({
   deps: [
     'Client',
+    'Alert',
     'AddressBook',
     'AccountExtension',
     'AccountPhoneNumber',
@@ -52,6 +53,7 @@ export default class Contacts extends RcModule {
    * @constructor
    * @param {Object} params - params object
    * @param {Client} params.client - client module instance
+   * @param {Alert} params.alert - alert module instance
    * @param {AddressBook} params.addressBook - addressBook module instance
    * @param {AccountExtension} params.accountExtension - accountExtension module instance
    * @param {AccountPhoneNumber} params.accountPhoneNumber - accountPhoneNumber module instance
