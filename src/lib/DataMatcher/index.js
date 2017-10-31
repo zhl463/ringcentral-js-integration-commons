@@ -22,7 +22,7 @@ const DEFAULT_NO_MATCH_TTL = 30 * 1000;
 
 @Library({
   deps: [
-    'Storage',
+    { dep: 'Storage', optional: true },
     { dep: 'DataMatcherOptions', optional: true }
   ]
 })
@@ -32,6 +32,7 @@ export default class DataMatcher extends RcModule {
     storage,
     ttl = DEFAULT_TTL,
     noMatchTtl = DEFAULT_NO_MATCH_TTL,
+    disableCache = false,
     actionTypes = prefixEnum({ base: baseActionTypes, prefix: name }),
     storageKey = `${name}Data`,
     getReducer = getDefaultReducer,
@@ -48,6 +49,9 @@ export default class DataMatcher extends RcModule {
     this._searchProviders = new Map();
     this._matchPromises = new Map();
     this._matchQueues = new Map();
+    if (!disableCache) {
+      this._storage = storage;
+    }
     this._storage = storage;
     this._ttl = ttl;
     this._noMatchTtl = noMatchTtl;

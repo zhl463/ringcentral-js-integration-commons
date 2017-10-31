@@ -15,7 +15,8 @@ const DEFAULT_RETRY = 62 * 1000;
 
 @Library({
   deps: [
-    'Auth', 'Client', 'Storage', 'Subscription', 'TabManager',
+    'Auth', 'Client', 'Subscription', 'TabManager',
+    { dep: 'Storage', optional: true },
     { dep: 'DataFetcherOptions', optional: true }
   ]
 })
@@ -29,6 +30,7 @@ export default class DataFetcher extends Pollable {
     timeToRetry = DEFAULT_RETRY,
     ttl = DEFAULT_TTL,
     polling = false,
+    disableCache = false,
     name,
     actionTypes = prefixEnum({ enumMap: baseActionTypes, prefix: name }),
     getReducer = getDataFetcherReducer,
@@ -54,7 +56,9 @@ export default class DataFetcher extends Pollable {
     });
     this._auth = this::ensureExist(auth, 'auth');
     this._client = this::ensureExist(client, 'client');
-    this._storage = storage;
+    if (!disableCache) {
+      this._storage = storage;
+    }
     this._subscription = subscription;
     this._tabManager = tabManager;
     this._ttl = ttl;

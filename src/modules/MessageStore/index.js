@@ -31,7 +31,8 @@ const DEFAULT_DAY_SPAN = 7;
  */
 @Module({
   deps: [
-    'Alert', 'Client', 'Auth', 'Storage', 'Subscription', 'ConnectivityMonitor',
+    'Alert', 'Client', 'Auth', 'Subscription', 'ConnectivityMonitor',
+    { dep: 'Storage', optional: true },
     { dep: 'MessageStoreOptions', optional: true }
   ]
 })
@@ -61,6 +62,7 @@ export default class MessageStore extends Pollable {
     subscription,
     connectivityMonitor,
     polling = false,
+    disableCache = false,
     ...options
   }) {
     super({
@@ -69,10 +71,11 @@ export default class MessageStore extends Pollable {
     });
     this._alert = alert;
     this._client = client;
-    this._storage = storage;
+    if (!disableCache) {
+      this._storage = storage;
+    }
     this._subscription = subscription;
     this._connectivityMonitor = connectivityMonitor;
-    this._reducer = getMessageStoreReducer(this.actionTypes);
     this._ttl = ttl;
     this._timeToRetry = timeToRetry;
     this._daySpan = daySpan;
@@ -82,10 +85,17 @@ export default class MessageStore extends Pollable {
     this._storageKey = 'messageStore';
     this._polling = polling;
 
-    this._storage.registerReducer({
-      key: this._storageKey,
-      reducer: getDataReducer(this.actionTypes),
-    });
+    if (this._storage) {
+      this._reducer = getMessageStoreReducer(this.actionTypes);
+      this._storage.registerReducer({
+        key: this._storageKey,
+        reducer: getDataReducer(this.actionTypes),
+      });
+    } else {
+      this._reducer = getMessageStoreReducer(this.actionTypes, {
+        data: getDataReducer(this.actionTypes),
+      });
+    }
 
     this.addSelector(
       'unreadCounts',
@@ -157,7 +167,7 @@ export default class MessageStore extends Pollable {
 
   _shouldInit() {
     return (
-      this._storage.ready &&
+      (!this._storage || this._storage.ready) &&
       this._subscription.ready &&
       (!this._connectivityMonitor || this._connectivityMonitor.ready) &&
       this.pending
@@ -167,7 +177,7 @@ export default class MessageStore extends Pollable {
   _shouldReset() {
     return (
       (
-        !this._storage.ready ||
+        (!!this._storage && !this._storage.ready) ||
         !this._subscription.ready ||
         (!!this._connectivityMonitor && !this._connectivityMonitor.ready)
       ) &&
@@ -504,7 +514,10 @@ export default class MessageStore extends Pollable {
   }
 
   get cache() {
-    return this._storage.getItem(this._storageKey);
+    if (this._storage) {
+      return this._storage.getItem(this._storageKey);
+    }
+    return this.state.data;
   }
 
   get messages() {

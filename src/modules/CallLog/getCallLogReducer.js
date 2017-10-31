@@ -98,8 +98,9 @@ export function getTimestampReducer(types) {
 }
 
 /* istanbul ignore next: unnecessary to test getModuleStatusReducer */
-export default function getCallLogReducer(types) {
+export default function getCallLogReducer(types, reducers = {}) {
   return combineReducers({
+    ...reducers,
     status: getModuleStatusReducer(types),
   });
 }

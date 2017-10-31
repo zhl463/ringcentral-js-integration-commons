@@ -58,9 +58,9 @@ const presenceRegExp = /\/presence\?detailedTelephonyState=true/;
   deps: [
     'Auth',
     'Client',
-    'Storage',
     'Subscription',
     'RolesAndPermissions',
+    { dep: 'Storage', optional: true },
     { dep: 'CallLogOptions', optional: true }
   ]
 })
@@ -78,6 +78,7 @@ export default class CallLog extends Pollable {
    * @param {Number} params.timeToRetry - waiting time to retry
    * @param {Number} params.daySpan - day span of call log
    * @param {Bool} params.polling - polling flag
+   * @param {Bool} params.disableCache - disable cache flag, default false
    */
   constructor({
     auth,
@@ -90,6 +91,7 @@ export default class CallLog extends Pollable {
     timeToRetry = DEFAULT_TIME_TO_RETRY,
     daySpan = DEFAULT_DAY_SPAN,
     polling = true,
+    disableCache = false,
     ...options
   }) {
     super({
@@ -98,7 +100,9 @@ export default class CallLog extends Pollable {
     });
     this._auth = auth;
     this._client = client;
-    this._storage = storage;
+    if (!disableCache) {
+      this._storage = storage;
+    }
     this._subscription = subscription;
     this._rolesAndPermissions = rolesAndPermissions;
     this._dataStorageKey = 'callLogData';
@@ -110,20 +114,27 @@ export default class CallLog extends Pollable {
     this._daySpan = daySpan;
     this._polling = polling;
 
-    this._storage.registerReducer({
-      key: this._dataStorageKey,
-      reducer: getDataReducer(this.actionTypes),
-    });
-    this._storage.registerReducer({
-      key: this._tokenStorageKey,
-      reducer: getTokenReducer(this.actionTypes),
-    });
-    this._storage.registerReducer({
-      key: this._timestampStorageKey,
-      reducer: getTimestampReducer(this.actionTypes),
-    });
-
-    this._reducer = getCallLogReducer(this.actionTypes);
+    if (this._storage) {
+      this._reducer = getCallLogReducer(this.actionTypes);
+      this._storage.registerReducer({
+        key: this._dataStorageKey,
+        reducer: getDataReducer(this.actionTypes),
+      });
+      this._storage.registerReducer({
+        key: this._tokenStorageKey,
+        reducer: getTokenReducer(this.actionTypes),
+      });
+      this._storage.registerReducer({
+        key: this._timestampStorageKey,
+        reducer: getTimestampReducer(this.actionTypes),
+      });
+    } else {
+      this._reducer = getCallLogReducer(this.actionTypes, {
+        data: getDataReducer(this.actionTypes),
+        token: getTokenReducer(this.actionTypes),
+        timestamp: getTimestampReducer(this.actionTypes),
+      });
+    }
 
     this.addSelector('calls',
       () => this.data,
@@ -158,7 +169,7 @@ export default class CallLog extends Pollable {
   _onStateChange = async () => {
     if (
       this._auth.loggedIn &&
-      this._storage.ready &&
+      (!this._storage || this._storage.ready) &&
       (!this._subscription || this._subscription.ready) &&
       this._rolesAndPermissions.ready &&
       this.status === moduleStatuses.pending
@@ -188,7 +199,7 @@ export default class CallLog extends Pollable {
     } else if (
       (
         !this._auth.loggedIn ||
-        !this._storage.ready ||
+        (!!this._storage && !this._storage.ready) ||
         (this._subscription && !this._subscription.ready) ||
         !this._rolesAndPermissions.ready
       ) &&
@@ -227,7 +238,10 @@ export default class CallLog extends Pollable {
   }
 
   get data() {
-    return this._storage.getItem(this._dataStorageKey);
+    if (this._storage) {
+      return this._storage.getItem(this._dataStorageKey);
+    }
+    return this.state.data;
   }
 
   get calls() {
@@ -235,11 +249,17 @@ export default class CallLog extends Pollable {
   }
 
   get token() {
-    return this._storage.getItem(this._tokenStorageKey);
+    if (this._storage) {
+      return this._storage.getItem(this._tokenStorageKey);
+    }
+    return this.state.token;
   }
 
   get timestamp() {
-    return this._storage.getItem(this._timestampStorageKey);
+    if (this._storage) {
+      return this._storage.getItem(this._timestampStorageKey);
+    }
+    return this.state.timestamp;
   }
 
   get ttl() {

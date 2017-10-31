@@ -46,7 +46,7 @@ function getSyncParams(syncToken, pageId) {
   deps: [
     'Client',
     'Auth',
-    'Storage',
+    { dep: 'Storage', optional: true },
     { dep: 'AddressBookOptions', optional: true }
   ]
 })
@@ -56,10 +56,11 @@ export default class AddressBook extends Pollable {
    * @param {Object} params - params object
    * @param {Client} params.client - client module instance
    * @param {Auth} params.auth - Auth module instance
-   * @param {Storage} params.storage - storage module instance
+   * @param {Storage} params.storage - storage module instance, optional
    * @param {Number} params.ttl - local cache timestamp, default 30 mins
    * @param {Number} params.timeToRetry - timestamp to retry, default 62 seconds
    * @param {Bool} params.polling - polling flag, default true
+   * @param {Bool} params.disableCache - polling flag, default false
    */
   constructor({
     client,
@@ -68,6 +69,7 @@ export default class AddressBook extends Pollable {
     ttl = DEFAULT_TTL,
     timeToRetry = DEFAULT_TIME_TO_RETRY,
     polling = true,
+    disableCache = false,
     ...options
   }) {
     super({
@@ -75,7 +77,9 @@ export default class AddressBook extends Pollable {
       actionTypes,
     });
     this._client = client;
-    this._storage = storage;
+    if (!disableCache) {
+      this._storage = storage;
+    }
     this._auth = auth;
     this._ttl = ttl;
     this._timeToRetry = timeToRetry;
@@ -84,19 +88,27 @@ export default class AddressBook extends Pollable {
     this._syncTokenStorageKey = 'contactsSyncToken';
     this._syncTimestampStorageKey = 'contactsSyncTimestamp';
     this._addressBookStorageKey = 'addressBookContactsList';
-    this._reducer = getAddressBookReducer(this.actionTypes);
-    this._storage.registerReducer({
-      key: this._syncTokenStorageKey,
-      reducer: getSyncTokenReducer(this.actionTypes),
-    });
-    this._storage.registerReducer({
-      key: this._syncTimestampStorageKey,
-      reducer: getSyncTimestampReducer(this.actionTypes),
-    });
-    this._storage.registerReducer({
-      key: this._addressBookStorageKey,
-      reducer: getContactListReducer(this.actionTypes),
-    });
+    if (this._storage) {
+      this._reducer = getAddressBookReducer(this.actionTypes);
+      this._storage.registerReducer({
+        key: this._syncTokenStorageKey,
+        reducer: getSyncTokenReducer(this.actionTypes),
+      });
+      this._storage.registerReducer({
+        key: this._syncTimestampStorageKey,
+        reducer: getSyncTimestampReducer(this.actionTypes),
+      });
+      this._storage.registerReducer({
+        key: this._addressBookStorageKey,
+        reducer: getContactListReducer(this.actionTypes),
+      });
+    } else {
+      this._reducer = getAddressBookReducer(this.actionTypes, {
+        contactList: getContactListReducer(this.actionTypes),
+        syncToken: getSyncTokenReducer(this.actionTypes),
+        syncTimestamp: getSyncTimestampReducer(this.actionTypes),
+      });
+    }
   }
 
   initialize() {
@@ -122,7 +134,7 @@ export default class AddressBook extends Pollable {
 
   _shouldInit() {
     return (
-      this._storage.ready &&
+      (!this._storage || this._storage.ready) &&
       this._auth.loggedIn &&
       this.pending
     );
@@ -131,7 +143,7 @@ export default class AddressBook extends Pollable {
   _shouldReset() {
     return (
       (
-        !this._storage.ready ||
+        (!!this._storage && !this._storage.ready) ||
         !this._auth.loggedIn
       ) &&
       this.ready
@@ -265,15 +277,24 @@ export default class AddressBook extends Pollable {
   }
 
   get syncToken() {
-    return this._storage.getItem(this._syncTokenStorageKey);
+    if (this._storage) {
+      return this._storage.getItem(this._syncTokenStorageKey);
+    }
+    return this.state.syncToken;
   }
 
   get contacts() {
-    return this._storage.getItem(this._addressBookStorageKey);
+    if (this._storage) {
+      return this._storage.getItem(this._addressBookStorageKey);
+    }
+    return this.state.contactList;
   }
 
   get timestamp() {
-    return this._storage.getItem(this._syncTimestampStorageKey);
+    if (this._storage) {
+      return this._storage.getItem(this._syncTimestampStorageKey);
+    }
+    return this.state.syncTimestamp;
   }
 
   get ttl() {

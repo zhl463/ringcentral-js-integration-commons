@@ -85,8 +85,9 @@ export function getSyncTimestampReducer(types) {
   };
 }
 
-export default function getAddressBookReducer(types) {
+export default function getAddressBookReducer(types, reducers = {}) {
   return combineReducers({
+    ...reducers,
     status: getModuleStatusReducer(types),
     syncStatus: getSyncStatusReducer(types),
   });

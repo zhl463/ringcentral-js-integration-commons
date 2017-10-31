@@ -16,8 +16,9 @@ export function getMessageStoreStatusReducer(types) {
   };
 }
 
-export default function getMessageStoreReducer(types) {
+export default function getMessageStoreReducer(types, reducers = {}) {
   return combineReducers({
+    ...reducers,
     status: getModuleStatusReducer(types),
     messageStoreStatus: getMessageStoreStatusReducer(types),
   });
