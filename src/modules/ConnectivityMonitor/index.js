@@ -11,8 +11,10 @@ import proxify from '../../lib/proxy/proxify';
 export const DEFAULT_TIME_TO_RETRY = 5 * 1000;
 export const DEFAULT_HEART_BEAT_INTERVAL = 60 * 1000;
 
-const DEFAULT_CHECK_URI
-  = 'https://dnyg0s5c46.execute-api.us-west-1.amazonaws.com/Prod/getnetworkstatus';
+
+async function defaultCheckConnectionFn() {
+  return fetch('https://pubsub.pubnub.com/time/0');
+}
 
 /**
  * @class
@@ -43,7 +45,7 @@ export default class ConnectivityMonitor extends RcModule {
     environment,
     timeToRetry = DEFAULT_TIME_TO_RETRY,
     heartBeatInterval = DEFAULT_HEART_BEAT_INTERVAL,
-    checkConnectionFunc,
+    checkConnectionFunc = defaultCheckConnectionFn,
     ...options
   }) {
     super({
@@ -66,11 +68,7 @@ export default class ConnectivityMonitor extends RcModule {
 
     this._checkConnectionFunc = async () => {
       try {
-        if (typeof checkConnectionFunc === 'function') {
-          await checkConnectionFunc();
-        } else {
-          await fetch(DEFAULT_CHECK_URI);
-        }
+        await checkConnectionFunc();
         this._requestSuccessHandler();
       } catch (error) {
         this._requestErrorHandler(error);

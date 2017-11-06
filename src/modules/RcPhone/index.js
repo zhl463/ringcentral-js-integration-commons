@@ -56,9 +56,11 @@ import Webphone from '../Webphone';
 import RecentMessages from '../RecentMessages';
 import RecentCalls from '../RecentCalls';
 import Analytics from '../Analytics';
+import AudioSettings from '../AudioSettings';
 
 @ModuleFactory({
   providers: [
+    AudioSettings,
     Alert,
     Brand,
     Locale,

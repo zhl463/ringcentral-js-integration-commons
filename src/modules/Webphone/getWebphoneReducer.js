@@ -148,17 +148,6 @@ export function getSessionsReducer(types) {
   };
 }
 
-export function getUserMediaReducer(types) {
-  return (state = false, { type }) => {
-    switch (type) {
-      case types.getUserMediaSuccess:
-        return true;
-      default:
-        return state;
-    }
-  };
-}
-
 export default function getWebphoneReducer(types) {
   return combineReducers({
     status: getModuleStatusReducer(types),
