@@ -30,7 +30,7 @@ export function uniqueContactItems(result) {
   return unique;
 }
 
-const NON_ALPHABET_RE = /[^A-z]/;
+const NON_ALPHABET_RE = /[^a-z]/i;
 export function sortContactItemsByName(result) {
   const items = result || [];
   items.sort((a, b) => {
@@ -49,8 +49,11 @@ export function sortContactItemsByName(result) {
       // put number name at last
       return -name1.localeCompare(name2);
     }
-    if (NON_ALPHABET_RE.test(name1[0])) {
+    if (NON_ALPHABET_RE.test(name1[0]) && !NON_ALPHABET_RE.test(name2[0])) {
       return 1;
+    }
+    if (!NON_ALPHABET_RE.test(name1[0]) && NON_ALPHABET_RE.test(name2[0])) {
+      return -1;
     }
     return name1.localeCompare(name2);
   });
