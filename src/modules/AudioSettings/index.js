@@ -221,20 +221,25 @@ export default class AudioSettings extends RcModule {
   get availableInputDevices() {
     return this._selectors.availableInputDevices();
   }
+
+  get cacheData() {
+    return this._storage.getItem(this._storageKey) || {};
+  }
+
   get dialButtonVolume() {
-    return this._storage.getItem(this._storageKey).dialButtonVolume;
+    return this.cacheData.dialButtonVolume;
   }
   get dialButtonMuted() {
-    return this._storage.getItem(this._storageKey).dialButtonMuted;
+    return this.cacheData.dialButtonMuted;
   }
   get ringtoneVolume() {
-    return this._storage.getItem(this._storageKey).ringtoneVolume;
+    return this.cacheData.ringtoneVolume;
   }
   get ringtoneMuted() {
-    return this._storage.getItem(this._storageKey).ringtoneMuted;
+    return this.cacheData.ringtoneMuted;
   }
   get callVolume() {
-    return this._storage.getItem(this._storageKey).callVolume;
+    return this.cacheData.callVolume;
   }
 
   get userMedia() {
