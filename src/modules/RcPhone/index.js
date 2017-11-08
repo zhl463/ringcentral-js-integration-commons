@@ -5,6 +5,7 @@ import RingCentralClient from 'ringcentral-client';
 import { ModuleFactory } from '../../lib/di';
 import RcModule from '../../lib/RcModule';
 
+import AccountContacts from '../AccountContacts';
 import AccountExtension from '../AccountExtension';
 import AccountInfo from '../AccountInfo';
 import AccountPhoneNumber from '../AccountPhoneNumber';
@@ -106,6 +107,7 @@ import AudioSettings from '../AudioSettings';
     CallLogger,
     AccountPhoneNumber,
     AddressBook,
+    AccountContacts,
     Contacts,
     ConversationLogger,
     Messages,
@@ -144,6 +146,11 @@ import AudioSettings from '../AudioSettings';
         readyCheckFunction: () => true },
       spread: true },
     { provide: 'SoftphoneOptions', useValue: { extensionMode: null }, spread: true },
+    { provide: 'ContactSources',
+      useFactory: ({ addressBook, accountContacts }) =>
+        [addressBook, accountContacts],
+      deps: ['AccountContacts', 'AddressBook']
+    },
   ]
 })
 export default class RcPhone extends RcModule {
@@ -155,7 +162,7 @@ export default class RcPhone extends RcModule {
       contactSearch,
       contacts,
       callMonitor,
-      contactMatcher
+      contactMatcher,
     } = modules;
 
     // Webphone configuration

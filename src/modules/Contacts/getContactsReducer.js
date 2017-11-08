@@ -1,44 +1,42 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
-export function getProfileImagesReducer(types) {
-  return (state = {}, { type, imageId, imageUrl, ttl }) => {
+export function getSearchFilterReducer(types) {
+  return (state = '', { type, searchFilter }) => {
     switch (type) {
-      case types.fetchImageSuccess: {
-        const data = {};
-        Object.keys(state).forEach((key) => {
-          if (Date.now() - state[key].timestamp < ttl) {
-            data[key] = state[key];
-          }
-        });
-        data[imageId] = {
-          imageUrl,
-          timestamp: Date.now(),
-        };
-        return data;
-      }
+      case types.updateFilter:
+        if (searchFilter !== null && searchFilter !== undefined) {
+          return searchFilter;
+        }
+        return state;
       default:
         return state;
     }
   };
 }
 
-export function getContactPresencesReducer(types) {
-  return (state = {}, { type, presenceId, presence, ttl }) => {
+export function getSourceFilterReducer(types) {
+  return (state = '', { type, sourceFilter }) => {
     switch (type) {
-      case types.fetchPresenceSuccess: {
-        const data = {};
-        Object.keys(state).forEach((key) => {
-          if (Date.now() - state[key].timestamp < ttl) {
-            data[key] = state[key];
-          }
-        });
-        data[presenceId] = {
-          presence,
-          timestamp: Date.now(),
-        };
-        return data;
-      }
+      case types.updateFilter:
+        if (sourceFilter !== null && sourceFilter !== undefined) {
+          return sourceFilter;
+        }
+        return state;
+      default:
+        return state;
+    }
+  };
+}
+
+export function getPageNumberReducer(types) {
+  return (state = 1, { type, pageNumber }) => {
+    switch (type) {
+      case types.updateFilter:
+        if (pageNumber) {
+          return pageNumber;
+        }
+        return state;
       default:
         return state;
     }
@@ -48,7 +46,8 @@ export function getContactPresencesReducer(types) {
 export default function getContactsReducer(types) {
   return combineReducers({
     status: getModuleStatusReducer(types),
-    profileImages: getProfileImagesReducer(types),
-    contactPresences: getContactPresencesReducer(types),
+    searchFilter: getSearchFilterReducer(types),
+    sourceFilter: getSourceFilterReducer(types),
+    pageNumber: getPageNumberReducer(types),
   });
 }
