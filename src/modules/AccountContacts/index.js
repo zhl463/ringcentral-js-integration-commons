@@ -5,7 +5,6 @@ import ensureExist from '../../lib/ensureExist';
 import { addPhoneToContact } from '../../lib/contactHelper';
 import { batchGetApi } from '../../lib/batchApiHelper';
 import proxify from '../../lib/proxy/proxify';
-import sleep from '../../lib/sleep';
 
 import actionTypes from './actionTypes';
 import getReducer from './getReducer';
@@ -144,47 +143,25 @@ export default class AccountContacts extends RcModule {
 
   // interface of contact source
   @proxify
-  getProfileImage(contact, useCache = true) {
-    return new Promise((resolve) => {
-      if (!contact || !contact.id || contact.type !== 'company' || !contact.hasProfileImage) {
-        resolve(null);
-        return;
-      }
+  async getProfileImage(contact, useCache = true) {
+    if (!contact || !contact.id || contact.type !== 'company' || !contact.hasProfileImage) {
+      return null;
+    }
 
-      const imageId = contact.id;
-      if (
-        useCache &&
-        this.profileImages[imageId] &&
-        (Date.now() - this.profileImages[imageId].timestamp < this._avatarTtl)
-      ) {
-        const image = this.profileImages[imageId].imageUrl;
-        resolve(image);
-        return;
-      }
-
-      if (!this._getAvatarContexts) {
-        this._getAvatarContexts = [];
-      }
-      this._getAvatarContexts.push({
-        contact,
-        resolve,
-      });
-
-      if (!this._queryingAvatar) {
-        this._queryingAvatar = true;
-        this._processQueryAvatar(this._getAvatarContexts);
-      }
-    });
-  }
-
-  async _processQueryAvatar(getAvatarContexts) {
-    const ctx = getAvatarContexts[0];
-    const imageId = `${ctx.contact.id}`;
+    const imageId = contact.id;
+    if (
+      useCache &&
+      this.profileImages[imageId] &&
+      (Date.now() - this.profileImages[imageId].timestamp < this._avatarTtl)
+    ) {
+      const image = this.profileImages[imageId].imageUrl;
+      return image;
+    }
     let imageUrl = null;
     try {
       const response = await this._client
         .account()
-        .extension(ctx.contact.id)
+        .extension(contact.id)
         .profileImage('195x195')
         .get();
       imageUrl = URL.createObjectURL(await response._response.blob());
@@ -197,14 +174,7 @@ export default class AccountContacts extends RcModule {
     } catch (e) {
       console.error(e);
     }
-    ctx.resolve(imageUrl);
-    getAvatarContexts.splice(0, 1);
-    if (getAvatarContexts.length) {
-      await sleep(this._avatarQueryInterval);
-      this._processQueryAvatar(getAvatarContexts);
-    } else {
-      this._queryingAvatar = false;
-    }
+    return imageUrl;
   }
 
   // interface of contact source
@@ -318,5 +288,9 @@ export default class AccountContacts extends RcModule {
   // interface of contact source
   get contacts() {
     return this._selectors.contacts();
+  }
+
+  get sourceReady() {
+    return this.ready;
   }
 }

@@ -235,6 +235,7 @@ export default class AddressBook extends Pollable {
         this._promise = null;
       })();
     }
+    await this._promise;
   }
 
   _onSyncError() {
@@ -342,5 +343,9 @@ export default class AddressBook extends Pollable {
   // interface of contact source
   get contacts() {
     return this._selectors.contacts();
+  }
+
+  get sourceReady() {
+    return this.ready;
   }
 }

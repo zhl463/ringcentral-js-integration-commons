@@ -1,6 +1,8 @@
 import isBlank from './isBlank';
 import normalizeNumber from './normalizeNumber';
 
+export const AllContactSourceName = 'all';
+
 export function addPhoneToContact(contact, phone, type) {
   const phoneNumber = normalizeNumber({ phoneNumber: phone });
   if (isBlank(phoneNumber)) {

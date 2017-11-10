@@ -8,12 +8,12 @@ import {
   sortContactItemsByName,
   groupByFirstLetterOfName,
   filterContacts,
+  AllContactSourceName,
 } from '../../lib/contactHelper';
 import proxify from '../../lib/proxy/proxify';
 import actionTypes from './actionTypes';
 import getContactsReducer from './getContactsReducer';
 
-export const AllContactSourceName = 'all';
 export const DefaultContactListPageSize = 20;
 
 /**
@@ -62,7 +62,7 @@ export default class Contacts extends RcModule {
         const names = [AllContactSourceName];
         for (const sourceName of Array.from(this._contactSources.keys())) {
           const source = this._contactSources.get(sourceName);
-          if (source.ready) {
+          if (source.sourceReady) {
             names.push(sourceName);
           }
         }
@@ -77,7 +77,7 @@ export default class Contacts extends RcModule {
         let contacts = [];
         for (const sourceName of Array.from(this._contactSources.keys())) {
           const source = this._contactSources.get(sourceName);
-          if (source.ready) {
+          if (source.sourceReady) {
             contacts = contacts.concat(source.contacts);
           }
         }
@@ -115,7 +115,7 @@ export default class Contacts extends RcModule {
         }
         if (sourceFilter !== AllContactSourceName && !isBlank(sourceFilter)) {
           const source = this._contactSources.get(sourceFilter);
-          if (source && source.ready) {
+          if (source && source.sourceReady) {
             contacts = source.contacts;
           } else {
             contacts = [];
@@ -148,13 +148,17 @@ export default class Contacts extends RcModule {
   _shouldInit() {
     return (
       this._auth.loggedIn &&
+      this.sourceModuleReady &&
       this.pending
     );
   }
 
   _shouldReset() {
     return (
-      !this._auth.loggedIn &&
+      (
+        !this._auth.loggedIn ||
+        !this.sourceModuleReady
+      ) &&
       this.ready
     );
   }
@@ -179,10 +183,12 @@ export default class Contacts extends RcModule {
    * @function
    * @param {Object} source - source module object
    * @param {String} params.sourceName - source name
-   * @param {Bool} params.ready - source ready status
+   * @param {Bool} params.ready - source module ready status
+   * @param {Bool} params.sourceReady - source ready status
    * @param {Array} params.contacts - source contacts data
    * @param {Function} params.getPresence - get source presence function, optional
    * @param {Function} params.getProfileImage - get source profile image function, optional
+   * @param {Function} params.sync - sync source data function, optional
    */
   addSource(source) {
     if (!source.sourceName) {
@@ -208,12 +214,12 @@ export default class Contacts extends RcModule {
       const source = this._contactSources.get(sourceName);
       const lastStatus = this._sourcesLastStatus.get(sourceName);
       if (
-        lastStatus.ready !== source.ready ||
+        lastStatus.ready !== source.sourceReady ||
         lastStatus.data !== source.contacts
       ) {
         updated = true;
         this._sourcesLastStatus.set(sourceName, {
-          ready: source.ready,
+          ready: source.sourceReady,
           data: source.contacts,
         });
       }
@@ -278,7 +284,7 @@ export default class Contacts extends RcModule {
 
   @proxify
   async getProfileImage(contact, useCache = true) {
-    const source = this._contactSources.get(contact.type);
+    const source = this._contactSources.get(contact && contact.type);
     if (source && source.getProfileImage) {
       const result = await source.getProfileImage(contact, useCache);
       return result;
@@ -288,7 +294,7 @@ export default class Contacts extends RcModule {
 
   @proxify
   async getPresence(contact) {
-    const source = this._contactSources.get(contact.type);
+    const source = this._contactSources.get(contact && contact.type);
     if (source && source.getPresence) {
       const result = await source.getPresence(contact);
       return result;
@@ -296,8 +302,29 @@ export default class Contacts extends RcModule {
     return null;
   }
 
+  @proxify
+  async sync() {
+    for (const sourceName of Array.from(this._contactSources.keys())) {
+      const source = this._contactSources.get(sourceName);
+      if (typeof source.sync === 'function') {
+        await source.sync();
+      }
+    }
+  }
+
   get status() {
     return this.state.status;
+  }
+
+  get sourceModuleReady() {
+    let ready = true;
+    for (const sourceName of Array.from(this._contactSources.keys())) {
+      const source = this._contactSources.get(sourceName);
+      if (!source.ready) {
+        ready = false;
+      }
+    }
+    return ready;
   }
 
   get companyContacts() {
