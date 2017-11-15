@@ -17,7 +17,10 @@ const DEFAULT_ALERT_TTL = 5 * 1000;
  */
 @Module({
   deps: [
-    'Alert', 'Client', 'Environment', 'GlobalStorage',
+    'Alert',
+    'Client',
+    { dep: 'Environment', optional: true },
+    'GlobalStorage',
     { dep: 'RateLimiterOptions', optional: true }
   ]
 })

@@ -24,7 +24,7 @@ async function defaultCheckConnectionFn() {
   deps: [
     'Alert',
     'Client',
-    'Environment',
+    { dep: 'Environment', optional: true },
     { dep: 'ConnectivityMonitorOptions', optional: true }
   ]
 })

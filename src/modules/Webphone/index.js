@@ -38,7 +38,7 @@ const MAX_RETRIES_DELAY = 2 * 60 * 1000;
     'Auth',
     'Alert',
     'Client',
-    'ContactMatcher',
+    { dep: 'ContactMatcher', optional: true },
     'ExtensionDevice',
     'NumberValidate',
     'RolesAndPermissions',

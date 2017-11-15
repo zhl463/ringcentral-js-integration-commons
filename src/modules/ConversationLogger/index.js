@@ -24,7 +24,7 @@ export function conversationLogIdentityFunction(conversation) {
   deps: [
     'Auth',
     'Storage',
-    'TabManager',
+    { dep: 'TabManager', optional: true },
     'ContactMatcher',
     'ConversationMatcher',
     'DateTimeFormat',

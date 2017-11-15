@@ -37,8 +37,8 @@ function getDefaultProxyUri() {
     'Alert',
     'Brand',
     'Locale',
-    'TabManager',
-    'Environment',
+    { dep: 'TabManager', optional: true },
+    { dep: 'Environment', optional: true },
     { dep: 'AuthOptions', optional: true }
   ]
 })
@@ -380,6 +380,12 @@ export default class Auth extends RcModule {
     this._proxyFrame = document.createElement('iframe');
     this._proxyFrame.src = this.proxyUri;
     this._proxyFrame.style.display = 'none';
+    this._proxyFrame.setAttribute('sandbox', [
+      'allow-scripts',
+      'allow-popups',
+      'allow-same-origin',
+      'allow-forms',
+    ].join(' '));
 
     document.body.appendChild(this._proxyFrame);
     this._callbackHandler = async ({ origin, data }) => {
@@ -402,7 +408,7 @@ export default class Auth extends RcModule {
             if (code) {
               await this.login({
                 code,
-                redirectUri: this.redirectUri,
+                redirectUri: url.resolve(location.href, this.redirectUri),
               });
               if (typeof onLogin === 'function') {
                 onLogin();
@@ -505,7 +511,7 @@ export default class Auth extends RcModule {
       });
       this._proxyFrame.contentWindow.postMessage({
         oAuthUri: `${this.getLoginUrl({
-          redirectUri: this.redirectUri,
+          redirectUri: url.resolve(location.href, this.redirectUri),
           brandId: this._brand.id,
           state: btoa(Date.now()),
           display: 'page',

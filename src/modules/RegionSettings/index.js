@@ -16,7 +16,13 @@ import proxify from '../../lib/proxy/proxify';
  * @description Region settings managing module
  */
 @Module({
-  deps: ['Storage', 'ExtensionInfo', 'DialingPlan', 'Alert', 'TabManager']
+  deps: [
+    'Alert',
+    'DialingPlan',
+    'ExtensionInfo',
+    'Storage',
+    { dep: 'TabManager', optional: true },
+  ],
 })
 export default class RegionSettings extends RcModule {
   /**

@@ -18,8 +18,8 @@ import normalizeNumber from '../../lib/normalizeNumber';
     'AccountInfo',
     'CallLog',
     'CallMonitor',
-    'ActivityMatcher',
-    'ContactMatcher',
+    { dep: 'ActivityMatcher', optional: true },
+    { dep: 'ContactMatcher', optional: true },
     { dep: 'CallHistoryOptions', optional: true }
   ]
 })

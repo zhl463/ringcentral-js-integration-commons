@@ -18,7 +18,7 @@ import getEnvironmentReducer, {
   deps: [
     'Client',
     'GlobalStorage',
-    { dep: 'EnvironmentOptions', optional: true }
+    { dep: 'EnvironmentOptions' }
   ]
 })
 export default class Environment extends RcModule {

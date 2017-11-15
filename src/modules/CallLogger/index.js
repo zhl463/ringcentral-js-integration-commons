@@ -27,11 +27,11 @@ export function callIdentityFunction(call) {
 @Module({
   deps: [
     'Storage',
-    'ActivityMatcher',
+    { dep: 'ActivityMatcher', optional: true },
     'CallHistory',
     'CallMonitor',
-    'ContactMatcher',
-    'TabManager',
+    { dep: 'ContactMatcher', optional: true },
+    { dep: 'TabManager', optional: true },
     { dep: 'CallLoggerOptions', optional: true }
   ]
 })

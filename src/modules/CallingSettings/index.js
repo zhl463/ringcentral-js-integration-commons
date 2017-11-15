@@ -27,7 +27,7 @@ import proxify from '../../lib/proxy/proxify';
     'ForwardingNumber',
     'Storage',
     'RolesAndPermissions',
-    'TabManager',
+    { dep: 'TabManager', optional: true },
     'Webphone',
     { deps: 'CallingSettingsOptions', optional: true }
   ]

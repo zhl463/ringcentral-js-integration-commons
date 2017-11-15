@@ -15,7 +15,10 @@ const DEFAULT_RETRY = 62 * 1000;
 
 @Library({
   deps: [
-    'Auth', 'Client', 'Subscription', 'TabManager',
+    'Auth',
+    'Client',
+    'Subscription',
+    { dep: 'TabManager', optional: true },
     { dep: 'Storage', optional: true },
     { dep: 'DataFetcherOptions', optional: true }
   ]

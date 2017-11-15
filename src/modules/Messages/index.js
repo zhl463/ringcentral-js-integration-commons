@@ -16,8 +16,7 @@ import proxify from '../../lib/proxy/proxify';
   deps: [
     'MessageStore',
     'ExtensionInfo',
-    'ContactMatcher',
-    'ConversationMatcher',
+    { dep: 'ContactMatcher', optional: true },
     { dep: 'ConversationLogger', optional: true },
     { dep: 'MessagesOptions', optional: true }
   ]
@@ -29,7 +28,6 @@ export default class Messages extends RcModule {
    * @param {MessageStore} params.messageStore - messageStore module instance
    * @param {ExtensionInfo} params.extensionInfo - extensionInfo module instance
    * @param {ContactMatcher} params.contactMatcher - contactMatcher module instance
-   * @param {ConversationMatcher} params.conversationMatcher - conversationMatcher module instance
    * @param {ConversationLogger} params.conversationLogger - conversationLogger module instance
    * @param {Number} params.defaultPerPage - default numbers of perPage, default 20
    */
@@ -38,7 +36,6 @@ export default class Messages extends RcModule {
     extensionInfo,
     defaultPerPage = 20,
     contactMatcher,
-    conversationMatcher,
     conversationLogger,
     ...options
   }) {

@@ -18,7 +18,7 @@ const DEFAULT_TTL = 5 * 60 * 1000;
 @Module({
   deps: [
     'Client',
-    'TabManager',
+    { dep: 'TabManager', optional: true },
     { dep: 'AccountPhoneNumberOptions', optional: true }
   ]
 })
