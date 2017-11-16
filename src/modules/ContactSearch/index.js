@@ -9,83 +9,6 @@ import getCacheReducer from './getCacheReducer';
 
 export const AllContactSourceName = 'all';
 export const DefaultMinimalSearchLength = 3;
-export const DefaultContactListPageSize = 20;
-
-export function uniqueContactItems(result) {
-  let items = result || [];
-  // remove duplicated referencing
-  items = items.filter((value, index, arr) =>
-    arr.indexOf(value) === index
-  );
-  // remove duplicated items by id
-  const hash = {};
-  const unique = [];
-  items.forEach((item) => {
-    const itemId = `${item.type}${item.id}`;
-    if (!hash[itemId]) {
-      hash[itemId] = 1;
-      unique.push(item);
-    }
-  });
-  return unique;
-}
-
-const NON_ALPHABET_RE = /[^a-z]/i;
-export function sortContactItemsByName(result) {
-  const items = result || [];
-  items.sort((a, b) => {
-    const name1 = (a.name || '').toLowerCase().replace(/^\s\s*/, ''); // trim start
-    const name2 = (b.name || '').toLowerCase().replace(/^\s\s*/, ''); // trim start
-    const isNumber1 = /^[0-9]/.test(name1);
-    const isNumber2 = /^[0-9]/.test(name2);
-    // Empty string should be put at the end
-    if (name1.length <= 0 || name2.length <= 0) {
-      return -name1.localeCompare(name2);
-    }
-    if (isNumber1 && isNumber2) {
-      return name1.localeCompare(name2);
-    }
-    if (isNumber1 || isNumber2) {
-      // put number name at last
-      return -name1.localeCompare(name2);
-    }
-    if (NON_ALPHABET_RE.test(name1[0]) && !NON_ALPHABET_RE.test(name2[0])) {
-      return 1;
-    }
-    if (!NON_ALPHABET_RE.test(name1[0]) && NON_ALPHABET_RE.test(name2[0])) {
-      return -1;
-    }
-    return name1.localeCompare(name2);
-  });
-  return items;
-}
-
-const POUND_SIGN = '#';
-export function groupByFirstLetterOfName(contactItems) {
-  const groups = [];
-  if (contactItems && contactItems.length) {
-    let group;
-    contactItems.forEach((contact) => {
-      const name = (contact.name || '').replace(/^\s\s*/, ''); // trim start
-      let letter = null;
-      if (name.length <= 0 || NON_ALPHABET_RE.test(name[0])) {
-        letter = POUND_SIGN;
-      } else {
-        letter = (name[0] || '').toLocaleUpperCase();
-      }
-      if (!group || group.caption !== letter) {
-        group = {
-          contacts: [],
-          caption: letter,
-          id: letter,
-        };
-        groups.push(group);
-      }
-      group.contacts.push(contact);
-    });
-  }
-  return groups;
-}
 
 /**
  * @class
@@ -113,7 +36,6 @@ export default class ContactSearch extends RcModule {
     storage,
     storageKey = 'contactSearchCache',
     minimalSearchLength = DefaultMinimalSearchLength,
-    contactListPageSize = DefaultContactListPageSize,
     ttl = 5 * 60 * 1000, // 5 minutes
     ...options,
   }) {
@@ -125,7 +47,6 @@ export default class ContactSearch extends RcModule {
     this._storage = storage;
     this._storageKey = storageKey;
     this._minimalSearchLength = minimalSearchLength;
-    this._contactListPageSize = contactListPageSize;
     this._ttl = ttl;
     this._searchSources = new Map();
     this._searchSourcesFormat = new Map();
@@ -141,33 +62,6 @@ export default class ContactSearch extends RcModule {
         cache: getCacheReducer(this.actionTypes),
       });
     }
-
-    this.addSelector(
-      'contactSourceNames',
-      () => this._searchSources.size,
-      () => {
-        const names = [AllContactSourceName];
-        for (const sourceName of this._searchSources.keys()) {
-          names.push(sourceName);
-        }
-        return names;
-      }
-    );
-
-    this.addSelector(
-      'contactGroups',
-      () => this.searching && this.searching.result,
-      (result) => {
-        const pageSize = this._contactListPageSize;
-        const pageNumber = this.searchCriteria.pageNumber || 1;
-        const count = pageNumber * pageSize;
-        let items = uniqueContactItems(result);
-        items = sortContactItemsByName(items);
-        items = items.slice(0, count);
-        const groups = groupByFirstLetterOfName(items);
-        return groups;
-      }
-    );
   }
   initialize() {
     this.store.subscribe(() => this._onStateChange());
@@ -179,7 +73,6 @@ export default class ContactSearch extends RcModule {
     } else if (this._shouldReset()) {
       this._resetModuleStatus();
       this._clearStateCache();
-      this._restSearchCriteria();
     }
   }
 
@@ -211,12 +104,6 @@ export default class ContactSearch extends RcModule {
   _clearStateCache() {
     this.store.dispatch({
       type: this.actionTypes.cleanUp,
-    });
-  }
-
-  _restSearchCriteria() {
-    this.store.dispatch({
-      type: this.actionTypes.restSearchCriteria,
     });
   }
 
@@ -261,7 +148,7 @@ export default class ContactSearch extends RcModule {
 
   @proxify
   async search({ searchString }) {
-    if (!this.ready || (searchString.length < this._minimalSearchLength)) {
+    if (!this.ready || !searchString || (searchString.length < this._minimalSearchLength)) {
       this.store.dispatch({
         type: this.actionTypes.prepareSearch,
       });
@@ -289,39 +176,6 @@ export default class ContactSearch extends RcModule {
     }
   }
 
-  @proxify
-  async searchPlus({ sourceName, searchString, pageNumber }) {
-    if (!this.ready) {
-      this.store.dispatch({
-        type: this.actionTypes.prepareSearch,
-      });
-      return;
-    }
-    this._clearTimeout();
-    this._timeoutId = setTimeout(async () => {
-      const searchCriteria = { ...this.state.searchCriteria };
-      await this.searchPlus({ ...this.state.searchCriteria, searchString: undefined });
-      await this.searchPlus(searchCriteria);
-    }, this._ttl);
-    this.store.dispatch({
-      type: this.actionTypes.updateSearchCriteria,
-      sourceName,
-      searchString,
-      pageNumber,
-    });
-
-    const searchOnSources = (!sourceName || sourceName === AllContactSourceName) ?
-      Array.from(this._searchSources.keys()) :
-      [sourceName];
-
-    for (const source of searchOnSources) {
-      await this._searchSource({
-        searchOnSources,
-        sourceName: source,
-        searchString,
-      });
-    }
-  }
   // TODO Need to refactor, remove cache, and update data in real time.
   @proxify
   async _searchSource({ searchOnSources, sourceName, searchString }) {
@@ -428,18 +282,6 @@ export default class ContactSearch extends RcModule {
 
   get searchResult() {
     return this.searching ? this.searching.result : [];
-  }
-
-  get searchCriteria() {
-    return this.state.searchCriteria;
-  }
-
-  get contactSourceNames() {
-    return this._selectors.contactSourceNames();
-  }
-
-  get contactGroups() {
-    return this._selectors.contactGroups();
   }
 
   get sortedResult() {

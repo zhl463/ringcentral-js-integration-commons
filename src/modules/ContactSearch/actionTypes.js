@@ -9,6 +9,4 @@ export default new Enum([
   'searchError',
   'cleanUp',
   'save',
-  'updateSearchCriteria',
-  'restSearchCriteria',
 ], 'contactSearchActionTypes');

@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import getContactSearchReducer, {
   getContactSearchStatusReducer,
   getSearchingReducer,
-  getSearchCriteriaReducer,
 } from './getContactSearchReducer';
 
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
@@ -174,12 +173,10 @@ describe('getContactSearchReducer', () => {
     const statusReducer = getModuleStatusReducer(actionTypes);
     const searchStatusReducer = getContactSearchStatusReducer(actionTypes);
     const searchingReducer = getSearchingReducer(actionTypes);
-    const searchCriteriaReducer = getSearchCriteriaReducer(actionTypes);
     expect(reducer(undefined, {})).to.deep.equal({
       status: statusReducer(undefined, {}),
       searchStatus: searchStatusReducer(undefined, {}),
       searching: searchingReducer(undefined, {}),
-      searchCriteria: searchCriteriaReducer(undefined, {}),
     });
   });
 });

@@ -1,7 +1,6 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import contactSearchStatus from './contactSearchStatus';
-import { AllContactSourceName } from './index';
 
 export function getContactSearchStatusReducer(types) {
   return (state = contactSearchStatus.idle, { type }) => {
@@ -60,41 +59,11 @@ export function getSearchingReducer(types) {
   };
 }
 
-export function getSearchCriteriaReducer(types) {
-  const initialState = {
-    sourceName: AllContactSourceName,
-    searchString: '',
-    pageNumber: 1
-  };
-  return (state = initialState, { type, sourceName, searchString, pageNumber }) => {
-    switch (type) {
-      case types.updateSearchCriteria:
-        if (
-          state.sourceName !== sourceName ||
-          state.searchString !== searchString ||
-          state.pageNumber !== pageNumber
-        ) {
-          return {
-            sourceName,
-            searchString,
-            pageNumber,
-          };
-        }
-        return state;
-      case types.restSearchCriteria:
-        return initialState;
-      default:
-        return state;
-    }
-  };
-}
-
 export default function getContactSearchReducer(types, reducers = {}) {
   return combineReducers({
     ...reducers,
     status: getModuleStatusReducer(types),
     searchStatus: getContactSearchStatusReducer(types),
     searching: getSearchingReducer(types),
-    searchCriteria: getSearchCriteriaReducer(types),
   });
 }
