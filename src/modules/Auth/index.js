@@ -92,6 +92,16 @@ export default class Auth extends RcModule {
     if (this._unbindEvents) this._unbindEvents();
 
     const platform = this._client.service.platform();
+    const client = this._client.service._client;
+    const onRequestError = (apiResponse) => {
+      if (
+        apiResponse instanceof Error &&
+        apiResponse.message === 'Roken revoked'
+      ) {
+        this.logout();
+      }
+    };
+
     const onLoginSuccess = () => {
       this.store.dispatch({
         type: this.actionTypes.loginSuccess,
@@ -158,6 +168,7 @@ export default class Auth extends RcModule {
     platform.addListener(platform.events.logoutError, onLogoutError);
     platform.addListener(platform.events.refreshSuccess, onRefreshSuccess);
     platform.addListener(platform.events.refreshError, onRefreshError);
+    client.addListener(client.events.requestError, onRequestError);
     this._unbindEvents = () => {
       platform.removeListener(platform.events.loginSuccess, onLoginSuccess);
       platform.removeListener(platform.events.loginError, onLoginError);
@@ -165,6 +176,7 @@ export default class Auth extends RcModule {
       platform.removeListener(platform.events.logoutError, onLogoutError);
       platform.removeListener(platform.events.refreshSuccess, onRefreshSuccess);
       platform.removeListener(platform.events.refreshError, onRefreshError);
+      client.removeListener(client.events.requestError, onRequestError);
     };
   }
   initialize() {
