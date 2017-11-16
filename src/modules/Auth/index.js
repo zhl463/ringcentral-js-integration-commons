@@ -223,7 +223,7 @@ export default class Auth extends RcModule {
   }
 
   get redirectUri() {
-    return this._redirectUri;
+    return url.resolve(location.href, this._redirectUri);
   }
 
   get proxyUri() {
@@ -408,7 +408,7 @@ export default class Auth extends RcModule {
             if (code) {
               await this.login({
                 code,
-                redirectUri: url.resolve(location.href, this.redirectUri),
+                redirectUri: this.redirectUri,
               });
               if (typeof onLogin === 'function') {
                 onLogin();
@@ -511,7 +511,7 @@ export default class Auth extends RcModule {
       });
       this._proxyFrame.contentWindow.postMessage({
         oAuthUri: `${this.getLoginUrl({
-          redirectUri: url.resolve(location.href, this.redirectUri),
+          redirectUri: this.redirectUri,
           brandId: this._brand.id,
           state: btoa(Date.now()),
           display: 'page',
