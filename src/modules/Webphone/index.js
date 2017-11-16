@@ -20,7 +20,6 @@ import {
   normalizeSession,
   isRing,
   isOnHold,
-  sendReceiveConfirm,
 } from './webphoneHelper';
 import getWebphoneReducer from './getWebphoneReducer';
 
@@ -389,7 +388,6 @@ export default class Webphone extends RcModule {
     this._webphone.userAgent.once('registrationFailed', onRegistrationFailed);
     this._webphone.userAgent.on('invite', (session) => {
       console.debug('UA invite');
-      sendReceiveConfirm(session);
       this._onInvite(session);
     });
   }

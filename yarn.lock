@@ -5708,9 +5708,9 @@ ringcentral-client@^1.0.0-rc1:
     form-data "^2.1.2"
     isomorphic-fetch "^2.2.1"
 
-ringcentral-web-phone@^0.4.3:
-  version "0.4.3"
-  resolved "https://registry.yarnpkg.com/ringcentral-web-phone/-/ringcentral-web-phone-0.4.3.tgz#13d4a137f1246b4fc4b2c68e03d66b77a749f37b"
+ringcentral-web-phone@^0.4.5:
+  version "0.4.5"
+  resolved "https://registry.yarnpkg.com/ringcentral-web-phone/-/ringcentral-web-phone-0.4.5.tgz#9c901cbbba8db03218b3b3ebc908f996aae21da6"
   dependencies:
     sip.js "^0.7.8"
 

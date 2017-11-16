@@ -50,11 +50,3 @@ export function isRing(session) {
 export function isOnHold(session) {
   return !!(session && session.callStatus === sessionStatus.onHold);
 }
-
-export async function sendReceiveConfirm(session) {
-  try {
-    await session.sendReceiveConfirm();
-  } catch (error) {
-    console.error(`failed to send receive confirmation via SIP MESSAGE due to ${error}`);
-  }
-}
