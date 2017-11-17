@@ -33,6 +33,11 @@ describe('Contacts :: getSearchFilterReducer', () => {
         searchFilter: 'test',
       })).to.equal('test');
     });
+    it('should return blank string on resetSuccess', () => {
+      expect(reducer('foo', {
+        type: actionTypes.resetSuccess,
+      })).to.equal('');
+    });
     it('should return original filter when searchFilter is undefined on updateFilter', () => {
       expect(reducer('foo', {
         type: actionTypes.updateFilter,
@@ -65,11 +70,16 @@ describe('Contacts :: getSourceFilterReducer', () => {
       expect(reducer(originalState, { type: 'foo' }))
         .to.equal(originalState);
     });
-    it('should return new filter on updateFilter', () => {
+    it('should return sourceFilter on updateFilter', () => {
       expect(reducer('foo', {
         type: actionTypes.updateFilter,
         sourceFilter: 'test',
       })).to.equal('test');
+    });
+    it('should return AllContactSourceName on resetSuccess', () => {
+      expect(reducer('foo', {
+        type: actionTypes.resetSuccess,
+      })).to.equal(AllContactSourceName);
     });
     it('should return original filter when sourceFilter is undefined on updateFilter', () => {
       expect(reducer('foo', {
@@ -102,6 +112,11 @@ describe('Contacts :: getPageNumberReducer', () => {
       const originalState = {};
       expect(reducer(originalState, { type: 'foo' }))
         .to.equal(originalState);
+    });
+    it('should return blank string on resetSuccess', () => {
+      expect(reducer(2, {
+        type: actionTypes.resetSuccess,
+      })).to.equal(1);
     });
     it('should return new pageNumber on updateFilter', () => {
       expect(reducer(1, {

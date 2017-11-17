@@ -10,6 +10,8 @@ export function getSearchFilterReducer(types) {
           return searchFilter;
         }
         return state;
+      case types.resetSuccess:
+        return '';
       default:
         return state;
     }
@@ -24,6 +26,8 @@ export function getSourceFilterReducer(types) {
           return sourceFilter;
         }
         return state;
+      case types.resetSuccess:
+        return AllContactSourceName;
       default:
         return state;
     }
@@ -38,6 +42,8 @@ export function getPageNumberReducer(types) {
           return pageNumber;
         }
         return state;
+      case types.resetSuccess:
+        return 1;
       default:
         return state;
     }

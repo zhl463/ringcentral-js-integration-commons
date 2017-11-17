@@ -153,6 +153,16 @@ import AudioSettings from '../AudioSettings';
         [addressBook, accountContacts],
       deps: ['AccountContacts', 'AddressBook']
     },
+    { provide: 'EnvironmentOptions',
+      useFactory: ({ clientOptions, config }) => ({
+        sdkConfig: {
+          clearCacheOnRefreshError: false,
+          ...config,
+          ...clientOptions,
+        },
+      }),
+      deps: [{ dep: 'Config' }, { dep: 'ClientOptions', optional: true }]
+    },
   ]
 })
 export default class RcPhone extends RcModule {
