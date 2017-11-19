@@ -123,6 +123,7 @@ import AudioSettings from '../AudioSettings';
       useFactory: ({ clientOptions, config }) =>
         new RingCentralClient(new SDK({
           clearCacheOnRefreshError: false,
+          cachePrefix: 'rc-sdk',
           ...config,
           ...clientOptions,
         })),
@@ -156,6 +157,7 @@ import AudioSettings from '../AudioSettings';
     { provide: 'EnvironmentOptions',
       useFactory: ({ clientOptions, config }) => ({
         sdkConfig: {
+          cachePrefix: 'rc-sdk',
           clearCacheOnRefreshError: false,
           ...config,
           ...clientOptions,

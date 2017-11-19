@@ -4,6 +4,8 @@ import fetchList from '../../lib/fetchList';
 import DataFetcher from '../../lib/DataFetcher';
 import removeUri from '../../lib/removeUri';
 
+import { getDataReducer } from './getReducer';
+
 function simplifyPhoneNumber(number) {
   return removeUri(number);
 }
@@ -31,6 +33,7 @@ export default class AccountPhoneNumber extends DataFetcher {
     super({
       name: 'accountPhoneNumber',
       client,
+      getDataReducer,
       fetchFunction: async () => (await fetchList(params => (
         client.account().phoneNumber().list(params)
       ))).map(simplifyPhoneNumber),

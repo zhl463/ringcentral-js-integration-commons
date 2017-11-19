@@ -36,7 +36,7 @@ export default class Contacts extends RcModule {
   constructor({
     auth,
     listPageSize = DefaultContactListPageSize,
-    contactSources,
+    contactSources = [],
     ...options,
   }) {
     super({
