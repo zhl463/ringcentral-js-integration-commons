@@ -59,6 +59,12 @@ export default class AudioSettings extends RcModule {
       });
     }
   }
+
+  initializeProxy() {
+    // TODO: remove following user media check
+    this.getUserMedia();
+  }
+
   _shouldInit() {
     return !!(
       this.pending &&
