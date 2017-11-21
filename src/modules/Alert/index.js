@@ -26,10 +26,17 @@ export default class Alert extends RcModule {
   }) {
     super({
       ...options,
-      actionTypes,
     });
     this._reducer = getAlertReducer(this.actionTypes);
     this._ttl = ttl;
+  }
+
+  get _actionTypes() {
+    return actionTypes;
+  }
+
+  _onStateChange() {
+    /* do nothing */
   }
 
   // this module has no dependency, and is always ready

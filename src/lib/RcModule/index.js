@@ -3,6 +3,9 @@ import { Injector, Library } from '../di';
 import { prefixEnum } from '../Enum';
 import moduleStatuses from '../../enums/moduleStatuses';
 import proxyStatuses from '../../enums/proxyStatuses';
+import once from '../once';
+import required from '../required';
+import deprecated from '../deprecated';
 
 /**
  * @function
@@ -46,7 +49,7 @@ export default class RcModule {
     getState = defaultGetState,
     getProxyState = defaultGetProxyState,
     prefix,
-    actionTypes,
+    actionTypes = this._actionTypes,
   } = {}) {
     if (typeof getState !== 'function') {
       throw new Error(
@@ -59,11 +62,16 @@ export default class RcModule {
       throw new Error('The `prefix` options property must be null, undefined, or a string');
     }
     this._prefix = prefix;
-    this._actionTypes = actionTypes && prefixEnum({ enumMap: actionTypes, prefix });
+    this._prefixedActionTypes = actionTypes && prefixEnum({ enumMap: actionTypes, prefix });
     this._reducer = defaultReducer;
     this._proxyReducer = defaultReducer;
     this._modulePath = 'root';
     this._selectors = {};
+  }
+
+  @required.warn
+  get _actionTypes() {
+    /* should be implemented by descendant */
   }
 
   /**
@@ -116,7 +124,7 @@ export default class RcModule {
    * @description The actionTypes used by the module
    */
   get actionTypes() {
-    return this._actionTypes;
+    return this._prefixedActionTypes;
   }
   /**
    * @property
@@ -134,7 +142,7 @@ export default class RcModule {
    * @description Add the desired module to the
    */
   addModule(name, module) {
-    if (this::Object.prototype.hasOwnProperty(name)) {
+    if (this:: Object.prototype.hasOwnProperty(name)) {
       throw new Error(`Property '${name}' already exists...`);
     }
     Object.defineProperty(this, name, {
@@ -157,8 +165,9 @@ export default class RcModule {
    *  This is intended to be called with this.addSelector(name, selectorFn) or
    *  this.addSelector(name, [...dependenciesFns], selectorFn);
    */
+  @deprecated
   addSelector(name, ...args) {
-    if (this._selectors::Object.prototype.hasOwnProperty(name)) {
+    if (this._selectors:: Object.prototype.hasOwnProperty(name)) {
       throw new Error(`Selector '${name}' already exists...`);
     }
     const selector = args.pop();
@@ -175,6 +184,7 @@ export default class RcModule {
    * @return {Function}
    * @description Returns the named selector function
    */
+  @deprecated
   getSelector(name) {
     return this._selectors[name];
   }
@@ -202,26 +212,33 @@ export default class RcModule {
     this._store = store;
     for (const subModule in this) {
       if (
-        this::Object.prototype.hasOwnProperty(subModule) &&
-        this[subModule] instanceof RcModule
+        this:: Object.prototype.hasOwnProperty(subModule) &&
+          this[subModule] instanceof RcModule
       ) {
         this[subModule]._setStore(store);
       }
     }
   }
+  initialize() {
+    this.store.subscribe(() => this._onStateChange());
+  }
+
+  @once
+  @required.warn
+  _onStateChange() {}
+
   _initModule() {
     if (
       !this._suppressInit &&
-      !this._initialized &&
-      typeof this.initialize === 'function'
+      !this._initialized
     ) {
       this._initialized = true;
       this.initialize();
     }
     for (const subModule in this) {
       if (
-        this::Object.prototype.hasOwnProperty(subModule) &&
-        this[subModule] instanceof RcModule
+        this:: Object.prototype.hasOwnProperty(subModule) &&
+          this[subModule] instanceof RcModule
       ) {
         this[subModule]._initModule();
       }

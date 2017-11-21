@@ -17,7 +17,7 @@ describe('ContactSearch Unit Test', () => {
       cache: getCacheReducer(actionTypes),
     }));
     contactSearch._store = store;
-    contactSearch._actionTypes = actionTypes;
+    contactSearch._prefixedActionTypes = actionTypes;
     contactSearch._minimalSearchLength = 3;
     [
       '_onStateChange',

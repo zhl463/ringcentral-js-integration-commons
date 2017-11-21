@@ -14,7 +14,7 @@ describe('DateTimeFormat Unit Test', () => {
     dateTimeFormat = sinon.createStubInstance(DateTimeFormat);
     store = createStore(getDateTimeFormatReducer(actionTypes));
     dateTimeFormat._store = store;
-    dateTimeFormat._actionTypes = actionTypes;
+    dateTimeFormat._prefixedActionTypes = actionTypes;
     [
       '_onStateChange',
       '_shouldInit',

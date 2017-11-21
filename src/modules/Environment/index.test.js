@@ -14,7 +14,7 @@ describe('Environment Unit Test', () => {
     environment = sinon.createStubInstance(Environment);
     store = createStore(getEnvironmentReducer(actionTypes));
     environment._store = store;
-    environment._actionTypes = actionTypes;
+    environment._prefixedActionTypes = actionTypes;
     ['_shouldInit', '_initClientService', '_onStateChange', 'setData'].forEach((key) => {
       environment[key].restore();
     });

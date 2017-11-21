@@ -290,4 +290,8 @@ export default class RcPhone extends RcModule {
       this.router.push('/calls');
     };
   }
+
+  get _actionTypes() {
+    return null;
+  }
 }

@@ -35,6 +35,14 @@ export default class Brand extends RcModule {
       code,
     }) => state;
   }
+  get _actionTypes() {
+    /* no action types */
+  }
+
+  _onStateChange() {
+    /* do nothing */
+  }
+
   get id() {
     return this.state.id;
   }

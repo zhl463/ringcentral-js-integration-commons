@@ -12,7 +12,7 @@ describe('CallHistory Unit Test', () => {
     callHistory = sinon.createStubInstance(CallHistory);
     store = createStore(getCallHistoryReducer(actionTypes));
     callHistory._store = store;
-    callHistory._actionTypes = actionTypes;
+    callHistory._prefixedActionTypes = actionTypes;
     [
       '_onStateChange',
       '_shouldInit',

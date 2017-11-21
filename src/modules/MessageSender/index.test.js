@@ -14,7 +14,7 @@ describe('MessageSender Unit Test', () => {
     messageSender = sinon.createStubInstance(MessageSender);
     store = createStore(getMessageSenderReducer(actionTypes));
     messageSender._store = store;
-    messageSender._actionTypes = actionTypes;
+    messageSender._prefixedActionTypes = actionTypes;
     [
       '_onStateChange',
       '_shouldInit',

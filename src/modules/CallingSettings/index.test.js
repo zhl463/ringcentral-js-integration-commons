@@ -14,7 +14,7 @@ describe('CallingSettings Unit Test', () => {
     callingSettings = sinon.createStubInstance(CallingSettings);
     store = createStore(getCallingSettingsReducer(actionTypes));
     callingSettings._store = store;
-    callingSettings._actionTypes = actionTypes;
+    callingSettings._prefixedActionTypes = actionTypes;
     [
       '_onStateChange',
       '_shouldInit',

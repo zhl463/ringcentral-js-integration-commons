@@ -29,6 +29,15 @@ export default class Softphone extends RcModule {
     this._brand = brand;
     this._extensionMode = extensionMode;
   }
+
+  get _actionTypes() {
+    /* no action types */
+  }
+
+  _onStateChange() {
+    /* do nothing */
+  }
+
   get protocol() {
     switch (this._brand.id) {
       case '3420': // ATT
@@ -64,11 +73,6 @@ export default class Softphone extends RcModule {
   // eslint-disable-next-line class-methods-use-this
   get status() {
     return moduleStatuses.ready;
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  get ready() {
-    return true;
   }
 
 }

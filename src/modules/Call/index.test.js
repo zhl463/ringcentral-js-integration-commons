@@ -16,7 +16,7 @@ describe('Call Unit Test', () => {
     call = sinon.createStubInstance(Call);
     store = createStore(getCallReducer(actionTypes));
     call._store = store;
-    call._actionTypes = actionTypes;
+    call._prefixedActionTypes = actionTypes;
     [
       '_onStateChange',
       '_shouldInit',

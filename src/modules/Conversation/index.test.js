@@ -13,7 +13,7 @@
 //     conversation = sinon.createStubInstance(Conversation);
 //     store = createStore(getConversationReducer(actionTypes));
 //     conversation._store = store;
-//     conversation._actionTypes = actionTypes;
+//     conversation._prefixedActionTypes = actionTypes;
 //     [
 //       '_onStateChange',
 //       '_shouldInit',

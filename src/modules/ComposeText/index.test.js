@@ -14,7 +14,7 @@ describe('ComposeText Unit Test', () => {
     composeText = sinon.createStubInstance(ComposeText);
     store = createStore(getComposeTextReducer(actionTypes));
     composeText._store = store;
-    composeText._actionTypes = actionTypes;
+    composeText._prefixedActionTypes = actionTypes;
     [
       '_onStateChange',
       '_shouldInit',

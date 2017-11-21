@@ -16,7 +16,7 @@ describe('AccountExtension Unit Test', () => {
     accountExtension = sinon.createStubInstance(AccountExtension);
     store = createStore(getDataReducer(actionTypes));
     accountExtension._store = store;
-    accountExtension._actionTypes = actionTypes;
+    accountExtension._prefixedActionTypes = actionTypes;
     [
       'isAvailableExtension',
       '_processExtension',

@@ -13,7 +13,7 @@ describe('NumberValidate Unit Test', () => {
     numberValidate = sinon.createStubInstance(NumberValidate);
     store = createStore(getNumberValidateReducer(actionTypes));
     numberValidate._store = store;
-    numberValidate._actionTypes = actionTypes;
+    numberValidate._prefixedActionTypes = actionTypes;
     [
       '_onStateChange',
       '_shouldInit',

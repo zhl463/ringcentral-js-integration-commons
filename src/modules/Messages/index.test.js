@@ -15,7 +15,7 @@ describe('Messages Unit Test', () => {
     messages = sinon.createStubInstance(Messages);
     store = createStore(getMessagesReducer(actionTypes));
     messages._store = store;
-    messages._actionTypes = actionTypes;
+    messages._prefixedActionTypes = actionTypes;
     [
       '_onStateChange',
       '_shouldInit',
