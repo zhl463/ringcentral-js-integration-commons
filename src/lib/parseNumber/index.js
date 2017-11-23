@@ -1,6 +1,6 @@
 import cleanNumber from '../cleanNumber';
 
-const invalidCharsRegExp = /[^\d*+#\-() ]/;
+const invalidCharsRegExp = /[^\d*+#\-(). ]/;
 
 export default function parseNumber(phoneNumber) {
   const cleaned = cleanNumber(`${phoneNumber}`);
