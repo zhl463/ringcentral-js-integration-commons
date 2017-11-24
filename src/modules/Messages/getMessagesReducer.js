@@ -1,6 +1,8 @@
 import { combineReducers } from 'redux';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
+import messageTypes from '../../enums/messageTypes';
+
 export function getCurrentPageReducer(types) {
   return (state = 0, { type, page = state }) => {
     switch (type) {
@@ -32,6 +34,19 @@ export function getSearchInputReducer(types) {
   };
 }
 
+export function getTypeFilterReducer(types) {
+  return (state = messageTypes.all, { type, typeFilter }) => {
+    switch (type) {
+      case types.updateTypeFilter:
+        return typeFilter;
+      case types.resetSuccess:
+        return messageTypes.all;
+      default:
+        return state;
+    }
+  };
+}
+
 export function getPerPageReducer(types, defaultPerPage = 20) {
   return (state = defaultPerPage, { type, perPage = defaultPerPage }) => {
     switch (type) {
@@ -51,5 +66,6 @@ export default function getMessagesReducer(types, defaultPerPage) {
     currentPage: getCurrentPageReducer(types),
     perPage: getPerPageReducer(types, defaultPerPage),
     searchInput: getSearchInputReducer(types),
+    typeFilter: getTypeFilterReducer(types),
   });
 }

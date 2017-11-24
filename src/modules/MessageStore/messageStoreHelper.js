@@ -5,7 +5,7 @@ import syncTypes from '../../enums/syncTypes';
 export function normalizeRecord(record) {
   return {
     ...record,
-    conversationId: (record.conversation && record.conversation.id) || record.id,
+    conversationId: `${(record.conversation && record.conversation.id) || record.id}`,
   };
 }
 

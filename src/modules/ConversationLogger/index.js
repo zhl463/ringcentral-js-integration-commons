@@ -245,7 +245,11 @@ export default class ConversationLogger extends LoggerBase {
       }, [])) || [];
   }
   getLastMatchedCorrespondentEntity(conversation) {
-    const lastRecord = Object.keys(this.conversationLogMap[conversation.conversationId])
+    const conversationLog = this.conversationLogMap[conversation.conversationId];
+    if (!conversationLog) {
+      return null;
+    }
+    const lastRecord = Object.keys(conversationLog)
       .map(date => (
         this.conversationLogMap[conversation.conversationId][date]
       )).sort(sortByDate).find(item => (

@@ -98,7 +98,7 @@ export default class MessageStore extends Pollable {
     }
 
     this.addSelector(
-      'unreadCounts',
+      'textUnreadCounts',
       () => this.allConversations,
       (conversations) => {
         let unreadCounts = 0;
@@ -109,6 +109,27 @@ export default class MessageStore extends Pollable {
         });
         return unreadCounts;
       }
+    );
+
+    this.addSelector(
+      'voiceUnreadCounts',
+      () => this.allConversations,
+      (conversations) => {
+        let unreadCounts = 0;
+        conversations.forEach((conversation) => {
+          if (messageHelper.messageIsVoicemail(conversation)) {
+            unreadCounts += conversation.unreadCounts;
+          }
+        });
+        return unreadCounts;
+      }
+    );
+
+    this.addSelector(
+      'unreadCounts',
+      () => this.voiceUnreadCounts,
+      () => this.textUnreadCounts,
+      (voiceUnreadCounts, textUnreadCounts) => (voiceUnreadCounts + textUnreadCounts),
     );
 
     this.addSelector(
@@ -135,6 +156,19 @@ export default class MessageStore extends Pollable {
       conversations =>
         conversations.filter(
           conversation => messageHelper.messageIsVoicemail(conversation)
+        )
+    );
+
+    this.addSelector(
+      'textAndVoicemailMessages',
+      () => this.allConversations,
+      conversations =>
+        conversations.filter(
+          conversation =>
+            (
+              messageHelper.messageIsTextMessage(conversation) ||
+              messageHelper.messageIsVoicemail(conversation)
+            )
         )
     );
   }
@@ -536,8 +570,12 @@ export default class MessageStore extends Pollable {
     return this._selectors.faxMessages();
   }
 
-  get conversations() {
+  get textConversations() {
     return this._selectors.textConversations();
+  }
+
+  get conversations() {
+    return this._selectors.textAndVoicemailMessages();
   }
 
   get conversationMap() {
@@ -562,6 +600,14 @@ export default class MessageStore extends Pollable {
 
   get unreadCounts() {
     return this._selectors.unreadCounts();
+  }
+
+  get textUnreadCounts() {
+    return this._selectors.textUnreadCounts();
+  }
+
+  get voiceUnreadCounts() {
+    return this._selectors.voiceUnreadCounts();
   }
 
   get messageStoreStatus() {

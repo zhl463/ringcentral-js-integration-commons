@@ -9,4 +9,5 @@ export default new Enum([
   'setPage',
   'setPerPage',
   'updateSearchInput',
+  'updateTypeFilter',
 ], 'messages');
