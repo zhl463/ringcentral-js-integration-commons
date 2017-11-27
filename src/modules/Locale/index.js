@@ -82,11 +82,8 @@ export default class Locale extends RcModule {
       type: this.actionTypes.proxyInit,
     });
     await checkIntl();
-    await this._setLocale(this.state.currentLocale);
-    this.store.dispatch({
-      type: this.actionTypes.syncProxyLocale,
-      locale: this.state.currentLocale,
-    });
+    await this._setLocale(this.currentLocale);
+    await this.setLocale(this.currentLocale);
     this.store.dispatch({
       type: this.actionTypes.proxyInitSuccess,
     });
