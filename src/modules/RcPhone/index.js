@@ -59,6 +59,7 @@ import RecentMessages from '../RecentMessages';
 import RecentCalls from '../RecentCalls';
 import Analytics from '../Analytics';
 import AudioSettings from '../AudioSettings';
+import Meeting from '../Meeting';
 
 @ModuleFactory({
   providers: [
@@ -116,6 +117,7 @@ import AudioSettings from '../AudioSettings';
     RecentMessages,
     RecentCalls,
     Analytics,
+    Meeting,
     { provide: 'ModuleOptions',
       useValue: { prefix: 'rc-phone' },
       spread: true },
