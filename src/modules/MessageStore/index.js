@@ -256,7 +256,7 @@ export default class MessageStore extends Pollable {
 
   _subscriptionHandler() {
     const accountExtesionEndPoint = /\/message-store$/;
-    const message = this._subscription.message;
+    const { message } = this._subscription;
     if (
       message &&
       message !== this._lastSubscriptionMessage &&
@@ -303,17 +303,19 @@ export default class MessageStore extends Pollable {
       syncToken,
       daySpan: this._daySpan,
     });
-    const response = await this._messageSyncApi(params);
-    const records = response.records;
+    const {
+      records,
+      syncInfo,
+    } = await this._messageSyncApi(params);
     recordsLength += records.length;
-    if (recordsLength > MAX_MSG_LENGTH || !response.syncInfo.olderRecordsExist) {
+    if (recordsLength > MAX_MSG_LENGTH || !syncInfo.olderRecordsExist) {
       return {
         records,
-        syncInfo: response.syncInfo
+        syncInfo,
       };
     }
     await sleep(1000);
-    const _dateTo = new Date(response.records[response.records.length - 1].creationTime);
+    const _dateTo = new Date(records[records.length - 1].creationTime);
     const lastResponse = await this._recursiveFSync({
       dateFrom,
       dateTo: _dateTo,
@@ -322,7 +324,7 @@ export default class MessageStore extends Pollable {
     });
     return {
       records: records.concat(lastResponse.records),
-      syncInfo: response.syncInfo
+      syncInfo,
     };
   }
   async _updateMessagesFromSync() {

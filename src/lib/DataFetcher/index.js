@@ -224,7 +224,7 @@ export default class DataFetcher extends Pollable {
     this.store.dispatch({
       type: this.actionTypes.fetch,
     });
-    const ownerId = this._auth.ownerId;
+    const { ownerId } = this._auth;
     try {
       const data = await this._fetchFunction();
       if (this._auth.ownerId === ownerId) {

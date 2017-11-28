@@ -96,9 +96,8 @@ export function filterNullFromConversations({
     if (!conversation) {
       return;
     }
-    const conversationId = conversation.conversationId;
     newConversations.push({ ...conversation });
-    conversationMap[conversationId].index = newConversations.length - 1;
+    conversationMap[conversation.conversationId].index = newConversations.length - 1;
   });
   return {
     conversations: newConversations,
@@ -106,8 +105,7 @@ export function filterNullFromConversations({
   };
 }
 
-export function findIndexOfConversations(newConversationMap, message) {
-  const conversationId = message.conversationId;
+export function findIndexOfConversations(newConversationMap, { conversationId }) {
   if (!conversationId) {
     return -1;
   }
@@ -166,7 +164,7 @@ export function pushRecordsToMessageData({
     }
   };
   const addMessageToConversationMap = (message, index) => {
-    const conversationId = message.conversationId;
+    const { conversationId } = message;
     const conversation = newConversationMap[conversationId] || { unreadMessages: {} };
     conversation.index = index;
     conversation.id = conversationId;

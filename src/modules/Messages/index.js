@@ -106,40 +106,40 @@ export default class Messages extends RcModule {
         loggingMap = {},
         conversationLogMapping = {},
       ) => (
-          conversations.map((message) => {
-            const {
-              self,
-              correspondents,
+        conversations.map((message) => {
+          const {
+            self,
+            correspondents,
           } = getNumbersFromMessage({ extensionNumber, message });
-            const selfNumber = self && (self.phoneNumber || self.extensionNumber);
-            const selfMatches = (selfNumber && contactMapping[selfNumber]) || [];
-            const correspondentMatches = correspondents.reduce((matches, contact) => {
-              const number = contact && (contact.phoneNumber || contact.extensionNumber);
-              return number && contactMapping[number] && contactMapping[number].length ?
-                matches.concat(contactMapping[number]) :
-                matches;
-            }, []);
-            const conversationLogId = this._conversationLogger ?
-              this._conversationLogger.getConversationLogId(message) :
-              null;
-            const isLogging = !!(conversationLogId && loggingMap[conversationLogId]);
-            const conversationMatches = conversationLogMapping[conversationLogId] || [];
-            return {
-              ...message,
-              self,
-              selfMatches,
-              correspondents,
-              correspondentMatches,
-              conversationLogId,
-              isLogging,
-              conversationMatches,
-              lastMatchedCorrespondentEntity: (
-                this._conversationLogger &&
+          const selfNumber = self && (self.phoneNumber || self.extensionNumber);
+          const selfMatches = (selfNumber && contactMapping[selfNumber]) || [];
+          const correspondentMatches = correspondents.reduce((matches, contact) => {
+            const number = contact && (contact.phoneNumber || contact.extensionNumber);
+            return number && contactMapping[number] && contactMapping[number].length ?
+              matches.concat(contactMapping[number]) :
+              matches;
+          }, []);
+          const conversationLogId = this._conversationLogger ?
+            this._conversationLogger.getConversationLogId(message) :
+            null;
+          const isLogging = !!(conversationLogId && loggingMap[conversationLogId]);
+          const conversationMatches = conversationLogMapping[conversationLogId] || [];
+          return {
+            ...message,
+            self,
+            selfMatches,
+            correspondents,
+            correspondentMatches,
+            conversationLogId,
+            isLogging,
+            conversationMatches,
+            lastMatchedCorrespondentEntity: (
+              this._conversationLogger &&
                 this._conversationLogger.getLastMatchedCorrespondentEntity(message)
-              ) || null,
-            };
-          })
-        ),
+            ) || null,
+          };
+        })
+      ),
     );
 
     this.addSelector('typeFilteredConversations',

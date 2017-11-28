@@ -1,5 +1,4 @@
 import url from 'url';
-import qs from 'qs';
 import RcModule from '../../lib/RcModule';
 import { Module } from '../../lib/di';
 import getAuthReducer from './getAuthReducer';
@@ -215,6 +214,7 @@ export default class Auth extends RcModule {
           this._tabManager.event.name === 'loginStatusChange' &&
           this._tabManager.event.args[0] !== loggedIn
         ) {
+          /* eslint { "prefer-destructuring": 0 } */
           loggedIn = this._tabManager.event.args[0];
           this.store.dispatch({
             type: this.actionTypes.tabSync,
@@ -235,7 +235,7 @@ export default class Auth extends RcModule {
   }
 
   get redirectUri() {
-    return url.resolve(location.href, this._redirectUri);
+    return url.resolve(window.location.href, this._redirectUri);
   }
 
   get proxyUri() {
@@ -286,7 +286,9 @@ export default class Auth extends RcModule {
    * @description Login either with username/password or with authorization code
    */
   @proxify
-  async login({ username, password, extension, remember, code, redirectUri }) {
+  async login({
+    username, password, extension, remember, code, redirectUri
+  }) {
     this.store.dispatch({
       type: this.actionTypes.login,
     });
@@ -307,7 +309,9 @@ export default class Auth extends RcModule {
    * @return {String}
    * @description get OAuth page url
    */
-  getLoginUrl({ redirectUri, state, brandId, display, prompt, force }) {
+  getLoginUrl({
+    redirectUri, state, brandId, display, prompt, force
+  }) {
     return `${this._client.service.platform().loginUrl({
       redirectUri,
       state,

@@ -65,5 +65,4 @@ export default class StorageBase extends RcModule {
   get ready() {
     return this.status === moduleStatuses.ready;
   }
-
 }

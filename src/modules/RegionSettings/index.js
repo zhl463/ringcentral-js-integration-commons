@@ -64,9 +64,10 @@ export default class RegionSettings extends RcModule {
       key: this._areaCodeKey,
       reducer: getAreaCodeReducer(this.actionTypes),
     });
+
+    this._processedPlans = null;
   }
   initialize() {
-    let plans;
     this.store.subscribe(async () => {
       if (
         this._storage.ready &&
@@ -80,7 +81,7 @@ export default class RegionSettings extends RcModule {
         if (!this._tabManager || this._tabManager.active) {
           await this.checkRegionSettings();
         }
-        plans = this._dialingPlan.plans;
+        this._processedPlans = this._dialingPlan.plans;
         this.store.dispatch({
           type: this.actionTypes.initSuccess,
         });
@@ -93,9 +94,9 @@ export default class RegionSettings extends RcModule {
         });
       } else if (
         this.ready &&
-        plans !== this._dialingPlan.plans
+        this._processedPlans !== this._dialingPlan.plans
       ) {
-        plans = this._dialingPlan.plans;
+        this._processedPlans = this._dialingPlan.plans;
         if (!this._tabManager || this._tabManager.active) {
           await this.checkRegionSettings();
         }

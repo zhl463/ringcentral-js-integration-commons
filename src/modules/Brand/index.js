@@ -25,7 +25,7 @@ export default class Brand extends RcModule {
     application,
     code,
     ...options
-   }) {
+  }) {
     super(options);
     this._reducer = (state = {
       id,

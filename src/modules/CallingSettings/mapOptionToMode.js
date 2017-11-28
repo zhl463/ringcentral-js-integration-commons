@@ -3,7 +3,6 @@ import callingModes from './callingModes';
 
 export default function mapOptionToMode(callWith) {
   switch (callWith) {
-
     case callingOptions.softphone:
       return callingModes.softphone;
 
@@ -15,6 +14,5 @@ export default function mapOptionToMode(callWith) {
       return callingModes.webphone;
     default:
       return callingModes.softphone;
-
   }
 }

@@ -105,7 +105,9 @@ export default class RecentMessages extends RcModule {
   }
 
   @proxify
-  async getMessages({ currentContact, sessionId = null, fromLocal = false, forceUpdate = false }) {
+  async getMessages({
+    currentContact, sessionId = null, fromLocal = false, forceUpdate = false
+  }) {
     // No need to calculate recent messages of the same contact repeatly
     if (!currentContact) {
       return;
@@ -134,7 +136,7 @@ export default class RecentMessages extends RcModule {
     });
   }
 
-  cleanUpMessages({contact, sessionId = null }) {
+  cleanUpMessages({ contact, sessionId = null }) {
     this.store.dispatch({
       type: this.actionTypes.loadReset,
       contact,
@@ -196,9 +198,8 @@ export default class RecentMessages extends RcModule {
    * @param {Date} dateFrom
    * @param {Number} length
    */
-  _getLocalRecentMessages(currentContact, messages, dateFrom, length) {
+  _getLocalRecentMessages({ phoneNumbers }, messages, dateFrom, length) {
     // Get all messages related to this contact
-    const phoneNumbers = currentContact.phoneNumbers;
     const recentMessages = [];
     let message;
     let matches;
@@ -233,7 +234,7 @@ export default class RecentMessages extends RcModule {
    * @return {Array}
    */
   _fetchRemoteRecentMessages(
-    currentContact,
+    { phoneNumbers },
     dateFrom,
     dateTo = (new Date()).toISOString(),
     length
@@ -244,7 +245,6 @@ export default class RecentMessages extends RcModule {
       messageType: ['SMS', 'Text', 'Pager'],
       perPage: length
     };
-    const phoneNumbers = currentContact.phoneNumbers;
     const recentMessagesPromise = phoneNumbers.reduce((acc, { phoneNumber }) => {
       if (phoneNumber) {
         const promise = this._fetchMessageList(

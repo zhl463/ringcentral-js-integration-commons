@@ -227,7 +227,9 @@ export default class AccountContacts extends RcModule {
         ctx.resolve(null);
         return;
       }
-      const { dndStatus, presenceStatus, telephonyStatus, userStatus } = response;
+      const {
+        dndStatus, presenceStatus, telephonyStatus, userStatus
+      } = response;
       const presenceId = ctx.contact.id;
       presenceMap[presenceId] = {
         dndStatus,

@@ -125,5 +125,4 @@ export default class Ringout extends RcModule {
   get ready() {
     return this.state.status === moduleStatuses.ready;
   }
-
 }

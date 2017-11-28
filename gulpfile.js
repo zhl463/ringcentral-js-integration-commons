@@ -14,7 +14,7 @@ import cp from 'child_process';
 import demoExtensionConfig from './demo-extension/webpack.config';
 
 const TIMEOUT = 30000;
-const argv = yargs.argv;
+const { argv } = yargs;
 
 function getTestSources() {
   const src = new Set();

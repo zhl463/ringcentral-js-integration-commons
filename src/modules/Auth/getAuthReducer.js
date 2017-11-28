@@ -40,7 +40,6 @@ export function getLoginStatusReducer(types) {
 export function getOwnerIdReducer(types) {
   return (state = null, { type, token, refreshTokenValid }) => {
     switch (type) {
-
       case types.loginSuccess:
       case types.refreshSuccess:
         return token.owner_id;
@@ -66,7 +65,6 @@ export function getOwnerIdReducer(types) {
 export function getEndpointIdReducer(types) {
   return (state = null, { type, token, refreshTokenValid }) => {
     switch (type) {
-
       case types.loginSuccess:
       case types.refreshSuccess:
         return token.endpoint_id;
@@ -92,7 +90,6 @@ export function getEndpointIdReducer(types) {
 export function getFreshLoginReducer(types) {
   return (state = null, { type, loggedIn }) => {
     switch (type) {
-
       case types.initSuccess:
       case types.tabSync:
         return loggedIn ? false : null;

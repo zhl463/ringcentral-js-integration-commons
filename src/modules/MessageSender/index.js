@@ -192,7 +192,9 @@ export default class MessageSender extends RcModule {
   }
 
   @proxify
-  async send({ fromNumber, toNumbers, text, replyOnMessageId }) {
+  async send({
+    fromNumber, toNumbers, text, replyOnMessageId
+  }) {
     if (!this._validateText(text)) {
       return null;
     }

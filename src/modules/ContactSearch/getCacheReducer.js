@@ -1,7 +1,9 @@
 import { combineReducers } from 'redux';
 
 export function getContactSearchReducer(types) {
-  return (state = {}, { type, entities, sourceName, searchString, ttl }) => {
+  return (state = {}, {
+    type, entities, sourceName, searchString, ttl
+  }) => {
     switch (type) {
       case types.save: {
         const data = {};

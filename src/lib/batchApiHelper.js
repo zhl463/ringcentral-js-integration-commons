@@ -1,15 +1,13 @@
 import ApiResponse from 'ringcentral/src/http/ApiResponse';
+import uuid from 'uuid';
 
-function uuid() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
-
-export async function batchPutApi({ platform, url, query, body }) {
-  const boundry = `Boundary_${uuid()}`;
+export async function batchPutApi({
+  platform,
+  url,
+  query,
+  body,
+}) {
+  const boundry = `Boundary_${uuid.v4()}`;
   const options = { headers: {} };
   options.headers[ApiResponse._contentType]
     = `${ApiResponse._multipartContentType}; boundary=${boundry}`;
@@ -24,8 +22,12 @@ export async function batchPutApi({ platform, url, query, body }) {
   return result.multipart();
 }
 
-export async function batchGetApi({ platform, url, query }) {
-  const boundry = `Boundary_${uuid()}`;
+export async function batchGetApi({
+  platform,
+  url,
+  query,
+}) {
+  const boundry = `Boundary_${uuid.v4()}`;
   const options = { headers: {} };
   options.headers[ApiResponse._contentType]
     = `${ApiResponse._multipartContentType}; boundary=${boundry}`;

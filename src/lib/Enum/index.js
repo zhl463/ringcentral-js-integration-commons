@@ -1,6 +1,6 @@
 import HashMap from '../HashMap';
 
-const hasOwnProperty = Object.prototype.hasOwnProperty;
+const { hasOwnProperty } = Object.prototype;
 /**
  * @class
  * @description helper class for creating redux action definition maps

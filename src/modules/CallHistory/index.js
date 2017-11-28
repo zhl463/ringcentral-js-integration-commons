@@ -359,12 +359,11 @@ export default class CallHistory extends RcModule {
         endedCalls
           .filter(call => !sessionIds[call.sessionId])
           .map(call => call.sessionId)
-        );
+      );
     },
   )
 
   get recentlyEndedCalls() {
     return this.state.endedCalls;
   }
-
 }

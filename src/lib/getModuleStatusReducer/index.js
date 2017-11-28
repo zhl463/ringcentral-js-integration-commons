@@ -3,7 +3,6 @@ import moduleStatuses from '../../enums/moduleStatuses';
 export default function getModuleStatusReducer(types) {
   return (state = moduleStatuses.pending, { type }) => {
     switch (type) {
-
       case types.init:
         return moduleStatuses.initializing;
 

@@ -27,10 +27,10 @@ export default async function concurrentExecute(
     return promise.all(promiseThunks.map(_promise => _promise.apply(this)));
   }
   const current = await concurrentExecute(
-     promiseThunks.slice(0, concurrency),
-     concurrency,
-     delay,
-     options
+    promiseThunks.slice(0, concurrency),
+    concurrency,
+    delay,
+    options
   );
   if (delay) {
     await delayFn(delay);

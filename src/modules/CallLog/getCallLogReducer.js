@@ -27,7 +27,9 @@ function processRecords(records = [], supplementRecords = []) {
 }
 
 export function getDataReducer(types) {
-  return (state = [], { type, records = [], supplementRecords = [], daySpan }) => {
+  return (state = [], {
+    type, records = [], supplementRecords = [], daySpan
+  }) => {
     switch (type) {
       case types.init: {
         const cutOffTime = getDateFrom(daySpan).getTime();

@@ -116,6 +116,7 @@ export default class Contacts extends RcModule {
         if (sourceFilter !== AllContactSourceName && !isBlank(sourceFilter)) {
           const source = this._contactSources.get(sourceFilter);
           if (source && source.sourceReady) {
+            /* eslint { "prefer-destructuring": 0 } */
             contacts = source.contacts;
           } else {
             contacts = [];

@@ -32,6 +32,7 @@ export default class Softphone extends RcModule {
 
   get _actionTypes() {
     /* no action types */
+    return null;
   }
 
   _onStateChange() {
@@ -74,5 +75,4 @@ export default class Softphone extends RcModule {
   get status() {
     return moduleStatuses.ready;
   }
-
 }

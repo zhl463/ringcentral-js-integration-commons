@@ -188,7 +188,7 @@ export default class DetailedPresence extends Presence {
     this.store.dispatch({
       type: this.actionTypes.fetch,
     });
-    const ownerId = this._auth.ownerId;
+    const { ownerId } = this._auth;
     try {
       const {
         activeCalls,
@@ -198,7 +198,7 @@ export default class DetailedPresence extends Presence {
         userStatus,
         message,
       } = (await this._client.service.platform()
-          .get(subscriptionFilters.detailedPresenceWithSip)).json();
+        .get(subscriptionFilters.detailedPresenceWithSip)).json();
       if (this._auth.ownerId === ownerId) {
         this.store.dispatch({
           type: this.actionTypes.fetchSuccess,

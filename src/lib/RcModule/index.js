@@ -72,6 +72,7 @@ export default class RcModule {
   @required.warn
   get _actionTypes() {
     /* should be implemented by descendant */
+    return null;
   }
 
   /**

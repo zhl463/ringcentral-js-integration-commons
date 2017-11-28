@@ -126,7 +126,7 @@ export default class Presence extends RcModule {
       type: this.actionTypes.fetch,
     });
     try {
-      const ownerId = this._auth.ownerId;
+      const { ownerId } = this._auth;
       const data = await this._client.account().extension().presence().get();
       if (ownerId === this._auth.ownerId) {
         this.store.dispatch({
@@ -155,7 +155,7 @@ export default class Presence extends RcModule {
   @proxify
   async _update(params) {
     try {
-      const ownerId = this._auth.ownerId;
+      const { ownerId } = this._auth;
       const platform = this._client.service.platform();
       const response = await platform.put(
         '/account/~/extension/~/presence',

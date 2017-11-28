@@ -122,14 +122,12 @@ export default class ComposeText extends RcModule {
   }
 
   _initSenderNumber() {
-    let defaultPhoneNumber = null;
     const cachedPhoneNumber = this.cache && this.cache.senderNumber;
     if (cachedPhoneNumber) {
-      defaultPhoneNumber = cachedPhoneNumber;
+      this.updateSenderNumber(cachedPhoneNumber);
     } else {
-      defaultPhoneNumber = this._messageSender.senderNumbersList[0];
+      this.updateSenderNumber(this._messageSender.senderNumbersList[0]);
     }
-    this.updateSenderNumber(defaultPhoneNumber);
   }
 
   _handleRecipient() {
@@ -176,7 +174,7 @@ export default class ComposeText extends RcModule {
     const text = this.messageText;
     const fromNumber = this.senderNumber;
     const toNumbers = this.toNumbers.map(number => number.phoneNumber);
-    const typingToNumber = this.typingToNumber;
+    const { typingToNumber } = this;
     if (!isBlank(typingToNumber)) {
       if (this._validatePhoneNumber(typingToNumber)) {
         toNumbers.push(typingToNumber);

@@ -250,8 +250,8 @@ export default class CallingSettings extends RcModule {
       });
       this._alert.warning({
         message: this._brand.id === '1210' ?
-              callingSettingsMessages.firstLogin :
-              callingSettingsMessages.firstLoginOther,
+          callingSettingsMessages.firstLogin :
+          callingSettingsMessages.firstLoginOther,
       });
       this._warningEmergencyCallingNotAvailable();
       if (typeof this._onFirstLogin === 'function') {
@@ -323,9 +323,9 @@ export default class CallingSettings extends RcModule {
   }
   _hasWebphonePermissionRemoved() {
     return (!(
-        this._webphoneEnabled &&
+      this._webphoneEnabled &&
         this._webphone
-      ) &&
+    ) &&
       this.callWith === callingOptions.browser);
   }
   _hasPermissionChanged() {

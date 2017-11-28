@@ -119,7 +119,9 @@ export default class ContactSearch extends RcModule {
     });
   }
 
-  addSearchSource({ sourceName, searchFn, readyCheckFn, formatFn }) {
+  addSearchSource({
+    sourceName, searchFn, readyCheckFn, formatFn
+  }) {
     if (!sourceName) {
       throw new Error('ContactSearch: "sourceName" is required.');
     }

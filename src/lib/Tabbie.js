@@ -104,7 +104,7 @@ export default class Tabbie {
     });
   }
   _getHeartBeatKeys() {
-    const length = localStorage.length;
+    const { length } = localStorage;
     const keys = new Set();
     for (let i = 0; i < length; i += 1) {
       const key = localStorage.key(i);
@@ -164,6 +164,5 @@ export default class Tabbie {
       localStorage.removeItem(key);
     }
   }
-
 }
 emitter(Tabbie.prototype);
