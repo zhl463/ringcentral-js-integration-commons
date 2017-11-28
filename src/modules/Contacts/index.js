@@ -294,10 +294,10 @@ export default class Contacts extends RcModule {
   }
 
   @proxify
-  async getPresence(contact) {
+  async getPresence(contact, useCache = true) {
     const source = this._contactSources.get(contact && contact.type);
     if (source && source.getPresence) {
-      const result = await source.getPresence(contact);
+      const result = await source.getPresence(contact, useCache);
       return result;
     }
     return null;
