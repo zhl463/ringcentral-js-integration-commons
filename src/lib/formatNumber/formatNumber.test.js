@@ -142,4 +142,14 @@ describe('formatNumber', () => {
       countryCode: 'GB'
     })[0] !== '+').to.be.true;
   });
+  it ('should format to international format if options.international is set to true', () => {
+    expect(formatNumber({
+      phoneNumber: '+1-202-555-0139',
+      countryCode: 'US',
+      international: true,
+    })).to.equal(formatNumber({
+      phoneNumber: '+1-202-555-0139',
+      countryCode: 'GB',
+    }));
+  });
 });
