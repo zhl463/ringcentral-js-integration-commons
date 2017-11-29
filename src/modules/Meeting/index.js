@@ -233,6 +233,7 @@ export default class Meeting extends RcModule {
       audioOptions,
       password,
       schedule,
+      ...rest,
     } = meeting;
     const formatted = {
       topic,
@@ -241,6 +242,7 @@ export default class Meeting extends RcModule {
       startHostVideo,
       startParticipantsVideo,
       audioOptions,
+      ...rest,
     };
     if (password) {
       formatted.password = password;
