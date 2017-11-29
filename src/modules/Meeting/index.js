@@ -195,7 +195,7 @@ export default class Meeting extends RcModule {
       });
       // Reload meeting info
       this._initMeeting();
-      // Nofity user the meeting has been scheduled
+      // Notify user the meeting has been scheduled
       setTimeout(() => {
         this._alert.info({
           message: meetingStatus.scheduledSuccess
@@ -220,7 +220,7 @@ export default class Meeting extends RcModule {
   }
 
   /**
-   * Format meeting infomation.
+   * Format meeting information.
    * @param {Object} meeting
    */
   _format(meeting) {
@@ -233,7 +233,6 @@ export default class Meeting extends RcModule {
       audioOptions,
       password,
       schedule,
-      ...rest,
     } = meeting;
     const formatted = {
       topic,
@@ -242,7 +241,6 @@ export default class Meeting extends RcModule {
       startHostVideo,
       startParticipantsVideo,
       audioOptions,
-      ...rest,
     };
     if (password) {
       formatted.password = password;
@@ -255,7 +253,7 @@ export default class Meeting extends RcModule {
       };
       if (schedule.startTime) {
         // Format selected startTime to utc standard time
-        // Timezone infomation is not included here
+        // Timezone information is not included here
         _schedule.startTime = moment.utc(schedule.startTime).format();
       }
       formatted.schedule = _schedule;
@@ -264,7 +262,7 @@ export default class Meeting extends RcModule {
   }
 
   /**
-   * Validate meeting infomation format.
+   * Validate meeting information format.
    * @param {Object} meeting
    * @throws
    */
