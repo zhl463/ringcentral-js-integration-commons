@@ -1,50 +1,22 @@
 import formatMessage from 'format-message';
-import RcModule from '../../lib/RcModule';
-import proxify from '../../lib/proxy/proxify';
-import { Module } from '../../lib/di';
-
+import { combineReducers } from 'redux';
 import I18n, {
   DEFAULT_LOCALE,
   PSEUDO_LOCALE,
-} from '../../lib/I18n';
-import actionTypes from './actionTypes';
-import getLocaleReducer from './getLocaleReducer';
-import getProxyReducer from './getProxyReducer';
-
-/* eslint-disable global-require */
-
-
-/**
- *  @function
- *  @description Check if the current environement requires the Intl polyfill.
- *  @return {Promise}
- */
-function checkIntl() {
-  return new Promise((resolve) => {
-    if (!global.Intl) {
-      if (process.browser) {
-        require.ensure([
-          'intl',
-          'intl/locale-data/jsonp/en',
-          'intl/locale-data/jsonp/de',
-          'intl/locale-data/jsonp/fr',
-        ], (require) => {
-          require('intl');
-          require('intl/locale-data/jsonp/en');
-          require('intl/locale-data/jsonp/de');
-          require('intl/locale-data/jsonp/fr');
-
-          resolve();
-        }, 'intl');
-      } else {
-        require('intl');
-        resolve();
-      }
-    } else {
-      resolve();
-    }
-  });
-}
+} from 'locale-loader/lib/I18n';
+import RcModule from '../../lib/RcModule';
+import proxify from '../../lib/proxy/proxify';
+import { Module } from '../../lib/di';
+import {
+  getCurrentLocaleReducer,
+  getProxyLocaleReducer,
+} from './reducers';
+import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
+import getProxyStatusReducer from '../../lib/getProxyStatusReducer';
+import detectBrowserLocale from '../../lib/detectBrowserLocale';
+import Enum from '../../lib/Enum';
+import moduleActionTypes from '../../enums/moduleActionTypes';
+import proxyActionTypes from '../../enums/proxyActionTypes';
 
 /**
  * @class
@@ -61,34 +33,75 @@ export default class Locale extends RcModule {
    */
   constructor({
     defaultLocale = DEFAULT_LOCALE,
+    detectBrowser = true,
+    polling = false,
+    pollingInterval = 2000,
     ...options
   } = {}) {
     super({
       ...options,
-      actionTypes,
     });
-    this._reducer = getLocaleReducer({ defaultLocale, types: this.actionTypes });
-    this._proxyReducer = getProxyReducer({ defaultLocale, types: this.actionTypes });
+    this._defaultLocale = defaultLocale;
+    this._detectBrowser = detectBrowser;
+    this._polling = polling;
+    this._pollingInterval = pollingInterval;
   }
+
+  get _actionTypes() {
+    return new Enum([
+      ...Object.keys(moduleActionTypes),
+      ...Object.keys(proxyActionTypes),
+      'setLocale',
+      'setLocaleSuccess',
+      'setLocaleError',
+      'syncProxyLocale',
+    ], 'locale');
+  }
+
+  get reducer() {
+    return combineReducers({
+      status: getModuleStatusReducer(this.actionTypes),
+      currentLocale: getCurrentLocaleReducer(this.actionTypes),
+    });
+  }
+
+  get proxyReducer() {
+    return combineReducers({
+      status: getProxyStatusReducer(this.actionTypes),
+      proxyLocale: getProxyLocaleReducer(this.actionTypes),
+    });
+  }
+
   async initialize() {
-    await checkIntl();
-    await this.setLocale(this.currentLocale);
+    await this.setLocale(
+      this._detectBrowser ?
+        this.browserLocale :
+        this._defaultLocale
+    );
     this.store.dispatch({
       type: this.actionTypes.initSuccess,
     });
+    if (this._polling) {
+      this._syncBrowserLocale();
+    }
   }
+  async _syncBrowserLocale() {
+    if (this.browserLocale !== this.currentLocale) {
+      await this.setLocale(this.browserLocale);
+    }
+    setTimeout(() => this._syncBrowserLocale(), this._pollingInterval);
+  }
+
   async initializeProxy() {
     this.store.dispatch({
       type: this.actionTypes.proxyInit,
     });
-    await checkIntl();
     await this._setLocale(this.currentLocale);
-    await this.setLocale(this.currentLocale);
     this.store.dispatch({
       type: this.actionTypes.proxyInitSuccess,
     });
     this.store.subscribe(async () => {
-      if (this.state.currentLocale !== this.currentLocale) {
+      if (this.state.currentLocale !== this.proxyState.proxyLocale) {
         await this._setLocale(this.state.currentLocale);
         this.store.dispatch({
           type: this.actionTypes.syncProxyLocale,
@@ -102,7 +115,13 @@ export default class Locale extends RcModule {
    * @property {String} currentLocale
    */
   get currentLocale() {
-    return (this.proxyState && this.proxyState.currentLocale) || this.state.currentLocale;
+    return (this.proxyState && this.proxyState.proxyLocale) ||
+      this.state.currentLocale ||
+      this._defaultLocale;
+  }
+
+  get browserLocale() {
+    return detectBrowserLocale(this._defaultLocale);
   }
 
   get status() {
@@ -130,10 +149,21 @@ export default class Locale extends RcModule {
    */
   @proxify
   async setLocale(locale) {
-    this._setLocale(locale);
     this.store.dispatch({
       type: this.actionTypes.setLocale,
       locale,
     });
+    try {
+      await this._setLocale(locale);
+      this.store.dispatch({
+        type: this.actionTypes.setLocaleSuccess,
+        locale,
+      });
+    } catch (error) {
+      this.store.dispatch({
+        type: this.actionTypes.setLocaleError,
+        error,
+      });
+    }
   }
 }

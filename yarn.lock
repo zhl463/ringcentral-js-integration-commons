@@ -3655,10 +3655,6 @@ interpret@^1.0.0:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/interpret/-/interpret-1.0.3.tgz#cbc35c62eeee73f19ab7b10a801511401afc0f90"
 
-intl@^1.2.5:
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/intl/-/intl-1.2.5.tgz#82244a2190c4e419f8371f5aa34daa3420e2abde"
-
 invariant@^2.0.0, invariant@^2.2.0:
   version "2.2.2"
   resolved "https://registry.yarnpkg.com/invariant/-/invariant-2.2.2.tgz#9e1f56ac0acdb6bf303306f338be3b204ae60360"
@@ -4243,9 +4239,9 @@ loader-utils@^1.0.2:
     emojis-list "^2.0.0"
     json5 "^0.5.0"
 
-locale-loader@^1.4.3:
-  version "1.4.3"
-  resolved "https://registry.yarnpkg.com/locale-loader/-/locale-loader-1.4.3.tgz#fea3d050b09d94d11d2818de6ba37e8ab5232fc9"
+locale-loader@^1.4.5:
+  version "1.4.5"
+  resolved "https://registry.yarnpkg.com/locale-loader/-/locale-loader-1.4.5.tgz#a3ae390fa14e24dbc36a1ce9b3f6501a192081fc"
   dependencies:
     babylon "^6.16.1"
     dedent "^0.7.0"
