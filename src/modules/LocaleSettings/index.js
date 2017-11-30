@@ -20,13 +20,14 @@ import {
  * @description Locale managing module
  */
 @Module({
+  name: 'LocaleSettings',
   deps: [
     'GlobalStorage',
     'Locale',
     { dep: 'LocaleSettingsOptions', optional: true }
   ]
 })
-export default class Locale extends RcModule {
+export default class LocaleSettings extends RcModule {
   /**
    * @constructor
    * @param {Object} params - params object
