@@ -10,6 +10,7 @@ import { Module } from '../../lib/di';
 import {
   getCurrentLocaleReducer,
   getProxyLocaleReducer,
+  getToggleDebugMode
 } from './reducers';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 import getProxyStatusReducer from '../../lib/getProxyStatusReducer';
@@ -55,6 +56,7 @@ export default class Locale extends RcModule {
       'setLocaleSuccess',
       'setLocaleError',
       'syncProxyLocale',
+      'toggleDebugMode',
     ], 'locale');
   }
 
@@ -62,6 +64,7 @@ export default class Locale extends RcModule {
     return combineReducers({
       status: getModuleStatusReducer(this.actionTypes),
       currentLocale: getCurrentLocaleReducer(this.actionTypes),
+      debugMode: getToggleDebugMode(this.actionTypes),
     });
   }
 
@@ -86,7 +89,7 @@ export default class Locale extends RcModule {
     }
   }
   async _syncBrowserLocale() {
-    if (this.browserLocale !== this.currentLocale) {
+    if (!this.debugMode && this.browserLocale !== this.currentLocale) {
       await this.setLocale(this.browserLocale);
     }
     setTimeout(() => this._syncBrowserLocale(), this._pollingInterval);
@@ -130,6 +133,21 @@ export default class Locale extends RcModule {
 
   get proxyStatus() {
     return this.proxyState.status;
+  }
+
+  get debugMode() {
+    return this.state.debugMode;
+  }
+
+  @proxify
+  async toggleDebugMode() {
+    this.store.dispatch({
+      type: this.actionTypes.toggleDebugMode,
+      debugMode: this.debugMode,
+    });
+    if (this.debugMode) {
+      this.setLocale(PSEUDO_LOCALE);
+    }
   }
 
   async _setLocale(locale) {
