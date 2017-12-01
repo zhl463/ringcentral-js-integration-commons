@@ -361,4 +361,8 @@ export default class Messages extends RcModule {
   get filteredConversations() {
     return this._selectors.filteredConversations();
   }
+
+  get uniqueNumbers() {
+    return this._selectors.uniqueNumbers();
+  }
 }
