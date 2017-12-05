@@ -325,8 +325,6 @@ export default class MessageSender extends RcModule {
   }
 
   get senderNumbersList() {
-    return this._extensionPhoneNumber.smsSenderNumbers.map(
-      number => number.phoneNumber
-    );
+    return this._extensionPhoneNumber.smsSenderNumbers;
   }
 }

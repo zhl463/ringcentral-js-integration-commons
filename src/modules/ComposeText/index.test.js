@@ -300,7 +300,7 @@ describe('ComposeText Unit Test', () => {
   describe('_initSenderNumber', () => {
     it('Should return call updateSenderNumber with user\'s first senderNumber', () => {
       composeText._messageSender = {
-        senderNumbersList: ['+1234567890']
+        senderNumbersList: [{ phoneNumber: '+1234567890'}]
       };
       sinon.stub(composeText, 'cache', { get: () => ({}) });
       sinon.stub(composeText, 'updateSenderNumber');
