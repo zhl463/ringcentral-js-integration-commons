@@ -183,7 +183,7 @@ export default class Call extends RcModule {
   @proxify
   async call({ phoneNumber, recipient }) {
     if (this.isIdle) {
-      const toNumber = recipient && recipient.phoneNumber || phoneNumber;
+      const toNumber = recipient && (recipient.phoneNumber || recipient.extension) || phoneNumber;
       if (!toNumber || `${toNumber}`.trim().length === 0) {
         this._alert.warning({
           message: callErrors.noToNumber,
@@ -228,6 +228,7 @@ export default class Call extends RcModule {
           this.store.dispatch({
             type: this.actionTypes.connectError
           });
+          throw error;
         }
       }
     }
