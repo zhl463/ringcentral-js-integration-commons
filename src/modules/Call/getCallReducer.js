@@ -33,7 +33,7 @@ export function getToNumberEntitiesReducer(types) {
 }
 
 export function getLastPhoneNumberReducer(types) {
-  return (state = null, { type, phoneNumber }) => {
+  return (state = null, { type, phoneNumber = null }) => {
     switch (type) {
       case types.connect:
         return phoneNumber;
@@ -43,7 +43,7 @@ export function getLastPhoneNumberReducer(types) {
   };
 }
 export function getLastRecipientReducer(types) {
-  return (state = null, { type, recipient }) => {
+  return (state = null, { type, recipient = null }) => {
     switch (type) {
       case types.connect:
         return recipient;
