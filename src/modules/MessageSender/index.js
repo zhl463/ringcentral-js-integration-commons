@@ -132,7 +132,7 @@ export default class MessageSender extends RcModule {
     this.store.dispatch({ type: this.actionTypes.validate });
     if (validateResult) {
       const isMySenderNumber = this.senderNumbersList.find(number => (
-        number === senderNumber
+        number.phoneNumber === senderNumber
       ));
       if (!isMySenderNumber) {
         validateResult = false;
