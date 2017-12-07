@@ -74,8 +74,10 @@ export function prepareNewMessagesData({
     newConversations.push({ ...conversation });
   });
   messages.forEach((message) => {
-    newMessages.push({ ...message });
-    messageMap[message.id] = newMessages.length - 1;
+    if (message.availability !== 'Purged') {
+      newMessages.push({ ...message });
+      messageMap[message.id] = newMessages.length - 1;
+    }
   });
   return {
     newConversations,

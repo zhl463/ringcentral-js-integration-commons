@@ -10,6 +10,7 @@ import * as messageStoreHelper from './messageStoreHelper';
 import actionTypes from './actionTypes';
 import getMessageStoreReducer from './getMessageStoreReducer';
 import getDataReducer from './getDataReducer';
+import messageStoreErrors from './messageStoreErrors';
 import sleep from '../../lib/sleep';
 import proxify from '../../lib/proxy/proxify';
 
@@ -456,6 +457,13 @@ export default class MessageStore extends Pollable {
     return updateRequest;
   }
 
+  async _deleteMessageApi(messageId) {
+    await this._client.account()
+      .extension()
+      .messageStore(messageId)
+      .delete();
+  }
+
   async _batchUpdateMessagesApi(messageIds, body) {
     const ids = decodeURIComponent(messageIds.join(','));
     const platform = this._client.service.platform();
@@ -514,6 +522,23 @@ export default class MessageStore extends Pollable {
       console.error(error);
     }
     return null;
+  }
+
+  @proxify
+  async deleteMessage(messageId) {
+    try {
+      await this._deleteMessageApi(messageId);
+      this.store.dispatch({
+        type: this.actionTypes.removeMessage,
+        conversationId: messageId,
+        messageId,
+      });
+    } catch (error) {
+      console.error(error);
+      this._alert.info({
+        message: messageStoreErrors.deleteFailed,
+      });
+    }
   }
 
   searchMessagesText(searchText) {

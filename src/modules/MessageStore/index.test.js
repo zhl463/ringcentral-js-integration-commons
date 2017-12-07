@@ -40,6 +40,8 @@ describe('MessageStore Unit Test', () => {
       'searchMessagesText',
       'updateConversationRecipientList',
       'pushMessage',
+      'deleteMessage',
+      '_deleteMessageApi',
     ].forEach((key) => {
       messageStore[key].restore();
     });
@@ -629,6 +631,14 @@ describe('MessageStore Unit Test', () => {
       sinon.stub(messageStore, '_updateMessagesApi').callsFake(() => []);
       await messageStore.readMessages('123456');
       sinon.assert.notCalled(messageStore._updateMessagesApi);
+    });
+  });
+
+  describe('deleteMessage', () => {
+    it('should call _deleteMessagesApi once', async () => {
+      sinon.stub(messageStore, '_deleteMessageApi').callsFake(() => {});
+      await messageStore.deleteMessage('123456');
+      sinon.assert.calledWith(messageStore._deleteMessageApi, '123456');
     });
   });
 

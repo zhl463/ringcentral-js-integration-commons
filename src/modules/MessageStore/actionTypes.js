@@ -10,4 +10,5 @@ export default new Enum([
   'updateMessages',
   'updateConversationRecipients',
   'cleanUp',
+  'removeMessage',
 ], 'messageStore');
