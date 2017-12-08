@@ -1,8 +1,9 @@
+import uuid from 'uuid';
 import RcModule from '../../lib/RcModule';
 import { Module } from '../../lib/di';
 import loginStatus from '../../modules/Auth/loginStatus';
 import proxify from '../../lib/proxy/proxify';
-
+import debounce from '../../lib/debounce';
 import actionTypes from './actionTypes';
 import getContactSearchReducer from './getContactSearchReducer';
 import getCacheReducer from './getCacheReducer';
@@ -148,6 +149,8 @@ export default class ContactSearch extends RcModule {
     this._searchSourcesCheck.set(sourceName, readyCheckFn);
   }
 
+  debouncedSearch = debounce(this.search, 800, true)
+
   @proxify
   async search({ searchString }) {
     if (!this.ready || !searchString || (searchString.length < this._minimalSearchLength)) {
@@ -181,6 +184,8 @@ export default class ContactSearch extends RcModule {
   // TODO Need to refactor, remove cache, and update data in real time.
   @proxify
   async _searchSource({ searchOnSources, sourceName, searchString }) {
+    const searchId = uuid.v4();
+    this._searchId = searchId;
     this.store.dispatch({
       type: this.actionTypes.search,
     });
@@ -195,8 +200,10 @@ export default class ContactSearch extends RcModule {
         searchString,
       });
       entities = this._searchSourcesFormat.get(sourceName)(entities);
-      this._loadSearching({ searchOnSources, searchString, entities });
       this._saveSearching({ sourceName, searchString, entities });
+      if (this._searchId === searchId) {
+        this._loadSearching({ searchOnSources, searchString, entities });
+      }
     } catch (error) {
       this._onSearchError();
     }
