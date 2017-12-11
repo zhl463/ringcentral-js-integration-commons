@@ -115,3 +115,25 @@ export function filterContacts(contacts, searchFilter) {
     return false;
   });
 }
+
+export function getMatchContacts({ contacts, phoneNumber, entityType }) {
+  const result = [];
+  const normalizedNumber = normalizeNumber({ phoneNumber });
+  contacts.forEach((contact) => {
+    const found = contact.phoneNumbers && contact.phoneNumbers.find(
+      number => number.phoneNumber === normalizedNumber
+    );
+    if (!found) {
+      return;
+    }
+    const matchedContact = {
+      ...contact,
+      phoneNumbers: [
+        ...contact.phoneNumbers
+      ],
+      entityType,
+    };
+    result.push(matchedContact);
+  });
+  return result;
+}

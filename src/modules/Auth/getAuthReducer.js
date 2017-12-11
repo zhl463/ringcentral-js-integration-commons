@@ -37,50 +37,40 @@ export function getLoginStatusReducer(types) {
   };
 }
 
-export function getOwnerIdReducer(types) {
-  return (state = null, { type, token, refreshTokenValid }) => {
+export function getTokenReducer(types) {
+  return (state = {}, { type, token, refreshTokenValid }) => {
     switch (type) {
       case types.loginSuccess:
       case types.refreshSuccess:
-        return token.owner_id;
-
+        return {
+          ownerId: token.owner_id,
+          endpointId: token.endpoint_id,
+          accessToken: token.access_token,
+          expireTime: token.expire_time,
+          expiresIn: token.expires_in,
+        };
       case types.loginError:
       case types.logoutSuccess:
       case types.logoutError:
-        return null;
+        return {};
 
       case types.refreshError:
-        return refreshTokenValid ? state : null;
-
+        if (refreshTokenValid) {
+          return state;
+        }
+        return {};
       case types.initSuccess:
       case types.tabSync:
-        return (token && token.owner_id) || null;
-
-      default:
-        return state;
-    }
-  };
-}
-
-export function getEndpointIdReducer(types) {
-  return (state = null, { type, token, refreshTokenValid }) => {
-    switch (type) {
-      case types.loginSuccess:
-      case types.refreshSuccess:
-        return token.endpoint_id;
-
-      case types.loginError:
-      case types.logoutSuccess:
-      case types.logoutError:
-        return null;
-
-      case types.refreshError:
-        return refreshTokenValid ? state : null;
-
-      case types.initSuccess:
-      case types.tabSync:
-        return (token && token.endpoint_id) || null;
-
+        if (token) {
+          return {
+            ownerId: token.owner_id,
+            endpointId: token.endpoint_id,
+            accessToken: token.access_token,
+            expireTime: token.expire_time,
+            expiresIn: token.expires_in,
+          };
+        }
+        return {};
       default:
         return state;
     }
@@ -142,8 +132,7 @@ export default function getAuthReducer(types) {
     status: getModuleStatusReducer(types),
     loginStatus: getLoginStatusReducer(types),
     freshLogin: getFreshLoginReducer(types),
-    ownerId: getOwnerIdReducer(types),
-    endpointId: getEndpointIdReducer(types),
+    token: getTokenReducer(types),
     proxyLoaded: getProxyLoadedReducer(types),
     proxyRetryCount: getProxyRetryCountReducer(types),
   });

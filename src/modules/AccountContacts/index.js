@@ -2,7 +2,7 @@ import RcModule from '../../lib/RcModule';
 import { Module } from '../../lib/di';
 import isBlank from '../../lib/isBlank';
 import ensureExist from '../../lib/ensureExist';
-import { addPhoneToContact } from '../../lib/contactHelper';
+import { addPhoneToContact, getMatchContacts } from '../../lib/contactHelper';
 import { batchGetApi } from '../../lib/batchApiHelper';
 import proxify from '../../lib/proxy/proxify';
 
@@ -215,6 +215,15 @@ export default class AccountContacts extends RcModule {
           this._getPresenceContexts = null;
         }, 1000);
       }
+    });
+  }
+
+  // interface of contact source
+  matchPhoneNumber(phoneNumber) {
+    return getMatchContacts({
+      contacts: this.contacts,
+      phoneNumber,
+      entityType: 'rcContact',
     });
   }
 

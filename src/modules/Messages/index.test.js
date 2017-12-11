@@ -63,6 +63,7 @@ describe('Messages Unit Test', () => {
   describe('_shouldInit', () => {
     runBooleanTest(
       (
+        authLoggedIn,
         messageStoreReady,
         extensionInfoReady,
         hasContactMatcher,
@@ -71,7 +72,8 @@ describe('Messages Unit Test', () => {
         conversationLoggerReady,
         pending,
       ) => {
-        const result = (
+        const result = !!(
+          authLoggedIn &&
           messageStoreReady &&
           extensionInfoReady &&
           (!hasContactMatcher || contactMatcherReady) &&
@@ -80,6 +82,7 @@ describe('Messages Unit Test', () => {
         );
         it(
           `should return ${result} when:
+          auth.loggedIn is ${authLoggedIn} and
           messageStore.ready is ${messageStoreReady} and
           extensionInfo.ready is ${extensionInfoReady} and
           contactMatcher is ${hasContactMatcher ? '' : ' not '} used and
@@ -100,6 +103,9 @@ describe('Messages Unit Test', () => {
             };
             messages._extensionInfo = {
               ready: extensionInfoReady,
+            };
+            messages._auth = {
+              loggedIn: authLoggedIn,
             };
             if (hasContactMatcher) {
               messages._contactMatcher = {
@@ -123,6 +129,7 @@ describe('Messages Unit Test', () => {
   describe('_shouldReset', () => {
     runBooleanTest(
       (
+        authLoggedIn,
         messageStoreReady,
         extensionInfoReady,
         hasContactMatcher,
@@ -131,8 +138,9 @@ describe('Messages Unit Test', () => {
         conversationLoggerReady,
         ready,
       ) => {
-        const result = (
+        const result = !!(
           (
+            !authLoggedIn ||
             !messageStoreReady ||
             !extensionInfoReady ||
             (hasContactMatcher && !contactMatcherReady) ||
@@ -142,6 +150,7 @@ describe('Messages Unit Test', () => {
         );
         it(
           `should return ${result} when:
+          auth.loggedIn is ${authLoggedIn} and
           messageStore.ready is ${messageStoreReady} and
           extensionInfo.ready is ${extensionInfoReady} and
           contactMatcher is ${hasContactMatcher ? '' : ' not '} used and
@@ -162,6 +171,9 @@ describe('Messages Unit Test', () => {
             };
             messages._extensionInfo = {
               ready: extensionInfoReady,
+            };
+            messages._auth = {
+              loggedIn: authLoggedIn,
             };
             if (hasContactMatcher) {
               messages._contactMatcher = {

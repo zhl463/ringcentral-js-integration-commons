@@ -242,12 +242,20 @@ export default class Auth extends RcModule {
     return this._proxyUri;
   }
 
+  get token() {
+    return this.state.token;
+  }
+
   get ownerId() {
-    return this.state.ownerId;
+    return this.token.ownerId;
   }
 
   get endpointId() {
-    return this.state.endpointId;
+    return this.token.endpointId;
+  }
+
+  get accessToken() {
+    return this.token.accessToken;
   }
 
   get status() {

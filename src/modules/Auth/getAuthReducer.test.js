@@ -4,8 +4,7 @@ import getAuthReducer, {
   getLoginStatusReducer,
   getProxyLoadedReducer,
   getProxyRetryCountReducer,
-  getOwnerIdReducer,
-  getEndpointIdReducer,
+  getTokenReducer,
 } from './getAuthReducer';
 import getModuleStatusReducer from '../../lib/getModuleStatusReducer';
 
@@ -124,128 +123,47 @@ describe('getLoginStatusReducer', () => {
   });
 });
 
-describe('getOwnerIdReducer', () => {
+describe('getTokenReducer', () => {
   it('should be a function', () => {
-    expect(getOwnerIdReducer).to.be.a('function');
+    expect(getTokenReducer).to.be.a('function');
   });
   it('should return a reducer', () => {
-    expect(getOwnerIdReducer(actionTypes)).to.be.a('function');
-  });
-  describe('ownerIdReducer', () => {
-    const reducer = getOwnerIdReducer(actionTypes);
-    it('should have initial state of null', () => {
-      expect(reducer(undefined, {})).to.be.null;
-    });
-    it('should return original state of actionTypes is not recognized', () => {
-      const originalState = {};
-      expect(reducer(originalState, { type: 'foo' }))
-        .to.equal(originalState);
-    });
-    it('should return ownerId on loginSuccess', () => {
-      expect(reducer(null, {
-        type: actionTypes.loginSuccess,
-        token: {
-          owner_id: 'foo',
-        },
-      })).to.equal('foo');
-    });
-    it('should return ownerId on refreshSuccess', () => {
-      expect(reducer(null, {
-        type: actionTypes.refreshSuccess,
-        token: {
-          owner_id: 'foo',
-        },
-      })).to.equal('foo');
-    });
-    it('should return null on following auth action types', () => {
-      [
-        actionTypes.loginError,
-        actionTypes.logoutSuccess,
-        actionTypes.logoutError,
-        actionTypes.refreshError,
-      ].forEach(type => {
-        expect(reducer('foo', {
-          type,
-        })).to.be.null;
-      });
-    });
-    it('should ignore other auth action types', () => {
-      const originalState = {};
-      [
-        actionTypes.login,
-        actionTypes.logout,
-        actionTypes.refresh,
-        actionTypes.beforeLogout,
-        actionTypes.cancelLogout,
-      ].forEach(type => {
-        expect(reducer(originalState, {
-          type,
-        })).to.equal(originalState);
-      });
-    });
-    it('should return ownerId on initSuccess with token', () => {
-      expect(reducer(null, {
-        type: actionTypes.initSuccess,
-        token: {
-          owner_id: 'foo',
-        },
-      })).to.equal('foo');
-    });
-    it('should return null on initSuccess without token', () => {
-      expect(reducer('foo', {
-        type: actionTypes.initSuccess,
-      })).to.be.null;
-    });
-    it('should return ownerId on tabSync with token', () => {
-      expect(reducer(null, {
-        type: actionTypes.tabSync,
-        token: {
-          owner_id: 'foo',
-        },
-      })).to.equal('foo');
-    });
-    it('should return null on tabSync without token', () => {
-      expect(reducer('foo', {
-        type: actionTypes.tabSync,
-      })).to.be.null;
-    });
-  });
-});
-
-describe('getEndpointIdReducer', () => {
-  it('should be a function', () => {
-    expect(getEndpointIdReducer).to.be.a('function');
-  });
-  it('should return a reducer', () => {
-    expect(getEndpointIdReducer(actionTypes)).to.be.a('function');
+    expect(getTokenReducer(actionTypes)).to.be.a('function');
   });
   describe('endpointIdReducer', () => {
-    const reducer = getEndpointIdReducer(actionTypes);
-    it('should have initial state of null', () => {
-      expect(reducer(undefined, {})).to.be.null;
+    const reducer = getTokenReducer(actionTypes);
+    it('should have initial state of empty object', () => {
+      expect(reducer(undefined, {})).to.deep.equal({});
     });
     it('should return original state of actionTypes is not recognized', () => {
       const originalState = {};
       expect(reducer(originalState, { type: 'foo' }))
         .to.equal(originalState);
     });
-    it('should return endpoint_id on loginSuccess', () => {
-      expect(reducer(null, {
-        type: actionTypes.loginSuccess,
-        token: {
-          endpoint_id: 'foo',
-        },
-      })).to.equal('foo');
+    it('should return token object on loginSuccess and refreshSuccess', () => {
+      [
+        actionTypes.loginSuccess,
+        actionTypes.refreshSuccess,
+      ].forEach(type => {
+        expect(reducer(null, {
+          type,
+          token: {
+            endpoint_id: 'foo',
+            owner_id: 'owner',
+            access_token: 'access token',
+            expire_time: '1111',
+            expires_in: '1234',
+          },
+        })).to.deep.equal({
+          endpointId: 'foo',
+          ownerId: 'owner',
+          accessToken: 'access token',
+          expireTime: '1111',
+          expiresIn: '1234',
+        });
+      });
     });
-    it('should return endpoint_id on refreshSuccess', () => {
-      expect(reducer(null, {
-        type: actionTypes.refreshSuccess,
-        token: {
-          endpoint_id: 'foo',
-        },
-      })).to.equal('foo');
-    });
-    it('should return null on following auth action types', () => {
+    it('should return empty object on following auth action types', () => {
       [
         actionTypes.loginError,
         actionTypes.logoutSuccess,
@@ -253,18 +171,18 @@ describe('getEndpointIdReducer', () => {
       ].forEach((type) => {
         expect(reducer('foo', {
           type,
-        })).to.be.null;
+        })).to.be.deep.equal({});
       });
     });
 
-    it('should return null on refreshError and refreshToken not Valid', () => {
+    it('should return empty object on refreshError and refreshToken not Valid', () => {
       expect(reducer(null, {
         type: actionTypes.refreshError,
         token: {
           endpoint_id: 'foo',
         },
         refreshTokenValid: false,
-      })).to.equal(null);
+      })).to.deep.equal({});
     });
 
     it('should return original state on refreshError and refreshToken Valid', () => {
@@ -293,34 +211,39 @@ describe('getEndpointIdReducer', () => {
       });
     });
 
-    it('should return endpoint_id on initSuccess with token', () => {
-      expect(reducer(null, {
-        type: actionTypes.initSuccess,
-        token: {
-          endpoint_id: 'foo',
-        },
-      })).to.equal('foo');
+    it('should return endpoint_id on initSuccess or tabSync with token', () => {
+      [
+        actionTypes.initSuccess,
+        actionTypes.tabSync,
+      ].forEach(type => {
+        expect(reducer({}, {
+          type,
+          token: {
+            endpoint_id: 'foo',
+            owner_id: 'owner',
+            access_token: 'access token',
+            expire_time: '1111',
+            expires_in: '1234',
+          },
+        })).to.deep.equal({
+          endpointId: 'foo',
+          ownerId: 'owner',
+          accessToken: 'access token',
+          expireTime: '1111',
+          expiresIn: '1234',
+        });
+      });
     });
 
-    it('should return null on initSuccess without token', () => {
-      expect(reducer('foo', {
-        type: actionTypes.initSuccess,
-      })).to.be.null;
-    });
-
-    it('should return endpoint_id on tabSync with token', () => {
-      expect(reducer(null, {
-        type: actionTypes.tabSync,
-        token: {
-          endpoint_id: 'foo',
-        },
-      })).to.equal('foo');
-    });
-
-    it('should return null on tabSync without token', () => {
-      expect(reducer('foo', {
-        type: actionTypes.tabSync,
-      })).to.be.null;
+    it('should return empty object on initSuccess or tabSync without token', () => {
+      [
+        actionTypes.initSuccess,
+        actionTypes.tabSync,
+      ].forEach(type => {
+        expect(reducer({}, {
+          type,
+        })).to.deep.equal({});
+      });
     });
   });
 });
@@ -481,20 +404,18 @@ describe('getAuthReducer', () => {
     const statusReducer = getModuleStatusReducer(actionTypes);
     const loginStatusReducer = getLoginStatusReducer(actionTypes);
     const freshLoginReducer = getFreshLoginReducer(actionTypes);
-    const ownerIdReducer = getOwnerIdReducer(actionTypes);
+    const tokenReducer = getTokenReducer(actionTypes);
     const proxyLoadedReducer = getProxyLoadedReducer(actionTypes);
     const proxyRetryCountReducer = getProxyRetryCountReducer(actionTypes);
-    const endpointIdReducer = getEndpointIdReducer(actionTypes);
     it('should return combined state', () => {
       expect(reducer(undefined, {}))
         .to.deep.equal({
           status: statusReducer(undefined, {}),
           loginStatus: loginStatusReducer(undefined, {}),
           freshLogin: freshLoginReducer(undefined, {}),
-          ownerId: ownerIdReducer(undefined, {}),
+          token: tokenReducer(undefined, {}),
           proxyLoaded: proxyLoadedReducer(undefined, {}),
           proxyRetryCount: proxyRetryCountReducer(undefined, {}),
-          endpointId: endpointIdReducer(undefined, {}),
         });
       const error = new Error('test');
       const token = {
@@ -567,15 +488,13 @@ describe('getAuthReducer', () => {
           status: 'status',
           loginStatus: 'loginStatus',
           freshLogin: 'freshLogin',
-          ownerId: 'ownerId',
-          endpointId: 'endpointId',
+          token: {},
           proxyLoaded: false,
         }, action)).to.deep.equal({
           status: statusReducer('status', action),
           loginStatus: loginStatusReducer('loginStatus', action),
           freshLogin: freshLoginReducer('freshLogin', action),
-          ownerId: ownerIdReducer('ownerId', action),
-          endpointId: endpointIdReducer('endpointId', action),
+          token: tokenReducer({}, action),
           proxyLoaded: proxyLoadedReducer(false, action),
           proxyRetryCount: proxyRetryCountReducer(undefined, {}),
         });

@@ -152,3 +152,16 @@ export function sortSearchResults(a, b) {
   if (a.matchOrder === b.matchOrder) return sortByDate(a, b);
   return a.matchOrder > b.matchOrder ? 1 : -1;
 }
+
+export function getVoicemailAttachment(message, accessToken) {
+  const attachment = message.attachments && message.attachments[0];
+  if (!attachment) {
+    return { duration: 0 };
+  }
+  const duration = attachment.vmDuration;
+  const uri = `${attachment.uri}?access_token=${decodeURIComponent(accessToken)}`;
+  return {
+    duration,
+    uri,
+  };
+}

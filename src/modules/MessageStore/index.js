@@ -520,8 +520,27 @@ export default class MessageStore extends Pollable {
       });
     } catch (error) {
       console.error(error);
+      this._alert.warning({
+        message: messageStoreErrors.readFailed,
+      });
     }
     return null;
+  }
+
+  @proxify
+  async unreadMessage(messageId) {
+    try {
+      const message = await this._updateMessageApi(messageId, 'Unread');
+      this.store.dispatch({
+        type: this.actionTypes.updateMessages,
+        records: [message],
+      });
+    } catch (error) {
+      console.error(error);
+      this._alert.warning({
+        message: messageStoreErrors.unreadFailed,
+      });
+    }
   }
 
   @proxify
@@ -535,7 +554,7 @@ export default class MessageStore extends Pollable {
       });
     } catch (error) {
       console.error(error);
-      this._alert.info({
+      this._alert.warning({
         message: messageStoreErrors.deleteFailed,
       });
     }

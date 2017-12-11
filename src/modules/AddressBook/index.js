@@ -4,7 +4,7 @@ import sleep from '../../lib/sleep';
 import syncTypes from '../../enums/syncTypes';
 import actionTypes from './actionTypes';
 import proxify from '../../lib/proxy/proxify';
-import { addPhoneToContact } from '../../lib/contactHelper';
+import { addPhoneToContact, getMatchContacts } from '../../lib/contactHelper';
 
 import getAddressBookReducer, {
   getSyncTokenReducer,
@@ -300,6 +300,16 @@ export default class AddressBook extends Pollable {
       type: this.actionTypes.cleanUp,
     });
   }
+
+  // interface of contact source
+  matchPhoneNumber(phoneNumber) {
+    return getMatchContacts({
+      contacts: this.contacts,
+      phoneNumber,
+      entityType: 'rcContact',
+    });
+  }
+
   @proxify
   async fetchData() {
     await this.sync();
