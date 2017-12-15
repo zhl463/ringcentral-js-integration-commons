@@ -11,6 +11,7 @@ import {
   messageIsVoicemail,
   getVoicemailAttachment,
 } from '../../lib/messageHelper';
+import cleanNumber from '../../lib/cleanNumber';
 import proxify from '../../lib/proxy/proxify';
 import messageTypes from '../../enums/messageTypes';
 
@@ -179,12 +180,32 @@ export default class Messages extends RcModule {
       (allConversations, effectiveSearchString) => {
         if (effectiveSearchString !== '') {
           const searchResults = [];
+          const cleanRegex = /[^\d*+#\s]/g;
+          const searchString = effectiveSearchString.toLowerCase();
+          const searchNumber = effectiveSearchString.replace(cleanRegex, '');
           allConversations.forEach((message) => {
-            const searchRegExp = new RegExp(effectiveSearchString, 'i');
+            if (searchNumber === effectiveSearchString) {
+              const cleanedNumber = cleanNumber(effectiveSearchString);
+              if (
+                message.correspondents.find(
+                  contact => (
+                    cleanNumber(contact.phoneNumber || contact.extensionNumber || '')
+                      .indexOf(cleanedNumber) > -1
+                  )
+                )
+              ) {
+                // match by phoneNumber or extensionNumber
+                searchResults.push({
+                  ...message,
+                  matchOrder: 0,
+                });
+                return;
+              }
+            }
             if (message.correspondentMatches.length) {
               if (
                 message.correspondentMatches.find(entity => (
-                  entity.name && searchRegExp.test(entity.name)
+                  (entity.name || '').toLowerCase().indexOf(searchString) > -1
                 ))
               ) {
                 // match by entity's name
@@ -195,7 +216,7 @@ export default class Messages extends RcModule {
                 return;
               }
             } else if (message.correspondents.find(contact => (
-              searchRegExp.test(contact.name || '')
+              (contact.name || '').toLowerCase().indexOf(searchString) > -1
             ))) {
               searchResults.push({
                 ...message,
@@ -205,7 +226,7 @@ export default class Messages extends RcModule {
             }
 
             // try match messages of the same conversation
-            if (searchRegExp.test(message.subject)) {
+            if ((message.subject || '').toLowerCase().indexOf(searchString) > -1) {
               searchResults.push({
                 ...message,
                 matchOrder: 1,
@@ -214,7 +235,7 @@ export default class Messages extends RcModule {
             }
             const matchedMessage = this._messageStore.messages.find(item => (
               item.conversationId === message.conversationId &&
-              searchRegExp.test(item.subject)
+              (item.subject || '').toLowerCase().indexOf(searchString) > -1
             ));
             if (matchedMessage) {
               searchResults.push({
