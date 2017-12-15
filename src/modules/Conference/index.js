@@ -42,6 +42,8 @@ export default class Conference extends DataFetcher {
     });
     this._dialInNumberStorageKey = 'conferenceDialInNumber';
     this._additionalNumbersStorageKey = 'conferenceAdditionalNumbers';
+    this._regionSetting = regionSettings;
+    this._lastCountryCode = null;
     this._storage.registerReducer({
       key: this._dialInNumberStorageKey,
       reducer: createSimpleReducer(this.actionTypes.updateDialInNumber, 'dialInNumber'),
@@ -50,6 +52,22 @@ export default class Conference extends DataFetcher {
       key: this._additionalNumbersStorageKey,
       reducer: createSimpleReducer(this.actionTypes.updateAdditionalNumbers, 'additionalNumbers'),
     });
+  }
+
+  async _onStateChange() {
+    super._onStateChange();
+    if (!this.data
+      || !this._regionSetting.ready
+      || this._lastCountryCode === this._regionSetting.countryCode) {
+      return;
+    }
+    this._lastCountryCode = this._regionSetting.countryCode;
+    const { phoneNumber } = this.data.phoneNumbers.find(
+      e => e.country.isoCode === this._lastCountryCode
+    );
+    if (phoneNumber !== this.dialInNumber) {
+      this.updateDialInNumber(phoneNumber);
+    }
   }
 
   @proxify
