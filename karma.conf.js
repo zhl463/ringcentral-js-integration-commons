@@ -47,12 +47,12 @@ module.exports = function(config) {
         loaders: [
           {
             test: /\.js$/,
-            loaders: ['babel'],
+            loaders: ['babel-loader'],
             exclude: /node_modules/,
           },
           {
             test: /\.json$/i,
-            loader: 'json',
+            loader: 'json-loader',
           },
           {
             test: /\.ogg$/,
