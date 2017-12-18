@@ -209,7 +209,14 @@ export default class Call extends RcModule {
             });
           }
         } catch (error) {
-          if (error.message === ringoutErrors.firstLegConnectFailed) {
+          if (!error.message) { // validate format error
+            this._alert.warning({
+              message: callErrors[error.type],
+              payload: {
+                phoneNumber: error.phoneNumber
+              }
+            });
+          } else if (error.message === ringoutErrors.firstLegConnectFailed) {
             this._alert.warning({
               message: callErrors.connectFailed,
               payload: error
@@ -254,12 +261,13 @@ export default class Call extends RcModule {
       = await this._numberValidate.validateNumbers(waitingValidateNumbers);
     if (!validatedResult.result) {
       validatedResult.errors.forEach((error) => {
-        this._alert.warning({
-          message: callErrors[error.type],
-          payload: {
-            phoneNumber: error.phoneNumber
-          }
-        });
+        // this._alert.warning({
+        //   message: callErrors[error.type],
+        //   payload: {
+        //     phoneNumber: error.phoneNumber
+        //   }
+        // });
+        throw error;
       });
       return null;
     }
