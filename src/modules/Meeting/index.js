@@ -37,6 +37,7 @@ export const getDefaultMeetingSettings = extensionName => ({
   _requireMeetingPassword: false,
   _showDate: false,
   _showTime: false,
+  _saved: false,
 });
 
 class MeetingErrors {
@@ -176,13 +177,13 @@ export default class Meeting extends RcModule {
       });
       // Validate meeting
       this._validate(meeting);
-      meeting = this._format(meeting);
+      const formattedMeeting = this._format(meeting);
 
       const resp = await this._client
         .account()
         .extension()
         .meeting()
-        .post(meeting);
+        .post(formattedMeeting);
       const serviceInfo = await this._client
         .account()
         .extension()
@@ -191,7 +192,10 @@ export default class Meeting extends RcModule {
         .get();
       this.store.dispatch({
         type: this.actionTypes.scheduled,
-        meeting
+        meeting: {
+          ...formattedMeeting,
+          _saved: meeting._saved
+        }
       });
       // Reload meeting info
       this._initMeeting();
