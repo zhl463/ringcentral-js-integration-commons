@@ -19,7 +19,7 @@ import callingModes from '../CallingSettings/callingModes';
     'Webphone',
     'Contacts',
     'MessageSender',
-    { dep: 'Router', optional: true },
+    { dep: 'RouterInteraction', optional: true },
     { dep: 'AnalyticsAdapter', optional: true },
     { dep: 'AnalyticsOptions', optional: true }
   ]
@@ -32,7 +32,8 @@ export default class Analytics extends RcModule {
     contacts,
     messageSender,
     adapter,
-    router,
+    // router,
+    routerInteraction,
     analyticsKey,
     appName,
     appVersion,
@@ -49,7 +50,7 @@ export default class Analytics extends RcModule {
     this._contacts = contacts;
     this._messageSender = messageSender;
     this._adapter = adapter;
-    this._router = router;
+    this._router = routerInteraction;
     this._analyticsKey = analyticsKey;
     this._appName = appName;
     this._appVersion = appVersion;
@@ -295,6 +296,9 @@ export default class Analytics extends RcModule {
       }, {
         eventPostfix: 'Meeting',
         router: '/meeting',
+      }, {
+        eventPostfix: 'Contacts',
+        router: '/contacts',
       }];
       return targets.find(target => firstRoute === target.router);
     }
