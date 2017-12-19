@@ -42,15 +42,23 @@ export function getMessageDataReducer(types) {
         });
       case types.removeMessage: {
         const newConversationMap = {};
-        Object.keys(state.conversationMap).forEach((key) => {
-          if (key !== conversationId) {
-            newConversationMap[key] = state.conversationMap[key];
+        const newConversations = [];
+        state.conversations.forEach((conversation) => {
+          if (conversation && conversation.conversationId !== conversationId) {
+            newConversations.push({ ...conversation });
+            if (state.conversationMap[conversation.conversationId]) {
+              newConversationMap[conversation.conversationId] = {
+                ...state.conversationMap[conversation.conversationId],
+                index: (newConversations.length - 1),
+                unreadMessages: {
+                  ...state.conversationMap[conversation.conversationId].unreadMessages,
+                },
+              };
+            }
           }
         });
         return {
-          conversations: state.conversations.filter(
-            conversation => conversation.conversationId !== conversationId
-          ),
+          conversations: newConversations,
           conversationMap: newConversationMap,
           messages: state.messages.filter(
             message => message.id !== messageId
