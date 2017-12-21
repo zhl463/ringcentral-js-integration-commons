@@ -150,7 +150,8 @@ export default class Auth extends RcModule {
     };
     const onRefreshError = (error) => {
       // user is still considered logged in if the refreshToken is still valid
-      const refreshTokenValid = platform.auth().refreshTokenValid();
+
+      const refreshTokenValid = error.message === 'Failed to fetch' && platform.auth().refreshTokenValid();
       this.store.dispatch({
         type: this.actionTypes.refreshError,
         error,
