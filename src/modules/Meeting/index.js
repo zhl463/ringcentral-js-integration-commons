@@ -168,7 +168,7 @@ export default class Meeting extends RcModule {
   }
 
   @proxify
-  async schedule(meeting) {
+  async schedule(meeting, { isAlertSuccess = true } = {}) {
     if (this.isScheduling) return null;
     meeting = meeting || this.meeting;
     try {
@@ -200,11 +200,13 @@ export default class Meeting extends RcModule {
       // Reload meeting info
       this._initMeeting();
       // Notify user the meeting has been scheduled
-      setTimeout(() => {
-        this._alert.info({
-          message: meetingStatus.scheduledSuccess
-        });
-      }, 50);
+      if (isAlertSuccess) {
+        setTimeout(() => {
+          this._alert.info({
+            message: meetingStatus.scheduledSuccess
+          });
+        }, 50);
+      }
       return {
         meeting: resp,
         serviceInfo,
