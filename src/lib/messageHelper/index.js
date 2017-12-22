@@ -66,13 +66,14 @@ export function getRecipientNumbersFromMessage({ message, myNumber }) {
   if (!message) {
     return [];
   }
+  const fromRecipients = (message.from && [message.from]) || [];
   if (message.type === messageTypes.sms) {
     if (message.direction === 'Outbound') {
       return message.to;
     }
-    return [message.from];
+    return fromRecipients;
   }
-  const allRecipients = [message.from].concat(message.to);
+  const allRecipients = fromRecipients.concat(message.to);
   const recipients = filterNumbers(allRecipients, myNumber);
   if (recipients.length === 0) {
     recipients.push(myNumber);
@@ -119,16 +120,10 @@ export function getNumbersFromMessage({ extensionNumber, message }) {
 
   const inbound = message.direction === 'Inbound';
   const fromField = (
-    message.from &&
-      Array.isArray(message.from) ?
-      message.from :
-      [message.from]
+    message.from && (Array.isArray(message.from) ? message.from : [message.from])
   ) || [];
   const toField = (
-    message.to &&
-      Array.isArray(message.to) ?
-      message.to :
-      [message.to]
+    message.to && (Array.isArray(message.to) ? message.to : [message.to])
   ) || [];
   if (inbound) {
     return {
