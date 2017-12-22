@@ -19,9 +19,13 @@ import callingModes from '../CallingSettings/callingModes';
     'Webphone',
     'Contacts',
     'MessageSender',
+    'MessageStore',
+    'ContactDetails',
+    'CallHistory',
+    'Conference',
     { dep: 'RouterInteraction', optional: true },
     { dep: 'AnalyticsAdapter', optional: true },
-    { dep: 'AnalyticsOptions', optional: true }
+    { dep: 'AnalyticsOptions', optional: true },
   ]
 })
 export default class Analytics extends RcModule {
@@ -32,12 +36,15 @@ export default class Analytics extends RcModule {
     contacts,
     messageSender,
     adapter,
-    // router,
     routerInteraction,
     analyticsKey,
     appName,
     appVersion,
     brandCode,
+    messageStore,
+    contactDetails,
+    callHistory,
+    conference,
     ...options
   }) {
     super({
@@ -55,6 +62,10 @@ export default class Analytics extends RcModule {
     this._appName = appName;
     this._appVersion = appVersion;
     this._brandCode = brandCode;
+    this._messageStore = messageStore;
+    this._contactDetails = contactDetails;
+    this._callHistory = callHistory;
+    this._conference = conference;
     this._reducer = getAnalyticsReducer(this.actionTypes);
     this._segment = Segment();
   }
@@ -123,6 +134,18 @@ export default class Analytics extends RcModule {
           '_navigate',
           '_inboundCall',
           '_coldTransfer',
+          '_textClickToDial',
+          '_voicemailClickToDial',
+          '_voicemailClickToSMS',
+          '_voicemailDelete',
+          '_voicemailFlag',
+          '_contactDetailClickToDial',
+          '_contactDetailClickToSMS',
+          '_callHistoryClickToDial',
+          '_callHistoryClickToSMS',
+          '_conferenceInviteWithText',
+          '_conferenceAddDialInNumber',
+          '_conferenceJoinAsHost',
         ].forEach((key) => {
           this[key](action);
         });
@@ -133,6 +156,7 @@ export default class Analytics extends RcModule {
       });
     }
   }
+
 
   _authentication(action) {
     if (this._auth && this._auth.actionTypes.loginSuccess === action.type) {
@@ -266,6 +290,91 @@ export default class Analytics extends RcModule {
     }
   }
 
+  _textClickToDial(action) {
+    if (this._messageStore
+      && this._messageStore.actionTypes.clickToCall === action.type
+      && (action.fromType === 'Pager' || action.fromType === 'SMS')) {
+      this.track('Click To Dial (Text List)');
+    }
+  }
+
+  _voicemailClickToDial(action) {
+    if (this._messageStore
+      && this._messageStore.actionTypes.clickToCall === action.type
+      && action.fromType === 'VoiceMail') {
+      this.track('Click To Dial (Voicemail List)');
+    }
+  }
+
+  _voicemailClickToSMS(action) {
+    if (this._messageStore && this._messageStore.actionTypes.clickToSMS === action.type) {
+      this.track('Click to SMS (Voicemail List)');
+    }
+  }
+
+  _voicemailDelete(action) {
+    if (this._messageStore && this._messageStore.actionTypes.removeMessage === action.type) {
+      this.track('Delete Voicemail');
+    }
+  }
+
+  _voicemailFlag(action) {
+    if (this._messageStore
+      && this._messageStore.actionTypes.markMessages === action.type) {
+      this.track('Flag Voicemail');
+    }
+  }
+
+  _contactDetailClickToDial(action) {
+    if (this._contactDetails
+      && this._contactDetails.actionTypes.clickToCall === action.type) {
+      this.track('Click To Dial (Contact Details)');
+    }
+  }
+
+  _contactDetailClickToSMS(action) {
+    if (this._contactDetails
+     && this._contactDetails.actionTypes.clickToSMS === action.type) {
+      this.track('Click To SMS (Contact Details)');
+    }
+  }
+
+  _callHistoryClickToDial(action) {
+    if (this._callHistory
+     && this._callHistory.actionTypes.clickToCall === action.type) {
+      this.track('Click To dial (Call History)');
+    }
+  }
+
+  _callHistoryClickToSMS(action) {
+    if (this._callHistory
+     && this._callHistory.actionTypes.clickToSMS === action.type) {
+      this.track('Click To SMS (Call History)');
+    }
+  }
+
+
+  _conferenceInviteWithText(action) {
+    if (this._conference
+      && this._conference.actionTypes.inviteWithText === action.type) {
+      this.track('Invite With Text (Conference)');
+    }
+  }
+
+  _conferenceAddDialInNumber(action) {
+    if (this._conference
+      && this._conference.actionTypes.updateAdditionalNumbers === action.type) {
+      this.track('Select Additional Dial-in Number (Conference)');
+    }
+  }
+
+  _conferenceJoinAsHost(action) {
+    if (this._conference
+      && this._conference.actionTypes.joinAsHost === action.type) {
+      this.track('Join As Host (Conference)');
+    }
+  }
+
 
   _getTrackTarget(path) {
     if (path) {
@@ -274,7 +383,7 @@ export default class Analytics extends RcModule {
 
       const targets = [{
         eventPostfix: 'Dialer',
-        router: '/',
+        router: '/dialer',
       }, {
         eventPostfix: 'Compose SMS',
         router: '/composeText',

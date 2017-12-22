@@ -87,6 +87,21 @@ export default class Conference extends DataFetcher {
     this._store.dispatch({ type: this.actionTypes.updateAdditionalNumbers, additionalNumbers });
   }
 
+  // for track invite with text
+  @proxify
+  onInviteWithText() {
+    this.store.dispatch({
+      type: this.actionTypes.inviteWithText
+    });
+  }
+  // for track join as host
+  @proxify
+  onJoinAsHost() {
+    this.store.dispatch({
+      type: this.actionTypes.joinAsHost
+    });
+  }
+
   get additionalNumbers() {
     return this._storage.getItem(this._additionalNumbersStorageKey) || [];
   }

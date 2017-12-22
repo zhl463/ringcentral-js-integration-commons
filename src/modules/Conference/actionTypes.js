@@ -7,5 +7,7 @@ export default new Enum([
   'fetchSuccess',
   'fetchError',
   'updateDialInNumber',
-  'updateAdditionalNumbers'
+  'updateAdditionalNumbers',
+  'inviteWithText',
+  'joinAsHost',
 ], 'conference');

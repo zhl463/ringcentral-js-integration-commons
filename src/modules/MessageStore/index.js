@@ -529,6 +529,10 @@ export default class MessageStore extends Pollable {
 
   @proxify
   async unreadMessage(messageId) {
+    //  for track mark message
+    this.store.dispatch({
+      type: this.actionTypes.markMessages,
+    });
     try {
       const message = await this._updateMessageApi(messageId, 'Unread');
       this.store.dispatch({
@@ -541,6 +545,14 @@ export default class MessageStore extends Pollable {
         message: messageStoreErrors.unreadFailed,
       });
     }
+  }
+
+  // for track mark message
+  @proxify
+  async unmarkMessages() {
+    this.store.dispatch({
+      type: this.actionTypes.markMessages,
+    });
   }
 
   @proxify
@@ -592,6 +604,24 @@ export default class MessageStore extends Pollable {
   pushMessage(record) {
     this.pushMessages([record]);
   }
+
+  // for track click to sms in message list
+  @proxify
+  onClickToSMS() {
+    this.store.dispatch({
+      type: this.actionTypes.clickToSMS
+    });
+  }
+
+  // for track click to call in message list
+  @proxify
+  onClickToCall({ fromType = '' }) {
+    this.store.dispatch({
+      type: this.actionTypes.clickToCall,
+      fromType
+    });
+  }
+
 
   get cache() {
     if (this._storage) {
