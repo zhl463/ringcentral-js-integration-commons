@@ -18,5 +18,6 @@ export default new Enum([
   'notAnExtension',
   'networkError',
   'notSmsToExtension',
-  'internationalSMSNotSupported'
+  'internationalSMSNotSupported',
+  'noInternalSMSPermission'
 ], 'message-sender-msg');

@@ -276,7 +276,8 @@ export default class MessageSender extends RcModule {
       errResp && errResp.response &&
       !errResp.response.ok
       && (errResp._json.errorCode === 'InvalidParameter'
-      || errResp._json.errorCode === 'InternationalProhibited')
+      || errResp._json.errorCode === 'InternationalProhibited'
+      || errResp._json.errorCode === 'CMN-408')
     ) {
       errResp._json.errors.map((err) => {
         if (
@@ -300,6 +301,10 @@ export default class MessageSender extends RcModule {
         if (err.errorCode === 'MSG-240') {
           // MSG-240 : "International SMS is not supported"
           this._alertWarning(messageSenderMessages.internationalSMSNotSupported);
+        }
+        if (err.errorCode === 'CMN-408') {
+          // MSG-240 : "In order to call this API endpoint, user needs to have [InternalSMS] permission for requested resource."
+          this._alertWarning(messageSenderMessages.noInternalSMSPermission);
         }
         return null;
       });
