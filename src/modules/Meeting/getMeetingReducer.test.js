@@ -50,13 +50,15 @@ describe('Meeting :: getMeetingSchedulingStatusReducer', () => {
 });
 
 describe('Meeting :: getMeetingStorageReducer', () => {
+  // TODO property test _saved property
   it('should store meeting when it is scheduled', () => {
     const meeting = {
       id: 10,
       startHostVideo: true,
       startParticipantsVideo: true,
       allowJoinBeforeHost: true,
-      audioOptions: ['ComputerAudio']
+      audioOptions: ['ComputerAudio'],
+      _saved: false,
     };
     const reducer = getMeetingStorageReducer(actionTypes);
     expect(reducer(null, {
@@ -66,7 +68,8 @@ describe('Meeting :: getMeetingStorageReducer', () => {
       startHostVideo: true,
       startParticipantsVideo: true,
       allowJoinBeforeHost: true,
-      audioOptions: ['ComputerAudio']
+      audioOptions: ['ComputerAudio'],
+      _saved: false,
     });
   });
 

@@ -99,41 +99,11 @@ export function getFreshLoginReducer(types) {
   };
 }
 
-export function getProxyLoadedReducer(types) {
-  return (state = false, { type }) => {
-    switch (type) {
-      case types.proxyLoaded:
-        return true;
-      case types.proxyCleared:
-        return false;
-      default:
-        return state;
-    }
-  };
-}
-
-export function getProxyRetryCountReducer(types) {
-  return (state = 0, { type }) => {
-    switch (type) {
-      case types.proxySetup:
-      case types.proxyCleared:
-      case types.proxyLoaded:
-        return 0;
-      case types.proxyRetry:
-        return state + 1;
-      default:
-        return state;
-    }
-  };
-}
-
 export default function getAuthReducer(types) {
   return combineReducers({
     status: getModuleStatusReducer(types),
     loginStatus: getLoginStatusReducer(types),
     freshLogin: getFreshLoginReducer(types),
     token: getTokenReducer(types),
-    proxyLoaded: getProxyLoadedReducer(types),
-    proxyRetryCount: getProxyRetryCountReducer(types),
   });
 }
