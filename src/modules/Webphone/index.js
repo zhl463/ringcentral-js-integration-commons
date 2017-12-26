@@ -723,12 +723,15 @@ export default class Webphone extends RcModule {
     if (!session) {
       return false;
     }
+    if (session.isOnHold().local) {
+      return true;
+    }
     try {
       await session.hold();
       this._updateSessions();
       return true;
     } catch (e) {
-      console.log(e);
+      console.error('hold error:', e);
       this._alert.warning({
         message: webphoneErrors.holdError
       });
