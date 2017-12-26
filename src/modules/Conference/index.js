@@ -62,11 +62,11 @@ export default class Conference extends DataFetcher {
       return;
     }
     this._lastCountryCode = this._regionSetting.countryCode;
-    const { phoneNumber } = this.data.phoneNumbers.find(
+    const matchedPhoneNumber = this.data.phoneNumbers.find(
       e => e.country.isoCode === this._lastCountryCode
     );
-    if (phoneNumber !== this.dialInNumber) {
-      this.updateDialInNumber(phoneNumber);
+    if (matchedPhoneNumber && matchedPhoneNumber.phoneNumber !== this.dialInNumber) {
+      this.updateDialInNumber(matchedPhoneNumber.phoneNumber);
     }
   }
 
