@@ -1,13 +1,13 @@
 import { Module } from '../../lib/di';
 import DataFetcher from '../../lib/DataFetcher';
 import fetchList from '../../lib/fetchList';
-
+import ensureExist from '../../lib/ensureExist';
 /**
  * @class
  * @description Extension forwarding number list module
  */
 @Module({
-  deps: ['Client', { dep: 'ForwardingNumberOptions', optional: true }]
+  deps: ['Client', 'RolesAndPermissions', { dep: 'ForwardingNumberOptions', optional: true }]
 })
 export default class ForwardingNumber extends DataFetcher {
   /**
@@ -17,16 +17,24 @@ export default class ForwardingNumber extends DataFetcher {
    */
   constructor({
     client,
+    rolesAndPermissions,
     ...options
   }) {
     super({
       name: 'forwardingNumber',
       client,
-      fetchFunction: async () => fetchList(params => (
-        this._client.account().extension().forwardingNumber().list(params)
-      )),
+      fetchFunction: async () => {
+        if (!this._rolesAndPermissions.permissions.ReadUserForwardingFlipNumbers) {
+          return [];
+        }
+        return fetchList(params => (
+          this._client.account().extension().forwardingNumber().list(params)
+        ));
+      },
+      readyCheckFn: () => this._rolesAndPermissions.ready,
       ...options,
     });
+    this._rolesAndPermissions = this::ensureExist(rolesAndPermissions, 'rolesAndPermissions');
 
     this.addSelector(
       'flipNumbers',
