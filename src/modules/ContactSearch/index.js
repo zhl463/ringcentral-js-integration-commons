@@ -52,6 +52,7 @@ export default class ContactSearch extends RcModule {
     this._searchSources = new Map();
     this._searchSourcesFormat = new Map();
     this._searchSourcesCheck = new Map();
+    this._searchIds = {};
     if (this._storage) {
       this._reducer = getContactSearchReducer(this.actionTypes);
       this._storage.registerReducer({
@@ -185,7 +186,7 @@ export default class ContactSearch extends RcModule {
   @proxify
   async _searchSource({ searchOnSources, sourceName, searchString }) {
     const searchId = uuid.v4();
-    this._searchId = searchId;
+    this._searchIds[sourceName] = searchId;
     this.store.dispatch({
       type: this.actionTypes.search,
     });
@@ -201,7 +202,7 @@ export default class ContactSearch extends RcModule {
       });
       entities = this._searchSourcesFormat.get(sourceName)(entities);
       this._saveSearching({ sourceName, searchString, entities });
-      if (this._searchId === searchId) {
+      if (this._searchIds[sourceName] === searchId) {
         this._loadSearching({ searchOnSources, searchString, entities });
       }
     } catch (error) {
