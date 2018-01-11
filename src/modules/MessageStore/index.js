@@ -32,7 +32,7 @@ const DEFAULT_DAY_SPAN = 7;
  */
 @Module({
   deps: [
-    'Alert', 'Client', 'Auth', 'Subscription', 'ConnectivityMonitor',
+    'Alert', 'Client', 'Auth', 'Subscription', 'ConnectivityMonitor', 'RolesAndPermissions',
     { dep: 'Storage', optional: true },
     { dep: 'MessageStoreOptions', optional: true }
   ]
@@ -47,6 +47,7 @@ export default class MessageStore extends Pollable {
    * @param {Storage} params.storage - storage module instance
    * @param {subscription} params.subscription - subscription module instance
    * @param {connectivityMonitor} params.connectivityMonitor - connectivityMonitor module instance
+   * @param {RolesAndPermissions} params.rolesAndPermissions - rolesAndPermissions module instance
    * @param {Number} params.ttl - local cache timestamp
    * @param {Number} params.timeToRetry - waiting time to retry
    * @param {Number} params.daySpan - day span of call log
@@ -62,6 +63,7 @@ export default class MessageStore extends Pollable {
     storage,
     subscription,
     connectivityMonitor,
+    rolesAndPermissions,
     polling = false,
     disableCache = false,
     ...options
@@ -77,6 +79,7 @@ export default class MessageStore extends Pollable {
     }
     this._subscription = subscription;
     this._connectivityMonitor = connectivityMonitor;
+    this._rolesAndPermissions = rolesAndPermissions;
     this._ttl = ttl;
     this._timeToRetry = timeToRetry;
     this._daySpan = daySpan;
@@ -130,7 +133,16 @@ export default class MessageStore extends Pollable {
       'unreadCounts',
       () => this.voiceUnreadCounts,
       () => this.textUnreadCounts,
-      (voiceUnreadCounts, textUnreadCounts) => (voiceUnreadCounts + textUnreadCounts),
+      (voiceUnreadCounts, textUnreadCounts) => {
+        let unreadCounts = 0;
+        if (this._rolesAndPermissions.readTextPermissions) {
+          unreadCounts += textUnreadCounts;
+        }
+        if (this._rolesAndPermissions.voicemailPermissions) {
+          unreadCounts += voiceUnreadCounts;
+        }
+        return unreadCounts;
+      },
     );
 
     this.addSelector(
@@ -205,6 +217,7 @@ export default class MessageStore extends Pollable {
       (!this._storage || this._storage.ready) &&
       this._subscription.ready &&
       (!this._connectivityMonitor || this._connectivityMonitor.ready) &&
+      this._rolesAndPermissions.ready &&
       this.pending
     );
   }
@@ -214,7 +227,8 @@ export default class MessageStore extends Pollable {
       (
         (!!this._storage && !this._storage.ready) ||
         !this._subscription.ready ||
-        (!!this._connectivityMonitor && !this._connectivityMonitor.ready)
+        (!!this._connectivityMonitor && !this._connectivityMonitor.ready) ||
+        !this._rolesAndPermissions.ready
       ) &&
       this.ready
     );

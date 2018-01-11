@@ -120,4 +120,37 @@ export default class RolesAndPermissions extends DataFetcher {
     }
     return this._extensionInfo.serviceFeatures[this._flag].enabled;
   }
+
+  get readTextPermissions() {
+    return !!(
+      this.serviceFeatures && (
+        (
+          this.serviceFeatures.PagerReceiving &&
+          this.serviceFeatures.PagerReceiving.enabled
+        ) ||
+        (
+          this.serviceFeatures.SMSReceiving &&
+          this.serviceFeatures.SMSReceiving.enabled
+        )
+      )
+    );
+  }
+
+  get voicemailPermissions() {
+    return !!(
+      this.serviceFeatures && (
+        this.serviceFeatures.Voicemail &&
+        this.serviceFeatures.Voicemail.enabled
+      )
+    );
+  }
+
+  get readFaxPermissions() {
+    return !!(
+      this.serviceFeatures && (
+        this.serviceFeatures.FaxReceiving &&
+        this.serviceFeatures.FaxReceiving.enabled
+      )
+    );
+  }
 }

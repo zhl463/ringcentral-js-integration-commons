@@ -217,6 +217,7 @@ export default class Phone extends RcModule {
       storage: this.storage,
       client: this.client,
       tabManager: this.tabManager,
+      rolesAndPermissions: this.rolesAndPermissions,
       getState: () => this.state.forwardingNumber,
     }));
     this.addModule('blockedNumber', new BlockedNumber({
