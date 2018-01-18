@@ -328,6 +328,7 @@ export default class Auth extends RcModule {
    */
   @proxify
   async logout() {
+    this._alert.dismissAll();
     this.store.dispatch({
       type: this.actionTypes.beforeLogout,
     });
