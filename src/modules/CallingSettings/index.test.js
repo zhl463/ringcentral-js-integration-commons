@@ -313,7 +313,7 @@ describe('CallingSettings Unit Test', () => {
       sinon.stub(callingSettings, '_initFromNumber');
       await callingSettings._init();
       sinon.assert.calledWith(callingSettings._alert.warning,
-        { message: callingSettingsMessages.firstLogin });
+        { message: callingSettingsMessages.firstLogin, ttl: 0 });
     });
     it(`should alert warning callingSettingsMessages.firstLoginOther when
     timestamp is equal to 0 and brand.id is not 1210`, async () => {
@@ -337,7 +337,7 @@ describe('CallingSettings Unit Test', () => {
       sinon.stub(callingSettings, '_initFromNumber');
       await callingSettings._init();
       sinon.assert.calledWith(callingSettings._alert.warning,
-        { message: callingSettingsMessages.firstLoginOther });
+        { message: callingSettingsMessages.firstLoginOther, ttl: 0 });
     });
     it(`should not alert warning when
     timestamp is  equal to 0`, async () => {
@@ -579,7 +579,7 @@ describe('CallingSettings Unit Test', () => {
       sinon.stub(callingSettings, '_alert');
       callingSettings._warningEmergencyCallingNotAvailable();
       sinon.assert.calledWith(callingSettings._alert.info,
-        { message: callingSettingsMessages.emergencyCallingNotAvailable });
+        { message: callingSettingsMessages.emergencyCallingNotAvailable, ttl: 0 });
     });
     it(`should alert info callingSettingsMessages.emergencyCallingNotAvailable when
     callWith is not equal to callingOptions.browser`, () => {
@@ -593,7 +593,7 @@ describe('CallingSettings Unit Test', () => {
     });
   });
   describe('setData', () => {
-    it(`_warningEmergencyCallingNotAvailable should not be called and 
+    it(`_warningEmergencyCallingNotAvailable should not be called and
     should alert info callingSettingsMessages.saveSuccessWithSoftphone when
     withPrompt is not equal to null and callWith is equal to callingOptions.softphone`, () => {
       sinon.stub(callingSettings, 'callWith', { get: () => callingOptions.softphone });
@@ -607,7 +607,7 @@ describe('CallingSettings Unit Test', () => {
         { message: callingSettingsMessages.saveSuccessWithSoftphone });
       sinon.assert.notCalled(callingSettings._warningEmergencyCallingNotAvailable);
     });
-    it(`_warningEmergencyCallingNotAvailable should be called once and 
+    it(`_warningEmergencyCallingNotAvailable should be called once and
     should alert info callingSettingsMessages.saveSuccess when
     withPrompt is not equal to null and callWith is not equal to callingOptions.softphone`, () => {
       sinon.stub(callingSettings, 'callWith', { get: () => callingOptions.browser });
@@ -621,7 +621,7 @@ describe('CallingSettings Unit Test', () => {
         { message: callingSettingsMessages.saveSuccess });
       sinon.assert.calledOnce(callingSettings._warningEmergencyCallingNotAvailable);
     });
-    it(`_warningEmergencyCallingNotAvailable should not be called once and 
+    it(`_warningEmergencyCallingNotAvailable should not be called once and
     should not alert info when
     withPrompt is equal to null and callWith is not equal to callingOptions.softphone`, () => {
       sinon.stub(callingSettings, 'callWith', { get: () => callingOptions.browser });

@@ -60,6 +60,7 @@ const presenceRegExp = /\/presence\?detailedTelephonyState=true/;
     'Client',
     'Subscription',
     'RolesAndPermissions',
+    { dep: 'TabManager', optional: true },
     { dep: 'Storage', optional: true },
     { dep: 'CallLogOptions', optional: true }
   ]
@@ -86,6 +87,7 @@ export default class CallLog extends Pollable {
     storage,
     subscription,
     rolesAndPermissions,
+    tabManager,
     ttl = DEFAULT_TTL,
     tokenExpiresIn = DEFAULT_TOKEN_EXPIRES_IN,
     timeToRetry = DEFAULT_TIME_TO_RETRY,
@@ -105,6 +107,7 @@ export default class CallLog extends Pollable {
     }
     this._subscription = subscription;
     this._rolesAndPermissions = rolesAndPermissions;
+    this._tabManager = tabManager;
     this._dataStorageKey = 'callLogData';
     this._tokenStorageKey = 'callLogToken';
     this._timestampStorageKey = 'callLogTimestamp';
@@ -159,9 +162,12 @@ export default class CallLog extends Pollable {
       message.body.activeCalls &&
       hasEndedCalls(message.body.activeCalls)
     ) {
-      const ownerId = this._auth.ownerId;
+      const { ownerId } = this._auth;
       await sleep(SYNC_DELAY);
-      if (ownerId === this._auth.ownerId) {
+      if (
+        ownerId === this._auth.ownerId &&
+        (!this._storage || !this._tabManager || this._tabManager.active)
+      ) {
         this.sync();
       }
     }
@@ -171,6 +177,7 @@ export default class CallLog extends Pollable {
       this._auth.loggedIn &&
       (!this._storage || this._storage.ready) &&
       (!this._subscription || this._subscription.ready) &&
+      (!this._tabManager || this._tabManager.ready) &&
       this._rolesAndPermissions.ready &&
       this.status === moduleStatuses.pending
     ) {
@@ -189,10 +196,7 @@ export default class CallLog extends Pollable {
           type: this.actionTypes.clearToken,
         });
       }
-      await this.sync();
-      if (this._subscription) {
-        this._subscription.subscribe(subscriptionFilters.detailedPresence);
-      }
+      await this._init();
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
@@ -201,6 +205,7 @@ export default class CallLog extends Pollable {
         !this._auth.loggedIn ||
         (!!this._storage && !this._storage.ready) ||
         (this._subscription && !this._subscription.ready) ||
+        (this._tabManager && !this._tabManager.ready) ||
         !this._rolesAndPermissions.ready
       ) &&
       this.ready
@@ -222,6 +227,21 @@ export default class CallLog extends Pollable {
     ) {
       this._lastMessage = this._subscription.message;
       this._subscriptionHandler(this._lastMessage);
+    }
+  }
+
+  async _init() {
+    if (!this._storage || !this._tabManager || this._tabManager.active) {
+      try {
+        await this.sync();
+      } catch (e) {
+        console.log(e);
+      }
+    } else if (this._polling) {
+      this._startPolling();
+    }
+    if (this._subscription) {
+      this._subscription.subscribe(subscriptionFilters.detailedPresence);
     }
   }
 

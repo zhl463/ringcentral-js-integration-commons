@@ -70,6 +70,7 @@ describe('Messages Unit Test', () => {
         contactMatcherReady,
         hasConversationLogger,
         conversationLoggerReady,
+        rolesAndPermissionsReady,
         pending,
       ) => {
         const result = !!(
@@ -78,6 +79,7 @@ describe('Messages Unit Test', () => {
           extensionInfoReady &&
           (!hasContactMatcher || contactMatcherReady) &&
           (!hasConversationLogger || conversationLoggerReady) &&
+          rolesAndPermissionsReady &&
           pending
         );
         it(
@@ -85,6 +87,7 @@ describe('Messages Unit Test', () => {
           auth.loggedIn is ${authLoggedIn} and
           messageStore.ready is ${messageStoreReady} and
           extensionInfo.ready is ${extensionInfoReady} and
+          rolesAndPermissions.ready is ${rolesAndPermissionsReady} and
           contactMatcher is ${hasContactMatcher ? '' : ' not '} used and
           ${
           hasContactMatcher ?
@@ -106,6 +109,9 @@ describe('Messages Unit Test', () => {
             };
             messages._auth = {
               loggedIn: authLoggedIn,
+            };
+            messages._rolesAndPermissions = {
+              ready: rolesAndPermissionsReady,
             };
             if (hasContactMatcher) {
               messages._contactMatcher = {
@@ -136,6 +142,7 @@ describe('Messages Unit Test', () => {
         contactMatcherReady,
         hasConversationLogger,
         conversationLoggerReady,
+        rolesAndPermissionsReady,
         ready,
       ) => {
         const result = !!(
@@ -143,6 +150,7 @@ describe('Messages Unit Test', () => {
             !authLoggedIn ||
             !messageStoreReady ||
             !extensionInfoReady ||
+            !rolesAndPermissionsReady ||
             (hasContactMatcher && !contactMatcherReady) ||
             (hasConversationLogger && !conversationLoggerReady)
           ) &&
@@ -153,6 +161,7 @@ describe('Messages Unit Test', () => {
           auth.loggedIn is ${authLoggedIn} and
           messageStore.ready is ${messageStoreReady} and
           extensionInfo.ready is ${extensionInfoReady} and
+          rolesAndPermissions.ready is ${rolesAndPermissionsReady} and
           contactMatcher is ${hasContactMatcher ? '' : ' not '} used and
           ${
           hasContactMatcher ?
@@ -174,6 +183,9 @@ describe('Messages Unit Test', () => {
             };
             messages._auth = {
               loggedIn: authLoggedIn,
+            };
+            messages._rolesAndPermissions = {
+              ready: rolesAndPermissionsReady,
             };
             if (hasContactMatcher) {
               messages._contactMatcher = {

@@ -641,6 +641,7 @@ describe('ContactSearch Unit Test', () => {
 
   describe('_searchSource', () => {
     it('should call _loadSearching and not call _saveSearching if searchFromCache return result', async () => {
+      contactSearch._searchIds = new Map();
       sinon.stub(contactSearch, '_searchFromCache').callsFake(() => ['123']);
       sinon.stub(contactSearch, '_loadSearching');
       sinon.stub(contactSearch, '_saveSearching');
@@ -652,6 +653,7 @@ describe('ContactSearch Unit Test', () => {
     });
 
     it('should call _loadSearching and call _saveSearching if searchFromCache return null', async () => {
+      contactSearch._searchIds = new Map();
       contactSearch._searchSources = new Map();
       contactSearch._searchSourcesFormat = new Map();
       contactSearch._searchSources.set('test', () => ['123']);
@@ -667,6 +669,7 @@ describe('ContactSearch Unit Test', () => {
     });
 
     it('should call _onSearchError when _searchFromCache throw error', async () => {
+      contactSearch._searchIds = new Map();
       contactSearch._searchSources = new Map();
       contactSearch._searchSourcesFormat = new Map();
       contactSearch._searchSources.set('test', () => ['123']);

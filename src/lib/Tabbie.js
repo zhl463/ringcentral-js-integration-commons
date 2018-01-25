@@ -45,7 +45,8 @@ export default class Tabbie {
 
       document.addEventListener('visibilitychange', async () => {
         // avoid setting mainTabId repeatedly which may result in forced rendering
-        if (!document.hidden && (await this.getMainTabId()) !== this.id) this._setAsMainTab();
+        const currentMainTabId = localStorage.getItem(this._mainTabKey);
+        if (!document.hidden && currentMainTabId !== this.id) this._setAsMainTab();
       });
       window.addEventListener('storage', async (e) => {
         if (e.key === this._mainTabKey) {
