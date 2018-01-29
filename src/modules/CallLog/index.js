@@ -196,7 +196,9 @@ export default class CallLog extends Pollable {
           type: this.actionTypes.clearToken,
         });
       }
-      await this._init();
+      if (this._rolesAndPermissions.permissions.ReadCallLog) {
+        await this._init();
+      }
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
@@ -297,6 +299,7 @@ export default class CallLog extends Pollable {
   get canReadPresence() {
     return !!this._rolesAndPermissions.permissions.ReadPresenceStatus;
   }
+
   @proxify
   async _fetch({ dateFrom, dateTo }) {
     return fetchList(params => (

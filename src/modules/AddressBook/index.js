@@ -48,6 +48,7 @@ function getSyncParams(syncToken, pageId) {
   deps: [
     'Client',
     'Auth',
+    'RolesAndPermissions',
     { dep: 'Storage', optional: true },
     { dep: 'TabManager', optional: true },
     { dep: 'AddressBookOptions', optional: true }
@@ -71,6 +72,7 @@ export default class AddressBook extends Pollable {
     auth,
     storage,
     tabManager,
+    rolesAndPermissions,
     ttl = DEFAULT_TTL,
     timeToRetry = DEFAULT_TIME_TO_RETRY,
     polling = true,
@@ -88,6 +90,7 @@ export default class AddressBook extends Pollable {
     this._auth = auth;
     this._tabManager = tabManager;
     this._ttl = ttl;
+    this._rolesAndPermissions = rolesAndPermissions;
     this._timeToRetry = timeToRetry;
     this._polling = polling;
     this._promise = null;
@@ -213,6 +216,7 @@ export default class AddressBook extends Pollable {
   }
 
   async _initAddressBook() {
+    if (!this._hasPermission) return;
     if (this._shouldFetch()) {
       try {
         await this.sync();
@@ -224,6 +228,10 @@ export default class AddressBook extends Pollable {
     } else {
       this._retry();
     }
+  }
+
+  get _hasPermission() {
+    return !!this._rolesAndPermissions.permissions.ReadPersonalContacts;
   }
 
   _resetModuleStatus() {

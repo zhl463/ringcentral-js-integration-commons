@@ -104,7 +104,13 @@ export default class DataFetcher extends Pollable {
       this.store.dispatch({
         type: this.actionTypes.init,
       });
-      await this._init();
+      if (this._hasPermission) {
+        await this._init();
+      } else {
+        this.store.dispatch({
+          type: this.actionTypes.initSuccess,
+        });
+      }
     } else if (this._isDataReady()) {
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
@@ -217,6 +223,10 @@ export default class DataFetcher extends Pollable {
 
   get timeToRetry() {
     return this._timeToRetry;
+  }
+
+  get _hasPermission() {
+    return true;
   }
 
   @proxify

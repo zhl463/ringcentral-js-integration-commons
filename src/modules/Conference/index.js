@@ -13,7 +13,7 @@ const DEFAULT_MASK = 'phoneNumber,hostCode,participantCode,phoneNumbers(country,
  */
 @Module({
   deps: [
-    'Client', 'Storage', 'RegionSettings', { dep: 'ConferenceOptions', optional: true }
+    'Client', 'Storage', 'RegionSettings', 'RolesAndPermissions', { dep: 'ConferenceOptions', optional: true }
   ]
 })
 export default class Conference extends DataFetcher {
@@ -27,6 +27,7 @@ export default class Conference extends DataFetcher {
     client,
     regionSettings,
     storage,
+    rolesAndPermissions,
     ...options
   }) {
     super({
@@ -43,6 +44,7 @@ export default class Conference extends DataFetcher {
     this._dialInNumberStorageKey = 'conferenceDialInNumber';
     this._additionalNumbersStorageKey = 'conferenceAdditionalNumbers';
     this._regionSetting = regionSettings;
+    this._rolesAndPermissions = rolesAndPermissions;
     this._lastCountryCode = null;
     this._storage.registerReducer({
       key: this._dialInNumberStorageKey,
@@ -68,6 +70,10 @@ export default class Conference extends DataFetcher {
     if (matchedPhoneNumber && matchedPhoneNumber.phoneNumber !== this.dialInNumber) {
       this.updateDialInNumber(matchedPhoneNumber.phoneNumber);
     }
+  }
+
+  _shouldInit() {
+    return super._shouldInit() && this._rolesAndPermissions.ready;
   }
 
   @proxify
@@ -108,6 +114,10 @@ export default class Conference extends DataFetcher {
 
   get dialInNumber() {
     return this._storage.getItem(this._dialInNumberStorageKey) || this.data.phoneNumber;
+  }
+
+  get _hasPermission() {
+    return !!this._rolesAndPermissions.permissions.OrganizeConference;
   }
 
   _shouldFetch() {

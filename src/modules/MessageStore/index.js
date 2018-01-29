@@ -98,7 +98,6 @@ export default class MessageStore extends Pollable {
     this._lastSubscriptionMessage = null;
     this._storageKey = 'messageStore';
     this._polling = polling;
-
     if (this._storage) {
       this._reducer = getMessageStoreReducer(this.actionTypes);
       this._storage.registerReducer({
@@ -275,7 +274,12 @@ export default class MessageStore extends Pollable {
     return this.conversationMap[id.toString()];
   }
 
+  get _hasPermission() {
+    return this._rolesAndPermissions.hasReadMessagesPermission;
+  }
+
   async _initMessageStore() {
+    if (!this._hasPermission) return;
     if (!this._storage || !this._tabManager || this._tabManager.active) {
       try {
         await this._syncMessages();

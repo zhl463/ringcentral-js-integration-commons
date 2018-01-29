@@ -111,6 +111,10 @@ export default class RolesAndPermissions extends DataFetcher {
     );
   }
 
+  get callingEnabled() {
+    return this.webphoneEnabled || this.ringoutEnabled;
+  }
+
   get tierEnabled() {
     if (
       !this._extensionInfo.serviceFeatures ||
@@ -119,6 +123,39 @@ export default class RolesAndPermissions extends DataFetcher {
       return null;
     }
     return this._extensionInfo.serviceFeatures[this._flag].enabled;
+  }
+
+  get hasReadCallLogPermission() {
+    return !!(
+      this.ready &&
+      this.permissions &&
+      this.permissions.ReadCallLog
+    );
+  }
+
+  get hasPresencePermission() {
+    return !!(
+      this.serviceFeatures && (
+        this.serviceFeatures.Presence &&
+        this.serviceFeatures.Presence.enabled
+      )
+    );
+  }
+
+  get hasComposeTextPermission() {
+    return !!(
+      this.serviceFeatures && (
+        (this.serviceFeatures.Pager && this.serviceFeatures.Pager.enabled) ||
+        (this.serviceFeatures.SMS && this.serviceFeatures.SMS.enabled)
+      )
+    );
+  }
+
+  get hasReadMessagesPermission() {
+    return this.ready && (
+      this.readTextPermissions ||
+      this.voicemailPermissions
+    );
   }
 
   get readTextPermissions() {
@@ -138,6 +175,7 @@ export default class RolesAndPermissions extends DataFetcher {
 
   get voicemailPermissions() {
     return !!(
+      this.callingEnabled &&
       this.serviceFeatures && (
         this.serviceFeatures.Voicemail &&
         this.serviceFeatures.Voicemail.enabled

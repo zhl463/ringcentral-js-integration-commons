@@ -236,6 +236,7 @@ export default class CallingSettings extends RcModule {
     );
   }
   async _init() {
+    if (!this._rolesAndPermissions.callingEnabled) return;
     this._myPhoneNumbers = this.myPhoneNumbers;
     this._otherPhoneNumbers = this.otherPhoneNumbers;
     this._ringoutEnabled = this._rolesAndPermissions.ringoutEnabled;
@@ -247,12 +248,6 @@ export default class CallingSettings extends RcModule {
         type: this.actionTypes.setData,
         callWith: defaultCallWith,
         timestamp: Date.now(),
-      });
-      this._alert.warning({
-        message: this._brand.id === '1210' ?
-          callingSettingsMessages.firstLogin :
-          callingSettingsMessages.firstLoginOther,
-        ttl: 0,
       });
       this._warningEmergencyCallingNotAvailable();
       if (typeof this._onFirstLogin === 'function') {
