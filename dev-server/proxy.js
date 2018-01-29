@@ -1,3 +1,3 @@
-import ProxyFrameController from '../src/lib/ProxyFrameController';
+// import ProxyFrameController from '../src/lib/ProxyFrameController';
 
-export default new ProxyFrameController();
+// export default new ProxyFrameController();

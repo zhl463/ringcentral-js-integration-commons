@@ -377,7 +377,7 @@ export default class Webphone extends RcModule {
       *   (But the WebRTC client must logout on receiving SIP/2.0 403 Forbidden error and in case of login -
       *   provision again via Platform API and receive new InstanceID)
       */
-      if (response && response.status_code === 503) {
+      if (response && (response.status_code === 503 || response.status_code === 603)) {
         errorCode = webphoneErrors.webphoneCountOverLimit;
         this._alert.warning({
           message: errorCode,

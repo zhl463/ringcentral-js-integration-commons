@@ -1,3 +1,3 @@
-import RedirectController from '../src/lib/RedirectController';
+// import RedirectController from '../src/lib/RedirectController';
 
-export default new RedirectController();
+// export default new RedirectController();
