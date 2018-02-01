@@ -382,6 +382,9 @@ describe('MessageStore Unit Test', () => {
       messageStore._subscription = {
         subscribe: () => null,
       };
+      messageStore._rolesAndPermissions = {
+        hasReadMessagesPermission: true,
+      };
       await messageStore._initMessageStore();
       sinon.assert.calledOnce(messageStore._syncMessages);
     });
@@ -391,6 +394,9 @@ describe('MessageStore Unit Test', () => {
       sinon.stub(messageStore, '_syncMessages');
       messageStore._subscription = {
         subscribe: () => null,
+      };
+      messageStore._rolesAndPermissions = {
+        hasReadMessagesPermission: true,
       };
       await messageStore._initMessageStore();
       sinon.assert.calledOnce(messageStore._syncMessages);
@@ -403,19 +409,38 @@ describe('MessageStore Unit Test', () => {
       messageStore._subscription = {
         subscribe: () => null,
       };
+      messageStore._rolesAndPermissions = {
+        hasReadMessagesPermission: true,
+      };
       await messageStore._initMessageStore();
       sinon.assert.notCalled(messageStore._syncMessages);
     });
 
-    it('should not call _syncMessages if tabManager is active', async () => {
+    it('should call _syncMessages if tabManager is active', async () => {
       messageStore._storage = {};
       messageStore._tabManager = { active: true };
       sinon.stub(messageStore, '_syncMessages');
       messageStore._subscription = {
         subscribe: () => null,
       };
+      messageStore._rolesAndPermissions = {
+        hasReadMessagesPermission: true,
+      };
       await messageStore._initMessageStore();
       sinon.assert.calledOnce(messageStore._syncMessages);
+    });
+
+    it('should not call _syncMessages if hasReadMessagesPermission is false', async () => {
+      messageStore._storage = {};
+      sinon.stub(messageStore, '_syncMessages');
+      messageStore._subscription = {
+        subscribe: () => null,
+      };
+      messageStore._rolesAndPermissions = {
+        hasReadMessagesPermission: false,
+      };
+      await messageStore._initMessageStore();
+      sinon.assert.notCalled(messageStore._syncMessages);
     });
   });
 
