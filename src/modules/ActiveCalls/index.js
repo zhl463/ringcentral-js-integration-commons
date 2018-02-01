@@ -18,6 +18,7 @@ const DEFAULT_TTL = 5 * 60 * 1000;
 @Module({
   deps: [
     'Client',
+    'RolesAndPermissions',
     { dep: 'TabManager', optional: true },
     { dep: 'AccountPhoneNumberOptions', optional: true }
   ]
@@ -31,6 +32,7 @@ export default class ActiveCalls extends DataFetcher {
    */
   constructor({
     client,
+    rolesAndPermissions,
     tabManager, // do not pass tabManager to DataFetcher as data is not shared in localStorage
     ttl = DEFAULT_TTL,
     ...options
@@ -51,15 +53,24 @@ export default class ActiveCalls extends DataFetcher {
           }
         }
       },
-      fetchFunction: async () => fetchList(params => (
+      fetchFunction: async () => fetchList(params =>
         this._client.account().extension().activeCalls().list(params)
-      ))
+      )
     });
+    this._rolesAndPermissions = rolesAndPermissions;
     this.addSelector(
       'calls',
       () => this.data,
       data => data || [],
     );
+  }
+
+  _shouldInit() {
+    return super._shouldInit() && this._rolesAndPermissions.ready;
+  }
+
+  get _hasPermission() {
+    return this._rolesAndPermissions.permissions.ReadCallLog;
   }
 
   get calls() {

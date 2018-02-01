@@ -1,11 +1,9 @@
 import isBlank from './isBlank';
-import normalizeNumber from './normalizeNumber';
 
 export const AllContactSourceName = 'all';
 
 export function addPhoneToContact(contact, phone, type) {
-  const phoneNumber = normalizeNumber({ phoneNumber: phone });
-  if (isBlank(phoneNumber)) {
+  if (isBlank(phone)) {
     return;
   }
   const existedPhone = contact.phoneNumbers.find(
@@ -114,4 +112,25 @@ export function filterContacts(contacts, searchFilter) {
     }
     return false;
   });
+}
+
+export function getMatchContacts({ contacts, phoneNumber, entityType }) {
+  const result = [];
+  contacts.forEach((contact) => {
+    const found = contact.phoneNumbers && contact.phoneNumbers.find(
+      number => (number.phoneNumber === phoneNumber)
+    );
+    if (!found) {
+      return;
+    }
+    const matchedContact = {
+      ...contact,
+      phoneNumbers: [
+        ...contact.phoneNumbers
+      ],
+      entityType,
+    };
+    result.push(matchedContact);
+  });
+  return result;
 }

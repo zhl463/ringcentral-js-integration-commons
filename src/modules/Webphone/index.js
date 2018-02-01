@@ -42,6 +42,7 @@ const MAX_RETRIES_DELAY = 2 * 60 * 1000;
     'NumberValidate',
     'RolesAndPermissions',
     'AudioSettings',
+    { dep: 'TabManager', optional: true },
     { dep: 'WebphoneOptions', optional: true }
   ]
 })
@@ -79,6 +80,7 @@ export default class Webphone extends RcModule {
     extensionDevice,
     numberValidate,
     audioSettings,
+    tabManager,
     onCallEnd,
     onCallRing,
     onCallStart,
@@ -100,6 +102,7 @@ export default class Webphone extends RcModule {
     this._numberValidate = this::ensureExist(numberValidate, 'numberValidate');
     this._audioSettings = this::ensureExist(audioSettings, 'audioSettings');
     this._contactMatcher = contactMatcher;
+    this._tabManager = tabManager;
     this._onCallEndFunc = onCallEnd;
     this._onCallRingFunc = onCallRing;
     this._onCallStartFunc = onCallStart;
@@ -214,9 +217,6 @@ export default class Webphone extends RcModule {
   async _onStateChange() {
     if (this._shouldInit()) {
       this.store.dispatch({
-        type: this.actionTypes.init,
-      });
-      this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
     } else if (this._shouldReset()) {
@@ -274,6 +274,7 @@ export default class Webphone extends RcModule {
       this._extensionDevice.ready &&
       this._numberValidate.ready &&
       this._audioSettings.ready &&
+      (!this._tabManager || this._tabManager.ready) &&
       this.pending
     );
   }
@@ -285,6 +286,7 @@ export default class Webphone extends RcModule {
         !this._rolesAndPermissions.ready ||
         !this._numberValidate.ready ||
         !this._extensionDevice.ready ||
+        (!!this._tabManager && !this._tabManager.ready) ||
         !this._audioSettings.ready
       ) &&
       this.ready
@@ -360,12 +362,29 @@ export default class Webphone extends RcModule {
       let errorCode;
       let needToReconnect = false;
       console.error(response);
-      console.error(`webphone register failed: ${cause}`);
-      if (response && response.status_code === 503) {
+      console.error('webphone register failed:', cause);
+      // limit logic:
+      /*
+      * Specialties of this flow are next:
+      *   6th WebRTC in another browser receives 6th ‘EndpointID’ and 1st ‘InstanceID’,
+      *   which has been given previously to the 1st ‘EndpointID’.
+      *   It successfully registers on WSX by moving 1st ‘EndpointID’ to a blacklist state.
+      *   When 1st WebRTC client re-registers on expiration timeout,
+      *   WSX defines that 1st ‘EndpointID’ is blacklisted and responds with ‘SIP/2.0 403 Forbidden,
+      *   instance id is intercepted by another registration’ and remove it from black list.
+      *   So if 1st WebRTC will send re-register again with the same ‘InstanceID’,
+      *   it will be accepted and 6th ‘EndpointID’ will be blacklisted.
+      *   (But the WebRTC client must logout on receiving SIP/2.0 403 Forbidden error and in case of login -
+      *   provision again via Platform API and receive new InstanceID)
+      */
+      if (response && (response.status_code === 503 || response.status_code === 603)) {
         errorCode = webphoneErrors.webphoneCountOverLimit;
         this._alert.warning({
           message: errorCode,
         });
+        needToReconnect = true;
+      }
+      if (response && response.status_code === 403) {
         needToReconnect = true;
       }
       this.store.dispatch({
@@ -413,6 +432,12 @@ export default class Webphone extends RcModule {
         this.store.dispatch({
           type: this.actionTypes.resetRetryCounts,
         });
+        return;
+      }
+
+      if (this._tabManager && !this._tabManager.active) {
+        await sleep(FIRST_THREE_RETRIES_DELAY);
+        await this._connect(reconnect);
         return;
       }
 
@@ -723,12 +748,15 @@ export default class Webphone extends RcModule {
     if (!session) {
       return false;
     }
+    if (session.isOnHold().local) {
+      return true;
+    }
     try {
       await session.hold();
       this._updateSessions();
       return true;
     } catch (e) {
-      console.log(e);
+      console.error('hold error:', e);
       this._alert.warning({
         message: webphoneErrors.holdError
       });

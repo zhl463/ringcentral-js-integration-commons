@@ -1,13 +1,13 @@
 export default function init() {
-  let analytics = [];
   if (typeof window !== 'undefined') {
-    analytics = window.analytics = window.analytics || [];
+    window.analytics = window.analytics || [];
+    const { analytics } = window;
     if (analytics.initialize) {
       if (window.console && console.log) {
         console.log('Segment initialized!');
       }
     } else if (analytics.invoked) {
-    // If the snippet was invoked already show an error.
+      // If the snippet was invoked already show an error.
       if (window.console && console.error) {
         console.error('Segment snippet included twice.');
       }
@@ -63,6 +63,7 @@ export default function init() {
 
       analytics.SNIPPET_VERSION = '4.0.0';
     }
+    return analytics;
   }
-  return analytics;
+  return [];
 }

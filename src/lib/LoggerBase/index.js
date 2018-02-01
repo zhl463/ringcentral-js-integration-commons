@@ -173,5 +173,4 @@ export default class LoggerBase extends RcModule {
   get loggingMap() {
     return this._selectors.loggingMap();
   }
-
 }

@@ -66,7 +66,7 @@ export default class Phone extends RcModule {
     redirectUri,
     proxyUri,
     ...options
-   } = {}) {
+  } = {}) {
     super({
       ...options,
     });
@@ -217,6 +217,7 @@ export default class Phone extends RcModule {
       storage: this.storage,
       client: this.client,
       tabManager: this.tabManager,
+      rolesAndPermissions: this.rolesAndPermissions,
       getState: () => this.state.forwardingNumber,
     }));
     this.addModule('blockedNumber', new BlockedNumber({
@@ -389,6 +390,8 @@ export default class Phone extends RcModule {
       client: this.client,
       storage: this.storage,
       subscription: this.subscription,
+      connectivityMonitor: this.connectivityMonitor,
+      rolesAndPermissions: this.rolesAndPermissions,
       getState: () => this.state.messageStore,
     }));
 
@@ -403,8 +406,10 @@ export default class Phone extends RcModule {
 
     this.addModule('messages', new Messages({
       ...options,
+      auth: this.auth,
       messageStore: this.messageStore,
       extensionInfo: this.extensionInfo,
+      rolesAndPermissions: this.rolesAndPermissions,
       getState: () => this.state.messages,
     }));
 

@@ -144,9 +144,8 @@ export default class RecentCalls extends RcModule {
    * @param {Array} calls
    * @param {Date} dateFrom
    */
-  _getLocalRecentCalls(currentContact, calls, dateFrom) {
+  _getLocalRecentCalls({ phoneNumbers }, calls, dateFrom) {
     // Get all calls related to this contact
-    const phoneNumbers = currentContact.phoneNumbers;
     return calls.reduce((acc, call) => {
       if (call && call.to && call.from) {
         const matches = phoneNumbers.find(this._filterPhoneNumber(call));
@@ -178,7 +177,7 @@ export default class RecentCalls extends RcModule {
    * @return {Array}
    */
   _fetchRemoteRecentCalls(
-    currentContact,
+    { phoneNumbers },
     dateFrom,
     length
   ) {
@@ -189,7 +188,6 @@ export default class RecentCalls extends RcModule {
     };
 
     // CallLog API doesn't support plus sign in phoneNumber
-    const phoneNumbers = currentContact.phoneNumbers;
     const recentCallsPromises = phoneNumbers.reduce((acc, { phoneType, phoneNumber }) => {
       phoneNumber = phoneNumber.replace('+', '');
       if (phoneType === 'extension') {

@@ -1,4 +1,4 @@
-import { formatLocal } from 'phoneformat.js';
+import { formatLocal, formatInternational } from 'phoneformat.js';
 import parseNumber from '../parseNumber';
 
 const SWITCH_US_CA = {
@@ -20,6 +20,7 @@ export default function formatNumber({
   removeExtension = false,
   countryCode = 'US',
   areaCode = '',
+  international = false,
 }) {
   const {
     hasPlus,
@@ -37,16 +38,22 @@ export default function formatNumber({
     const numberWithAreaCode = (!hasPlus && number.length === 7 && areaCode !== '') ?
       (areaCode + number) :
       number;
-    formattedNumber = formatLocal(countryCode, `${hasPlus ? '+' : ''}${numberWithAreaCode}`);
-    if (formattedNumber[0] === '+' && number[0] === '1') {
-      const switchedFormat = formatLocal(
-        SWITCH_US_CA[countryCode],
-        `+${numberWithAreaCode}`
-      );
-      if (switchedFormat[0] !== '+') formattedNumber = switchedFormat;
+    if (international) {
+      formattedNumber = formatInternational(countryCode, `${hasPlus ? '+' : ''}${numberWithAreaCode}`);
+    } else {
+      formattedNumber = formatLocal(countryCode, `${hasPlus ? '+' : ''}${numberWithAreaCode}`);
+      if (formattedNumber[0] === '+' && number[0] === '1') {
+        const switchedFormat = formatLocal(
+          SWITCH_US_CA[countryCode],
+          `+${numberWithAreaCode}`
+        );
+        if (switchedFormat[0] !== '+') formattedNumber = switchedFormat;
+      }
     }
   } else {
-    formattedNumber = formatLocal(countryCode, `${hasPlus ? '+' : ''}${number}`);
+    formattedNumber = international ?
+      formatInternational(countryCode, `${hasPlus ? '+' : ''}${number}`) :
+      formatLocal(countryCode, `${hasPlus ? '+' : ''}${number}`);
   }
 
   return extension && !removeExtension ?

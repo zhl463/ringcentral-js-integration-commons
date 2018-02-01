@@ -1,10 +1,11 @@
 import { Module } from '../../lib/di';
 import Pollable from '../../lib/Pollable';
 import sleep from '../../lib/sleep';
+import moduleStatuses from '../../enums/moduleStatuses';
 import syncTypes from '../../enums/syncTypes';
 import actionTypes from './actionTypes';
 import proxify from '../../lib/proxy/proxify';
-import { addPhoneToContact } from '../../lib/contactHelper';
+import { addPhoneToContact, getMatchContacts } from '../../lib/contactHelper';
 
 import getAddressBookReducer, {
   getSyncTokenReducer,
@@ -47,7 +48,9 @@ function getSyncParams(syncToken, pageId) {
   deps: [
     'Client',
     'Auth',
+    'RolesAndPermissions',
     { dep: 'Storage', optional: true },
+    { dep: 'TabManager', optional: true },
     { dep: 'AddressBookOptions', optional: true }
   ]
 })
@@ -57,6 +60,7 @@ export default class AddressBook extends Pollable {
    * @param {Object} params - params object
    * @param {Client} params.client - client module instance
    * @param {Auth} params.auth - Auth module instance
+   * @param {TabManager} params.tabManage - TabManager module instance
    * @param {Storage} params.storage - storage module instance, optional
    * @param {Number} params.ttl - local cache timestamp, default 30 mins
    * @param {Number} params.timeToRetry - timestamp to retry, default 62 seconds
@@ -67,6 +71,8 @@ export default class AddressBook extends Pollable {
     client,
     auth,
     storage,
+    tabManager,
+    rolesAndPermissions,
     ttl = DEFAULT_TTL,
     timeToRetry = DEFAULT_TIME_TO_RETRY,
     polling = true,
@@ -82,7 +88,9 @@ export default class AddressBook extends Pollable {
       this._storage = storage;
     }
     this._auth = auth;
+    this._tabManager = tabManager;
     this._ttl = ttl;
+    this._rolesAndPermissions = rolesAndPermissions;
     this._timeToRetry = timeToRetry;
     this._polling = polling;
     this._promise = null;
@@ -155,7 +163,14 @@ export default class AddressBook extends Pollable {
       if (this._shouleCleanCache()) {
         this._cleanUp();
       }
-      await this._initAddressBook();
+      if (this._hasPermission) {
+        await this._initAddressBook();
+      } else {
+        this.store.dispatch({
+          type: this.actionTypes.initSuccess,
+        });
+      }
+    } else if (this._isDataReady()) {
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
@@ -167,6 +182,8 @@ export default class AddressBook extends Pollable {
   _shouldInit() {
     return (
       (!this._storage || this._storage.ready) &&
+      (!this._tabManager || this._tabManager.ready) &&
+      this._rolesAndPermissions.ready &&
       this._auth.loggedIn &&
       this.pending
     );
@@ -176,6 +193,8 @@ export default class AddressBook extends Pollable {
     return (
       (
         (!!this._storage && !this._storage.ready) ||
+        (!!this._tabManager && !this._tabManager.ready) ||
+        !this._rolesAndPermissions.ready ||
         !this._auth.loggedIn
       ) &&
       this.ready
@@ -190,12 +209,37 @@ export default class AddressBook extends Pollable {
     );
   }
 
+  _shouldFetch() {
+    return (
+      (!this._storage || !this._tabManager || this._tabManager.active) &&
+      this._shouleCleanCache()
+    );
+  }
+
+  _isDataReady() {
+    // only turns ready when data has been fetched
+    // (could be from other tabs)
+    return this.status === moduleStatuses.initializing &&
+      this.syncToken !== null;
+  }
+
   async _initAddressBook() {
-    try {
-      await this.sync();
-    } catch (e) {
-      console.error(e);
+    if (!this._hasPermission) return;
+    if (this._shouldFetch()) {
+      try {
+        await this.sync();
+      } catch (e) {
+        console.error('syncData error:', e);
+      }
+    } else if (this._polling) {
+      this._startPolling();
+    } else {
+      this._retry();
     }
+  }
+
+  get _hasPermission() {
+    return !!this._rolesAndPermissions.permissions.ReadPersonalContacts;
   }
 
   _resetModuleStatus() {
@@ -300,6 +344,16 @@ export default class AddressBook extends Pollable {
       type: this.actionTypes.cleanUp,
     });
   }
+
+  // interface of contact source
+  matchPhoneNumber(phoneNumber) {
+    return getMatchContacts({
+      contacts: this.contacts,
+      phoneNumber,
+      entityType: 'rcContact',
+    });
+  }
+
   @proxify
   async fetchData() {
     await this.sync();

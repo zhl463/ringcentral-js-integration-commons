@@ -2,7 +2,7 @@ import RcModule from '../../lib/RcModule';
 import { Module } from '../../lib/di';
 import isBlank from '../../lib/isBlank';
 import ensureExist from '../../lib/ensureExist';
-import { addPhoneToContact } from '../../lib/contactHelper';
+import { addPhoneToContact, getMatchContacts } from '../../lib/contactHelper';
 import { batchGetApi } from '../../lib/batchApiHelper';
 import proxify from '../../lib/proxy/proxify';
 
@@ -179,7 +179,7 @@ export default class AccountContacts extends RcModule {
 
   // interface of contact source
   @proxify
-  getPresence(contact) {
+  getPresence(contact, useCache = true) {
     return new Promise((resolve) => {
       if (!contact || !contact.id || contact.type !== 'company') {
         resolve(null);
@@ -188,10 +188,11 @@ export default class AccountContacts extends RcModule {
 
       const presenceId = `${contact.id}`;
       if (
+        useCache &&
         this.presences[presenceId] &&
         (Date.now() - this.presences[presenceId].timestamp < this._presenceTtl)
       ) {
-        const presence = this.presences[presenceId].presence;
+        const { presence } = this.presences[presenceId];
         resolve(presence);
         return;
       }
@@ -217,6 +218,15 @@ export default class AccountContacts extends RcModule {
     });
   }
 
+  // interface of contact source
+  matchPhoneNumber(phoneNumber) {
+    return getMatchContacts({
+      contacts: this.contacts,
+      phoneNumber,
+      entityType: 'rcContact',
+    });
+  }
+
   async _processQueryPresences(getPresenceContexts) {
     const contacts = getPresenceContexts.map(x => x.contact);
     const responses = await this._batchQueryPresences(contacts);
@@ -227,7 +237,9 @@ export default class AccountContacts extends RcModule {
         ctx.resolve(null);
         return;
       }
-      const { dndStatus, presenceStatus, telephonyStatus, userStatus } = response;
+      const {
+        dndStatus, presenceStatus, telephonyStatus, userStatus
+      } = response;
       const presenceId = ctx.contact.id;
       presenceMap[presenceId] = {
         dndStatus,
@@ -248,7 +260,7 @@ export default class AccountContacts extends RcModule {
     const presenceSet = {};
     try {
       if (contacts.length === 1) {
-        const id = contacts[0].id;
+        const { id } = contacts[0];
         const response = await this._client.account().extension(id).presence().get();
         presenceSet[id] = response;
       } else if (contacts.length > 1) {

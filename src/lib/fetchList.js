@@ -35,6 +35,7 @@ async function serialFetch(fn, perPage, params) {
       perPage,
       page: fetchedPages,
     });
+    /* eslint { "prefer-destructuring": 0 } */
     totalPages = data.paging.totalPages;
     list.push(...data.records);
   }

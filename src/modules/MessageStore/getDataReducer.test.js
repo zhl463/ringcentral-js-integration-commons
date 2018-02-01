@@ -174,6 +174,41 @@ describe('MessageStore :: Data :: getMessageDataReducer', () => {
         });
       });
     });
+   it('should return new state correctly on removeMessage', () => {
+      const originalState = {
+        conversations: [{conversationId:'123456789'},{conversationId:'987654321'}],
+        conversationMap: {
+          123456789: {
+            id: '123456789',
+            index: 0,
+            unreadMessages: { 1234568: 1 },
+            syncToken: 'abcd',
+          },987654321: {
+            id: '987654321',
+            index: 0,
+            unreadMessages: { 1234568: 1 },
+            syncToken: 'abcd',
+          }
+        },
+        messages: [{id:'123456789'}, {id:'987654321'}],
+      };
+      expect(reducer(originalState, {
+          type: actionTypes.removeMessage,
+          conversationId: '123456789',
+          messageId: '123456789',
+        })).to.deep.equal({
+          conversations: [{conversationId: '987654321'}], 
+          conversationMap: {
+            987654321: {
+              id: '987654321',
+              index: 0,
+              unreadMessages: { 1234568: 1 },
+              syncToken: 'abcd',
+            }
+          },
+          messages: [{id: '987654321'}],
+        });
+    });
 
     it('should return empty object on cleanUp', () => {
       const originalState = {

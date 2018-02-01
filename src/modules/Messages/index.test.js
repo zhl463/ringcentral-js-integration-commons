@@ -63,25 +63,31 @@ describe('Messages Unit Test', () => {
   describe('_shouldInit', () => {
     runBooleanTest(
       (
+        authLoggedIn,
         messageStoreReady,
         extensionInfoReady,
         hasContactMatcher,
         contactMatcherReady,
         hasConversationLogger,
         conversationLoggerReady,
+        rolesAndPermissionsReady,
         pending,
       ) => {
-        const result = (
+        const result = !!(
+          authLoggedIn &&
           messageStoreReady &&
           extensionInfoReady &&
           (!hasContactMatcher || contactMatcherReady) &&
           (!hasConversationLogger || conversationLoggerReady) &&
+          rolesAndPermissionsReady &&
           pending
         );
         it(
           `should return ${result} when:
+          auth.loggedIn is ${authLoggedIn} and
           messageStore.ready is ${messageStoreReady} and
           extensionInfo.ready is ${extensionInfoReady} and
+          rolesAndPermissions.ready is ${rolesAndPermissionsReady} and
           contactMatcher is ${hasContactMatcher ? '' : ' not '} used and
           ${
           hasContactMatcher ?
@@ -100,6 +106,12 @@ describe('Messages Unit Test', () => {
             };
             messages._extensionInfo = {
               ready: extensionInfoReady,
+            };
+            messages._auth = {
+              loggedIn: authLoggedIn,
+            };
+            messages._rolesAndPermissions = {
+              ready: rolesAndPermissionsReady,
             };
             if (hasContactMatcher) {
               messages._contactMatcher = {
@@ -123,18 +135,22 @@ describe('Messages Unit Test', () => {
   describe('_shouldReset', () => {
     runBooleanTest(
       (
+        authLoggedIn,
         messageStoreReady,
         extensionInfoReady,
         hasContactMatcher,
         contactMatcherReady,
         hasConversationLogger,
         conversationLoggerReady,
+        rolesAndPermissionsReady,
         ready,
       ) => {
-        const result = (
+        const result = !!(
           (
+            !authLoggedIn ||
             !messageStoreReady ||
             !extensionInfoReady ||
+            !rolesAndPermissionsReady ||
             (hasContactMatcher && !contactMatcherReady) ||
             (hasConversationLogger && !conversationLoggerReady)
           ) &&
@@ -142,8 +158,10 @@ describe('Messages Unit Test', () => {
         );
         it(
           `should return ${result} when:
+          auth.loggedIn is ${authLoggedIn} and
           messageStore.ready is ${messageStoreReady} and
           extensionInfo.ready is ${extensionInfoReady} and
+          rolesAndPermissions.ready is ${rolesAndPermissionsReady} and
           contactMatcher is ${hasContactMatcher ? '' : ' not '} used and
           ${
           hasContactMatcher ?
@@ -162,6 +180,12 @@ describe('Messages Unit Test', () => {
             };
             messages._extensionInfo = {
               ready: extensionInfoReady,
+            };
+            messages._auth = {
+              loggedIn: authLoggedIn,
+            };
+            messages._rolesAndPermissions = {
+              ready: rolesAndPermissionsReady,
             };
             if (hasContactMatcher) {
               messages._contactMatcher = {

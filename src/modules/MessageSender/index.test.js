@@ -358,7 +358,7 @@ describe('MessageSender Unit Test', () => {
     it('should return true and not call warning', () => {
       sinon.stub(messageSender, '_alertWarning');
       const senderNumber = '1234567891';
-      sinon.stub(messageSender, 'senderNumbersList', { get: () => ['1234567891'] });
+      sinon.stub(messageSender, 'senderNumbersList', { get: () => [{ phoneNumber: '1234567891' }] });
       const result = messageSender._validateSenderNumber(senderNumber);
       sinon.assert.notCalled(messageSender._alertWarning);
       expect(result).to.equal(true);
@@ -367,7 +367,7 @@ describe('MessageSender Unit Test', () => {
     it('should return false and warning senderNumberInvalid when senderNumber is blank', () => {
       sinon.stub(messageSender, '_alertWarning');
       const senderNumber = '';
-      sinon.stub(messageSender, 'senderNumbersList', { get: () => ['1234567891'] });
+      sinon.stub(messageSender, 'senderNumbersList', { get: () => [{ phoneNumber: '1234567891' }] });
       const result = messageSender._validateSenderNumber(senderNumber);
       sinon.assert.calledWith(
         messageSender._alertWarning,
@@ -379,7 +379,7 @@ describe('MessageSender Unit Test', () => {
     it('should return false and warning senderNumberInvalid when senderNumber is null', () => {
       sinon.stub(messageSender, '_alertWarning');
       const senderNumber = null;
-      sinon.stub(messageSender, 'senderNumbersList', { get: () => ['1234567891'] });
+      sinon.stub(messageSender, 'senderNumbersList', { get: () => [{ phoneNumber: '1234567891' }] });
       const result = messageSender._validateSenderNumber(senderNumber);
       sinon.assert.calledWith(
         messageSender._alertWarning,
@@ -390,7 +390,7 @@ describe('MessageSender Unit Test', () => {
 
     it('should return false and warning senderNumberInvalid when senderNumber is undefined', () => {
       sinon.stub(messageSender, '_alertWarning');
-      sinon.stub(messageSender, 'senderNumbersList', { get: () => ['1234567891'] });
+      sinon.stub(messageSender, 'senderNumbersList', { get: () => [{ phoneNumber: '1234567891' }] });
       const result = messageSender._validateSenderNumber();
       sinon.assert.calledWith(
         messageSender._alertWarning,
@@ -403,7 +403,7 @@ describe('MessageSender Unit Test', () => {
       when senderNumber is not included in senderNumbersList`, () => {
       const senderNumber = '123456789';
       sinon.stub(messageSender, '_alertWarning');
-      sinon.stub(messageSender, 'senderNumbersList', { get: () => ['1234567891'] });
+      sinon.stub(messageSender, 'senderNumbersList', { get: () => [{ phoneNumber: '1234567891' }] });
       const result = messageSender._validateSenderNumber(senderNumber);
       sinon.assert.calledWith(
         messageSender._alertWarning,

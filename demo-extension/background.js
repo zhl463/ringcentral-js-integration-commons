@@ -3,6 +3,8 @@ import { getProxyServer } from '../src/lib/proxy';
 import Phone from '../dev-server/Phone';
 import { ServerTransport } from '../src/lib/ChromeTransport';
 
+/* global chrome */
+
 const ProxyServer = getProxyServer(Phone);
 
 const transport = new ServerTransport();

@@ -1,3 +1,5 @@
+import formatLocale from 'locale-loader/lib/formatLocale';
+
 const DEFAULT_LOCALE = 'en-US';
 
 /**
@@ -8,20 +10,13 @@ const DEFAULT_LOCALE = 'en-US';
  *   default is 'en-US'.
  * @return {String}
  */
-export default function detectDefaultLocale(defaultLocale = DEFAULT_LOCALE) {
-  let browserLocale = defaultLocale;
+export default function detectBrowserLocale(defaultLocale = DEFAULT_LOCALE) {
   if (typeof navigator !== 'undefined') {
     if (navigator.languages && navigator.languages.length) {
-      browserLocale = navigator.languages[0];
-    } else {
-      browserLocale = navigator.language || defaultLocale;
+      return formatLocale(navigator.languages[0]);
+    } else if (navigator.language) {
+      return formatLocale(navigator.language);
     }
   }
-  const tokens = browserLocale.split(/[-_]/);
-  return tokens.map((v, idx) => {
-    if (idx) {
-      return v.toUpperCase();
-    }
-    return v.toLowerCase();
-  }).join('-');
+  return formatLocale(defaultLocale);
 }

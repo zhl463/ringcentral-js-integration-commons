@@ -22,6 +22,7 @@ const presenceRegExp = /\/presence(\?.*)?/;
     'Client',
     'Storage',
     'Subscription',
+    'RolesAndPermissions',
     'ConnectivityMonitor'
   ]
 })
@@ -39,6 +40,7 @@ export default class DetailedPresence extends Presence {
     client,
     subscription,
     connectivityMonitor,
+    rolesAndPermissions,
     storage,
     ...options
   }) {
@@ -51,6 +53,7 @@ export default class DetailedPresence extends Presence {
     this._storage = storage;
     this._subscription = subscription;
     this._connectivityMonitor = connectivityMonitor;
+    this._rolesAndPermissions = rolesAndPermissions;
     this._lastNotDisturbDndStatusStorageKey = 'lastNotDisturbDndStatusDetailPresence';
     if (this._storage) {
       this._reducer = getDetailedPresenceReducer(this.actionTypes);
@@ -113,6 +116,7 @@ export default class DetailedPresence extends Presence {
     if (
       this._auth.loggedIn &&
       this._subscription.ready &&
+      this._rolesAndPermissions.ready &&
       (!this._connectivityMonitor || this._connectivityMonitor.ready) &&
       this.status === moduleStatuses.pending
     ) {
@@ -122,8 +126,10 @@ export default class DetailedPresence extends Presence {
       if (this._connectivityMonitor) {
         this._connectivity = this._connectivityMonitor.connectivity;
       }
-      await this.fetch();
-      this._subscription.subscribe(subscriptionFilters.detailedPresenceWithSip);
+      if (this._rolesAndPermissions.hasPresencePermission) {
+        await this.fetch();
+        this._subscription.subscribe(subscriptionFilters.detailedPresenceWithSip);
+      }
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
       });
@@ -161,7 +167,9 @@ export default class DetailedPresence extends Presence {
       this._connectivity = this._connectivityMonitor.connectivity;
       // fetch data on regain connectivity
       if (this._connectivity) {
-        this._fetch();
+        if (this._rolesAndPermissions.hasPresencePermission) {
+          this._fetch();
+        }
       }
     }
   }
@@ -188,7 +196,7 @@ export default class DetailedPresence extends Presence {
     this.store.dispatch({
       type: this.actionTypes.fetch,
     });
-    const ownerId = this._auth.ownerId;
+    const { ownerId } = this._auth;
     try {
       const {
         activeCalls,
@@ -198,7 +206,7 @@ export default class DetailedPresence extends Presence {
         userStatus,
         message,
       } = (await this._client.service.platform()
-          .get(subscriptionFilters.detailedPresenceWithSip)).json();
+        .get(subscriptionFilters.detailedPresenceWithSip)).json();
       if (this._auth.ownerId === ownerId) {
         this.store.dispatch({
           type: this.actionTypes.fetchSuccess,

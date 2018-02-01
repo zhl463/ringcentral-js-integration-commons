@@ -83,12 +83,28 @@ export default class ContactDetails extends RcModule {
 
   @background
   getProfileImage(contact) {
-    return this._contacts.getProfileImage(contact);
+    return this._contacts.getProfileImage(contact, false);
   }
 
   @background
   getPresence(contact) {
-    return this._contacts.getPresence(contact);
+    return this._contacts.getPresence(contact, false);
+  }
+
+  // for track click to sms in contact detail
+  @proxify
+  onClickToSMS() {
+    this.store.dispatch({
+      type: this.actionTypes.clickToSMS,
+    });
+  }
+
+  // for track click to call in contact detail
+  @proxify
+  onClickToCall() {
+    this.store.dispatch({
+      type: this.actionTypes.clickToCall,
+    });
   }
 
   get contact() {

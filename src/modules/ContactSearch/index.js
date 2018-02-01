@@ -1,8 +1,9 @@
+import uuid from 'uuid';
 import RcModule from '../../lib/RcModule';
 import { Module } from '../../lib/di';
 import loginStatus from '../../modules/Auth/loginStatus';
 import proxify from '../../lib/proxy/proxify';
-
+import debounce from '../../lib/debounce';
 import actionTypes from './actionTypes';
 import getContactSearchReducer from './getContactSearchReducer';
 import getCacheReducer from './getCacheReducer';
@@ -51,6 +52,7 @@ export default class ContactSearch extends RcModule {
     this._searchSources = new Map();
     this._searchSourcesFormat = new Map();
     this._searchSourcesCheck = new Map();
+    this._searchIds = {};
     if (this._storage) {
       this._reducer = getContactSearchReducer(this.actionTypes);
       this._storage.registerReducer({
@@ -119,7 +121,9 @@ export default class ContactSearch extends RcModule {
     });
   }
 
-  addSearchSource({ sourceName, searchFn, readyCheckFn, formatFn }) {
+  addSearchSource({
+    sourceName, searchFn, readyCheckFn, formatFn
+  }) {
     if (!sourceName) {
       throw new Error('ContactSearch: "sourceName" is required.');
     }
@@ -145,6 +149,8 @@ export default class ContactSearch extends RcModule {
     this._searchSourcesFormat.set(sourceName, formatFn);
     this._searchSourcesCheck.set(sourceName, readyCheckFn);
   }
+
+  debouncedSearch = debounce(this.search, 800, true)
 
   @proxify
   async search({ searchString }) {
@@ -179,6 +185,8 @@ export default class ContactSearch extends RcModule {
   // TODO Need to refactor, remove cache, and update data in real time.
   @proxify
   async _searchSource({ searchOnSources, sourceName, searchString }) {
+    const searchId = uuid.v4();
+    this._searchIds[sourceName] = searchId;
     this.store.dispatch({
       type: this.actionTypes.search,
     });
@@ -193,8 +201,10 @@ export default class ContactSearch extends RcModule {
         searchString,
       });
       entities = this._searchSourcesFormat.get(sourceName)(entities);
-      this._loadSearching({ searchOnSources, searchString, entities });
       this._saveSearching({ sourceName, searchString, entities });
+      if (this._searchIds[sourceName] === searchId) {
+        this._loadSearching({ searchOnSources, searchString, entities });
+      }
     } catch (error) {
       this._onSearchError();
     }

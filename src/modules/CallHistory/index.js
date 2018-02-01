@@ -10,6 +10,7 @@ import getCallHistoryReducer from './getCallHistoryReducer';
 import ensureExist from '../../lib/ensureExist';
 import normalizeNumber from '../../lib/normalizeNumber';
 import getter from '../../lib/getter';
+import proxify from '../../lib/proxy/proxify';
 
 /**
  * @class
@@ -231,6 +232,21 @@ export default class CallHistory extends RcModule {
     });
   }
 
+  // for track click to sms in call history
+  @proxify
+  onClickToSMS() {
+    this.store.dispatch({
+      type: this.actionTypes.clickToSMS
+    });
+  }
+  // for track click to call in call history
+  @proxify
+  onClickToCall() {
+    this.store.dispatch({
+      type: this.actionTypes.clickToCall,
+    });
+  }
+
 
   get status() {
     return this.state.status;
@@ -309,7 +325,7 @@ export default class CallHistory extends RcModule {
         };
       });
       return [
-        ...endedCalls.filter(call => !sessionIds[call.sessionId]),
+        ...endedCalls.filter(call => !sessionIds[call.sessionId]).sort(sortByStartTime),
         ...calls
       ];
     }
@@ -359,12 +375,11 @@ export default class CallHistory extends RcModule {
         endedCalls
           .filter(call => !sessionIds[call.sessionId])
           .map(call => call.sessionId)
-        );
+      );
     },
   )
 
   get recentlyEndedCalls() {
     return this.state.endedCalls;
   }
-
 }

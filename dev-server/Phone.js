@@ -502,28 +502,12 @@ export default class Phone extends RcModule {
     }));
     reducers.recentCalls = this.recentCalls.reducer;
 
-    this.addModule('analytics', new Analytics({
-      analyticsKey: 'd51li7ZONOLUcHKBqVmQmhG2mF0FySUZ',
-      appName: 'RingCentral Integration',
-      appVersion: '0.1.1-beta',
-      brandCode: 'rc',
-      auth: this.auth,
-      call: this.call,
-      webphone: this.webphone,
-      contacts: this.contacts,
-      messageSender: this.messageSender,
-      adapter: this.dynamicsAdapter,
-      router: this.router,
-      getState: () => this.state.analytics,
-    }));
-    reducers.analytics = this.analytics.reducer;
-
     this._reducer = combineReducers({
       ...reducers,
-      lastAction: (state = null, action) => {
-        // console.log(action);
-        return action;
-      },
+      // lastAction: (state = null, action) => {
+      //   console.log(action);
+      //   return action;
+      // },
     });
     this._proxyReducer = combineReducers({
       ...proxyReducers,

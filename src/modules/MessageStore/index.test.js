@@ -40,6 +40,8 @@ describe('MessageStore Unit Test', () => {
       'searchMessagesText',
       'updateConversationRecipientList',
       'pushMessage',
+      'deleteMessage',
+      '_deleteMessageApi',
     ].forEach((key) => {
       messageStore[key].restore();
     });
@@ -118,6 +120,12 @@ describe('MessageStore Unit Test', () => {
   describe('_shouldInit', () => {
     describe('when messageStore is pending', () => {
       beforeEach(() => {
+        messageStore._auth = {
+          loggedIn: true
+        };
+        messageStore._rolesAndPermissions = {
+          ready: true
+        };
         sinon.stub(messageStore, 'pending', { get: () => true });
       });
       it('Should return true when _storage and _subscription is all ready', () => {
@@ -163,6 +171,12 @@ describe('MessageStore Unit Test', () => {
 
     describe('when messageStore is ready', () => {
       beforeEach(() => {
+        messageStore._auth = {
+          loggedIn: true
+        };
+        messageStore._rolesAndPermissions = {
+          ready: true
+        };
         sinon.stub(messageStore, 'pending', { get: () => false });
       });
       it('Should return false when _storage and _subscription all ready', () => {
@@ -210,6 +224,12 @@ describe('MessageStore Unit Test', () => {
   describe('_shouldReset', () => {
     describe('when messageStore is ready', () => {
       beforeEach(() => {
+        messageStore._auth = {
+          loggedIn: true
+        };
+        messageStore._rolesAndPermissions = {
+          ready: true
+        };
         sinon.stub(messageStore, 'ready', { get: () => true });
       });
       it('should return true when _storage and _subscription is all not ready', () => {
@@ -255,6 +275,12 @@ describe('MessageStore Unit Test', () => {
 
     describe('when messageStore is not ready', () => {
       beforeEach(() => {
+        messageStore._auth = {
+          loggedIn: true
+        };
+        messageStore._rolesAndPermissions = {
+          ready: true
+        };
         sinon.stub(messageStore, 'ready', { get: () => false });
       });
 
@@ -351,14 +377,70 @@ describe('MessageStore Unit Test', () => {
   });
 
   describe('_initMessageStore', () => {
-    it('should set status to be ready and call _syncMessages', async () => {
+    it('should call _syncMessages if storage is undefined', async () => {
       sinon.stub(messageStore, '_syncMessages');
       messageStore._subscription = {
         subscribe: () => null,
       };
+      messageStore._rolesAndPermissions = {
+        hasReadMessagesPermission: true,
+      };
       await messageStore._initMessageStore();
       sinon.assert.calledOnce(messageStore._syncMessages);
-      expect(store.getState().status).to.equal(moduleStatuses.ready);
+    });
+
+    it('should call _syncMessages if tabManager is undefined', async () => {
+      messageStore._storage = {};
+      sinon.stub(messageStore, '_syncMessages');
+      messageStore._subscription = {
+        subscribe: () => null,
+      };
+      messageStore._rolesAndPermissions = {
+        hasReadMessagesPermission: true,
+      };
+      await messageStore._initMessageStore();
+      sinon.assert.calledOnce(messageStore._syncMessages);
+    });
+
+    it('should not call _syncMessages if tabManager is not active', async () => {
+      messageStore._storage = {};
+      messageStore._tabManager = { active: false };
+      sinon.stub(messageStore, '_syncMessages');
+      messageStore._subscription = {
+        subscribe: () => null,
+      };
+      messageStore._rolesAndPermissions = {
+        hasReadMessagesPermission: true,
+      };
+      await messageStore._initMessageStore();
+      sinon.assert.notCalled(messageStore._syncMessages);
+    });
+
+    it('should call _syncMessages if tabManager is active', async () => {
+      messageStore._storage = {};
+      messageStore._tabManager = { active: true };
+      sinon.stub(messageStore, '_syncMessages');
+      messageStore._subscription = {
+        subscribe: () => null,
+      };
+      messageStore._rolesAndPermissions = {
+        hasReadMessagesPermission: true,
+      };
+      await messageStore._initMessageStore();
+      sinon.assert.calledOnce(messageStore._syncMessages);
+    });
+
+    it('should not call _syncMessages if hasReadMessagesPermission is false', async () => {
+      messageStore._storage = {};
+      sinon.stub(messageStore, '_syncMessages');
+      messageStore._subscription = {
+        subscribe: () => null,
+      };
+      messageStore._rolesAndPermissions = {
+        hasReadMessagesPermission: false,
+      };
+      await messageStore._initMessageStore();
+      sinon.assert.notCalled(messageStore._syncMessages);
     });
   });
 
@@ -629,6 +711,14 @@ describe('MessageStore Unit Test', () => {
       sinon.stub(messageStore, '_updateMessagesApi').callsFake(() => []);
       await messageStore.readMessages('123456');
       sinon.assert.notCalled(messageStore._updateMessagesApi);
+    });
+  });
+
+  describe('deleteMessage', () => {
+    it('should call _deleteMessagesApi once', async () => {
+      sinon.stub(messageStore, '_deleteMessageApi').callsFake(() => {});
+      await messageStore.deleteMessage('123456');
+      sinon.assert.calledWith(messageStore._deleteMessageApi, '123456');
     });
   });
 

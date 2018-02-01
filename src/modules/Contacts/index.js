@@ -1,6 +1,5 @@
 import RcModule from '../../lib/RcModule';
 import { Module } from '../../lib/di';
-import normalizeNumber from '../../lib/normalizeNumber';
 import ensureExist from '../../lib/ensureExist';
 import isBlank from '../../lib/isBlank';
 import {
@@ -116,6 +115,7 @@ export default class Contacts extends RcModule {
         if (sourceFilter !== AllContactSourceName && !isBlank(sourceFilter)) {
           const source = this._contactSources.get(sourceFilter);
           if (source && source.sourceReady) {
+            /* eslint { "prefer-destructuring": 0 } */
             contacts = source.contacts;
           } else {
             contacts = [];
@@ -189,6 +189,7 @@ export default class Contacts extends RcModule {
    * @param {Function} params.getPresence - get source presence function, optional
    * @param {Function} params.getProfileImage - get source profile image function, optional
    * @param {Function} params.sync - sync source data function, optional
+   * @param {Function} params.matchPhoneNumber - get match phoneNumber function, optional
    */
   addSource(source) {
     if (!source.sourceName) {
@@ -202,6 +203,9 @@ export default class Contacts extends RcModule {
     }
     if (source.getProfileImage && typeof source.getProfileImage !== 'function') {
       throw new Error('Contacts: source\' getProfileImage must be a function');
+    }
+    if (source.matchPhoneNumber && typeof source.matchPhoneNumber !== 'function') {
+      throw new Error('Contacts: source\' matchPhoneNumber must be a function');
     }
     this._contactSources.set(source.sourceName, source);
     this._sourcesLastStatus.set(source.sourceName, {});
@@ -230,38 +234,14 @@ export default class Contacts extends RcModule {
     return this._sourcesUpdatedAt;
   }
 
-  matchPhoneNumber(phone) {
-    const result = [];
-    const phoneNumber = normalizeNumber({ phoneNumber: phone });
-    const matchContact = (contact) => {
-      let found = contact.extensionNumber && contact.extensionNumber === phoneNumber;
-      if (!found) {
-        contact.phoneNumbers.forEach((contactPhoneNumber) => {
-          if (!found && contactPhoneNumber.phoneNumber === phoneNumber) {
-            found = true;
-          }
-        });
+  matchPhoneNumber(phoneNumber) {
+    let result = [];
+    for (const sourceName of Array.from(this._contactSources.keys())) {
+      const source = this._contactSources.get(sourceName);
+      if (typeof source.matchPhoneNumber === 'function') {
+        result = result.concat(source.matchPhoneNumber(phoneNumber));
       }
-      if (!found) {
-        return;
-      }
-      const matchedContact = {
-        ...contact,
-        phoneNumbers: [
-          ...contact.phoneNumbers
-        ],
-        entityType: 'rcContact',
-      };
-      if (contact.extensionNumber) {
-        matchedContact.phoneNumbers.push({
-          phoneType: 'extension',
-          phoneNumber: contact.extensionNumber,
-        });
-      }
-      result.push(matchedContact);
-    };
-    this.companyContacts.forEach(matchContact);
-    this.personalContacts.forEach(matchContact);
+    }
     return result;
   }
 
@@ -293,10 +273,10 @@ export default class Contacts extends RcModule {
   }
 
   @proxify
-  async getPresence(contact) {
+  async getPresence(contact, useCache = true) {
     const source = this._contactSources.get(contact && contact.type);
     if (source && source.getPresence) {
-      const result = await source.getPresence(contact);
+      const result = await source.getPresence(contact, useCache);
       return result;
     }
     return null;

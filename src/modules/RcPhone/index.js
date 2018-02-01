@@ -59,6 +59,7 @@ import RecentMessages from '../RecentMessages';
 import RecentCalls from '../RecentCalls';
 import Analytics from '../Analytics';
 import AudioSettings from '../AudioSettings';
+import Meeting from '../Meeting';
 
 @ModuleFactory({
   providers: [
@@ -116,10 +117,14 @@ import AudioSettings from '../AudioSettings';
     RecentMessages,
     RecentCalls,
     Analytics,
-    { provide: 'ModuleOptions',
+    Meeting,
+    {
+      provide: 'ModuleOptions',
       useValue: { prefix: 'rc-phone' },
-      spread: true },
-    { provide: 'Client',
+      spread: true
+    },
+    {
+      provide: 'Client',
       useFactory: ({ clientOptions, config }) =>
         new RingCentralClient(new SDK({
           clearCacheOnRefreshError: false,
@@ -127,34 +132,48 @@ import AudioSettings from '../AudioSettings';
           ...config,
           ...clientOptions,
         })),
-      deps: [{ dep: 'Config' }, { dep: 'ClientOptions', optional: true }] },
-    { provide: 'BrandOptions',
+      deps: [{ dep: 'Config' }, { dep: 'ClientOptions', optional: true }]
+    },
+    {
+      provide: 'BrandOptions',
       spread: true,
-      useValue: { id: '1210', name: 'RingCentral', fullName: 'RingCentral' } },
-    { provide: 'ConnectivityMonitorOptions',
-      useValue: {
-        checkConnectionFunc: async () => { await fetch('//pubsub.pubnub.com/time/0'); } },
-      spread: true },
-    { provide: 'CallLoggerOptions',
+      useValue: { id: '1210', name: 'RingCentral', fullName: 'RingCentral' }
+    },
+    {
+      provide: 'ConnectivityMonitorOptions',
+      useValue: { checkConnectionFunc: async () => { await fetch('//pubsub.pubnub.com/time/0'); } },
+      spread: true
+    },
+    {
+      provide: 'CallLoggerOptions',
       useValue: {
         logFunction: async () => { },
-        readyCheckFunction: () => true },
-      spread: true },
-    { provide: 'WebphoneOptions',
+        readyCheckFunction: () => true
+      },
+      spread: true
+    },
+    {
+      provide: 'WebphoneOptions',
       spread: true,
-      useValue: { appKey: null, appName: null, appVersion: null } },
-    { provide: 'ConversationLoggerOptions',
+      useValue: { appKey: null, appName: null, appVersion: null }
+    },
+    {
+      provide: 'ConversationLoggerOptions',
       useValue: {
         logFunction: async () => { },
-        readyCheckFunction: () => true },
-      spread: true },
+        readyCheckFunction: () => true
+      },
+      spread: true
+    },
     { provide: 'SoftphoneOptions', useValue: { extensionMode: null }, spread: true },
-    { provide: 'ContactSources',
+    {
+      provide: 'ContactSources',
       useFactory: ({ addressBook, accountContacts }) =>
         [addressBook, accountContacts],
       deps: ['AccountContacts', 'AddressBook']
     },
-    { provide: 'EnvironmentOptions',
+    {
+      provide: 'EnvironmentOptions',
       useFactory: ({ clientOptions, config }) => ({
         sdkConfig: {
           cachePrefix: 'rc-sdk',
@@ -180,34 +199,34 @@ export default class RcPhone extends RcModule {
     } = modules;
 
     // Webphone configuration
-    webphone._onCallEndFunc = (session) => {
-      if (router.currentPath !== '/calls/active') {
-        return;
-      }
-      const currentSession = webphone.activeSession;
-      if (currentSession && session.id !== currentSession.id) {
-        return;
-      }
-      router.goBack();
-    };
-    webphone._onCallStartFunc = () => {
-      if (router.currentPath === '/calls/active') {
-        return;
-      }
-      router.push('/calls/active');
-    };
-    webphone._onCallRingFunc = () => {
-      if (
-        webphone.ringSessions.length > 1
-      ) {
-        if (router.currentPath !== '/calls') {
-          router.push('/calls');
-        }
-        webphone.ringSessions.forEach((session) => {
-          webphone.toggleMinimized(session.id);
-        });
-      }
-    };
+    // webphone._onCallEndFunc = (session) => {
+    //   if (router.currentPath !== '/calls/active') {
+    //     return;
+    //   }
+    //   const currentSession = webphone.activeSession;
+    //   if (currentSession && session.id !== currentSession.id) {
+    //     return;
+    //   }
+    //   router.goBack();
+    // };
+    // webphone._onCallStartFunc = () => {
+    //   if (router.currentPath === '/calls/active') {
+    //     return;
+    //   }
+    //   router.push('/calls/active');
+    // };
+    // webphone._onCallRingFunc = () => {
+    //   if (
+    //     webphone.ringSessions.length > 1
+    //   ) {
+    //     if (router.currentPath !== '/calls') {
+    //       router.push('/calls');
+    //     }
+    //     webphone.ringSessions.forEach((session) => {
+    //       webphone.toggleMinimized(session.id);
+    //     });
+    //   }
+    // };
 
     // ContactMatcher configuration
     contactMatcher.addSearchProvider({
@@ -282,13 +301,13 @@ export default class RcPhone extends RcModule {
     });
 
     // CallMonitor configuration
-    callMonitor._onRinging = async () => {
-      if (this.webphone._webphone) {
-        return;
-      }
-      // TODO refactor some of these logic into appropriate modules
-      this.router.push('/calls');
-    };
+    // callMonitor._onRinging = async () => {
+    //   if (this.webphone._webphone) {
+    //     return;
+    //   }
+    //   // TODO refactor some of these logic into appropriate modules
+    //   this.router.push('/calls');
+    // };
   }
 
   get _actionTypes() {

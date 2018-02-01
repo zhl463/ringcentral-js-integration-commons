@@ -9,6 +9,7 @@ import {
   sortSearchResults,
   messageIsTextMessage,
   messageIsVoicemail,
+  getVoicemailAttachment,
 } from '../../lib/messageHelper';
 import cleanNumber from '../../lib/cleanNumber';
 import proxify from '../../lib/proxy/proxify';
@@ -22,6 +23,8 @@ import messageTypes from '../../enums/messageTypes';
   deps: [
     'MessageStore',
     'ExtensionInfo',
+    'Auth',
+    'RolesAndPermissions',
     { dep: 'ContactMatcher', optional: true },
     { dep: 'ConversationLogger', optional: true },
     { dep: 'MessagesOptions', optional: true }
@@ -35,14 +38,17 @@ export default class Messages extends RcModule {
    * @param {ExtensionInfo} params.extensionInfo - extensionInfo module instance
    * @param {ContactMatcher} params.contactMatcher - contactMatcher module instance
    * @param {ConversationLogger} params.conversationLogger - conversationLogger module instance
+   * @param {RolesAndPermissions} params.rolesAndPermissions - rolesAndPermissions module instance
    * @param {Number} params.defaultPerPage - default numbers of perPage, default 20
    */
   constructor({
+    auth,
     messageStore,
     extensionInfo,
     defaultPerPage = 20,
     contactMatcher,
     conversationLogger,
+    rolesAndPermissions,
     ...options
   }) {
     super({
@@ -51,8 +57,10 @@ export default class Messages extends RcModule {
     });
     this._contactMatcher = contactMatcher;
     this._conversationLogger = conversationLogger;
+    this._auth = this::ensureExist(auth, 'auth');
     this._messageStore = this::ensureExist(messageStore, 'messageStore');
     this._extensionInfo = this::ensureExist(extensionInfo, 'extensionInfo');
+    this._rolesAndPermissions = this::ensureExist(rolesAndPermissions, 'rolesAndPermissions');
     this._reducer = getMessagesReducer(this.actionTypes, defaultPerPage);
 
     this.addSelector('uniqueNumbers',
@@ -99,47 +107,54 @@ export default class Messages extends RcModule {
       () => this._contactMatcher && this._contactMatcher.dataMapping,
       () => this._conversationLogger && this._conversationLogger.loggingMap,
       () => this._conversationLogger && this._conversationLogger.dataMapping,
+      () => this._auth.accessToken,
       (
         conversations,
         extensionNumber,
         contactMapping = {},
         loggingMap = {},
         conversationLogMapping = {},
+        accessToken,
       ) => (
-          conversations.map((message) => {
-            const {
-              self,
-              correspondents,
+        conversations.map((message) => {
+          const {
+            self,
+            correspondents,
           } = getNumbersFromMessage({ extensionNumber, message });
-            const selfNumber = self && (self.phoneNumber || self.extensionNumber);
-            const selfMatches = (selfNumber && contactMapping[selfNumber]) || [];
-            const correspondentMatches = correspondents.reduce((matches, contact) => {
-              const number = contact && (contact.phoneNumber || contact.extensionNumber);
-              return number && contactMapping[number] && contactMapping[number].length ?
-                matches.concat(contactMapping[number]) :
-                matches;
-            }, []);
-            const conversationLogId = this._conversationLogger ?
-              this._conversationLogger.getConversationLogId(message) :
-              null;
-            const isLogging = !!(conversationLogId && loggingMap[conversationLogId]);
-            const conversationMatches = conversationLogMapping[conversationLogId] || [];
-            return {
-              ...message,
-              self,
-              selfMatches,
-              correspondents,
-              correspondentMatches,
-              conversationLogId,
-              isLogging,
-              conversationMatches,
-              lastMatchedCorrespondentEntity: (
-                this._conversationLogger &&
+          const selfNumber = self && (self.phoneNumber || self.extensionNumber);
+          const selfMatches = (selfNumber && contactMapping[selfNumber]) || [];
+          const correspondentMatches = correspondents.reduce((matches, contact) => {
+            const number = contact && (contact.phoneNumber || contact.extensionNumber);
+            return number && contactMapping[number] && contactMapping[number].length ?
+              matches.concat(contactMapping[number]) :
+              matches;
+          }, []);
+          const conversationLogId = this._conversationLogger ?
+            this._conversationLogger.getConversationLogId(message) :
+            null;
+          const isLogging = !!(conversationLogId && loggingMap[conversationLogId]);
+          const conversationMatches = conversationLogMapping[conversationLogId] || [];
+          let voicemailAttachment = null;
+          if (messageIsVoicemail(message)) {
+            voicemailAttachment = getVoicemailAttachment(message, accessToken);
+          }
+          return {
+            ...message,
+            self,
+            selfMatches,
+            correspondents,
+            correspondentMatches,
+            conversationLogId,
+            isLogging,
+            conversationMatches,
+            voicemailAttachment,
+            lastMatchedCorrespondentEntity: (
+              this._conversationLogger &&
                 this._conversationLogger.getLastMatchedCorrespondentEntity(message)
-              ) || null,
-            };
-          })
-        ),
+            ) || null,
+          };
+        })
+      ),
     );
 
     this.addSelector('typeFilteredConversations',
@@ -147,8 +162,21 @@ export default class Messages extends RcModule {
       () => this.typeFilter,
       (allConversations, typeFilter) => {
         switch (typeFilter) {
-          case messageTypes.all:
-            return allConversations;
+          case messageTypes.all: {
+            return allConversations.filter(
+              conversation => (
+                (
+                  this._rolesAndPermissions.readTextPermissions ||
+                  !messageIsTextMessage(conversation)
+                )
+                &&
+                (
+                  this._rolesAndPermissions.voicemailPermissions ||
+                  !messageIsVoicemail(conversation)
+                )
+              )
+            );
+          }
           case messageTypes.text:
             return allConversations.filter(
               conversation => messageIsTextMessage(conversation)
@@ -169,24 +197,32 @@ export default class Messages extends RcModule {
       (allConversations, effectiveSearchString) => {
         if (effectiveSearchString !== '') {
           const searchResults = [];
+          const cleanRegex = /[^\d*+#\s]/g;
+          const searchString = effectiveSearchString.toLowerCase();
+          const searchNumber = effectiveSearchString.replace(cleanRegex, '');
           allConversations.forEach((message) => {
-            const searchNumber = cleanNumber(effectiveSearchString, false);
-            const searchRegExp = new RegExp(effectiveSearchString, 'i');
-            if (searchNumber !== '' && message.correspondents.find(contact => (
-              cleanNumber(contact.phoneNumber || contact.extensionNumber || '')
-                .indexOf(searchNumber) > -1
-            ))) {
-              // match by phoneNumber or extensionNumber
-              searchResults.push({
-                ...message,
-                matchOrder: 0,
-              });
-              return;
+            if (searchNumber === effectiveSearchString) {
+              const cleanedNumber = cleanNumber(effectiveSearchString);
+              if (
+                message.correspondents.find(
+                  contact => (
+                    cleanNumber(contact.phoneNumber || contact.extensionNumber || '')
+                      .indexOf(cleanedNumber) > -1
+                  )
+                )
+              ) {
+                // match by phoneNumber or extensionNumber
+                searchResults.push({
+                  ...message,
+                  matchOrder: 0,
+                });
+                return;
+              }
             }
             if (message.correspondentMatches.length) {
               if (
                 message.correspondentMatches.find(entity => (
-                  entity.name && searchRegExp.test(entity.name)
+                  (entity.name || '').toLowerCase().indexOf(searchString) > -1
                 ))
               ) {
                 // match by entity's name
@@ -197,7 +233,7 @@ export default class Messages extends RcModule {
                 return;
               }
             } else if (message.correspondents.find(contact => (
-              searchRegExp.test(contact.name || '')
+              (contact.name || '').toLowerCase().indexOf(searchString) > -1
             ))) {
               searchResults.push({
                 ...message,
@@ -207,7 +243,7 @@ export default class Messages extends RcModule {
             }
 
             // try match messages of the same conversation
-            if (searchRegExp.test(message.subject)) {
+            if ((message.subject || '').toLowerCase().indexOf(searchString) > -1) {
               searchResults.push({
                 ...message,
                 matchOrder: 1,
@@ -216,7 +252,7 @@ export default class Messages extends RcModule {
             }
             const matchedMessage = this._messageStore.messages.find(item => (
               item.conversationId === message.conversationId &&
-              searchRegExp.test(item.subject)
+              (item.subject || '').toLowerCase().indexOf(searchString) > -1
             ));
             if (matchedMessage) {
               searchResults.push({
@@ -263,8 +299,10 @@ export default class Messages extends RcModule {
 
   _shouldInit() {
     return !!(
+      this._auth.loggedIn &&
       this._messageStore.ready &&
       this._extensionInfo.ready &&
+      this._rolesAndPermissions.ready &&
       (!this._contactMatcher || this._contactMatcher.ready) &&
       (!this._conversationLogger || this._conversationLogger.ready) &&
       this.pending
@@ -285,8 +323,10 @@ export default class Messages extends RcModule {
   _shouldReset() {
     return !!(
       (
+        !this._auth.loggedIn ||
         !this._messageStore.ready ||
         !this._extensionInfo.ready ||
+        !this._rolesAndPermissions ||
         (this._contactMatcher && !this._contactMatcher.ready) ||
         (this._conversationLogger && !this._conversationLogger.ready)
       ) &&
@@ -360,5 +400,9 @@ export default class Messages extends RcModule {
 
   get filteredConversations() {
     return this._selectors.filteredConversations();
+  }
+
+  get uniqueNumbers() {
+    return this._selectors.uniqueNumbers();
   }
 }

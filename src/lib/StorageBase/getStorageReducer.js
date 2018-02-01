@@ -47,7 +47,6 @@ export function getDataReducer({ types, reducers }) {
 export function getStorageKeyReducer(types) {
   return (state = null, { type, storageKey }) => {
     switch (type) {
-
       case types.initSuccess:
         return storageKey;
 

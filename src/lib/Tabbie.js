@@ -45,7 +45,8 @@ export default class Tabbie {
 
       document.addEventListener('visibilitychange', async () => {
         // avoid setting mainTabId repeatedly which may result in forced rendering
-        if (!document.hidden && (await this.getMainTabId()) !== this.id) this._setAsMainTab();
+        const currentMainTabId = localStorage.getItem(this._mainTabKey);
+        if (!document.hidden && currentMainTabId !== this.id) this._setAsMainTab();
       });
       window.addEventListener('storage', async (e) => {
         if (e.key === this._mainTabKey) {
@@ -104,7 +105,7 @@ export default class Tabbie {
     });
   }
   _getHeartBeatKeys() {
-    const length = localStorage.length;
+    const { length } = localStorage;
     const keys = new Set();
     for (let i = 0; i < length; i += 1) {
       const key = localStorage.key(i);
@@ -164,6 +165,5 @@ export default class Tabbie {
       localStorage.removeItem(key);
     }
   }
-
 }
 emitter(Tabbie.prototype);

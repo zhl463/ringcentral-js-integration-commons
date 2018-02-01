@@ -1,5 +1,4 @@
 import url from 'url';
-import qs from 'qs';
 import RcModule from '../../lib/RcModule';
 import { Module } from '../../lib/di';
 import getAuthReducer from './getAuthReducer';
@@ -59,13 +58,10 @@ export default class Auth extends RcModule {
   constructor({
     client,
     alert,
-    redirectUri = getDefaultRedirectUri(),
-    proxyUri = getDefaultProxyUri(),
     brand,
     locale,
     tabManager,
     environment,
-    defaultProxyRetry = DEFAULT_PROXY_RETRY,
     ...options
   } = {}) {
     super({
@@ -76,13 +72,11 @@ export default class Auth extends RcModule {
     this._alert = ensureExist(alert, 'alert');
     this._brand = ensureExist(brand, 'brand');
     this._locale = ensureExist(locale, 'locale');
-    this._redirectUri = redirectUri;
-    this._proxyUri = proxyUri;
     this._tabManager = tabManager;
     this._environment = environment;
-    this._defaultProxyRetry = defaultProxyRetry;
     this._reducer = getAuthReducer(this.actionTypes);
     this._beforeLogoutHandlers = new Set();
+    this._afterLoggedInHandlers = new Set();
     this._proxyFrame = null;
     this._proxyFrameLoaded = false;
     this._unbindEvents = null;
@@ -102,11 +96,15 @@ export default class Auth extends RcModule {
       }
     };
 
-    const onLoginSuccess = () => {
+    const onLoginSuccess = async () => {
       this.store.dispatch({
         type: this.actionTypes.loginSuccess,
         token: platform.auth().data(),
       });
+      const handlers = [...this._afterLoggedInHandlers];
+      for (const handler of handlers) {
+        await (async () => handler())();
+      }
     };
     const onLoginError = (error) => {
       this.store.dispatch({
@@ -146,7 +144,8 @@ export default class Auth extends RcModule {
     };
     const onRefreshError = (error) => {
       // user is still considered logged in if the refreshToken is still valid
-      const refreshTokenValid = platform.auth().refreshTokenValid();
+
+      const refreshTokenValid = error.message === 'Failed to fetch' && platform.auth().refreshTokenValid();
       this.store.dispatch({
         type: this.actionTypes.refreshError,
         error,
@@ -215,6 +214,7 @@ export default class Auth extends RcModule {
           this._tabManager.event.name === 'loginStatusChange' &&
           this._tabManager.event.args[0] !== loggedIn
         ) {
+          /* eslint { "prefer-destructuring": 0 } */
           loggedIn = this._tabManager.event.args[0];
           this.store.dispatch({
             type: this.actionTypes.tabSync,
@@ -235,19 +235,27 @@ export default class Auth extends RcModule {
   }
 
   get redirectUri() {
-    return url.resolve(location.href, this._redirectUri);
+    return url.resolve(window.location.href, this._redirectUri);
   }
 
   get proxyUri() {
     return this._proxyUri;
   }
 
+  get token() {
+    return this.state.token;
+  }
+
   get ownerId() {
-    return this.state.ownerId;
+    return this.token.ownerId;
   }
 
   get endpointId() {
-    return this.state.endpointId;
+    return this.token.endpointId;
+  }
+
+  get accessToken() {
+    return this.token.accessToken;
   }
 
   get status() {
@@ -266,14 +274,6 @@ export default class Auth extends RcModule {
     return this.state.freshLogin;
   }
 
-  get proxyLoaded() {
-    return this.state.proxyLoaded;
-  }
-
-  get proxyRetryCount() {
-    return this.state.proxyRetryCount;
-  }
-
   /**
    * @function
    * @param {String} options.username
@@ -286,7 +286,9 @@ export default class Auth extends RcModule {
    * @description Login either with username/password or with authorization code
    */
   @proxify
-  async login({ username, password, extension, remember, code, redirectUri }) {
+  async login({
+    username, password, extension, remember, code, redirectUri
+  }) {
     this.store.dispatch({
       type: this.actionTypes.login,
     });
@@ -307,7 +309,9 @@ export default class Auth extends RcModule {
    * @return {String}
    * @description get OAuth page url
    */
-  getLoginUrl({ redirectUri, state, brandId, display, prompt, force }) {
+  getLoginUrl({
+    redirectUri, state, brandId, display, prompt, force
+  }) {
     return `${this._client.service.platform().loginUrl({
       redirectUri,
       state,
@@ -324,6 +328,7 @@ export default class Auth extends RcModule {
    */
   @proxify
   async logout() {
+    this._alert.dismissAll();
     this.store.dispatch({
       type: this.actionTypes.beforeLogout,
     });
@@ -370,6 +375,13 @@ export default class Auth extends RcModule {
     this._beforeLogoutHandlers.remove(handler);
   }
 
+  addAfterLoggedInHandler(handler) {
+    this._afterLoggedInHandlers.add(handler);
+    return () => {
+      this._afterLoggedInHandlers.remove(handler);
+    };
+  }
+
   @proxify
   async checkIsLoggedIn() {
     // SDK would return false when there's temporary network issues,
@@ -386,149 +398,5 @@ export default class Auth extends RcModule {
 
   get notLoggedIn() {
     return this.state.loginStatus === loginStatus.notLoggedIn;
-  }
-
-  _createProxyFrame = (onLogin) => {
-    this._proxyFrame = document.createElement('iframe');
-    this._proxyFrame.src = this.proxyUri;
-    this._proxyFrame.style.display = 'none';
-    this._proxyFrame.setAttribute('sandbox', [
-      'allow-scripts',
-      'allow-popups',
-      'allow-same-origin',
-      'allow-forms',
-    ].join(' '));
-
-    document.body.appendChild(this._proxyFrame);
-    this._callbackHandler = async ({ origin, data }) => {
-      // TODO origin check
-      if (data) {
-        const {
-          callbackUri,
-          proxyLoaded,
-          fromLocalStorage,
-        } = data;
-        if (
-          callbackUri &&
-          (
-            fromLocalStorage !== true ||
-            (!this._tabManager || this._tabManager.active)
-          )
-        ) {
-          try {
-            const code = parseCallbackUri(callbackUri);
-            if (code) {
-              await this.login({
-                code,
-                redirectUri: this.redirectUri,
-              });
-              if (typeof onLogin === 'function') {
-                onLogin();
-              }
-            }
-          } catch (error) {
-            let message;
-            switch (error.message) {
-              case 'invalid_request':
-              case 'unauthorized_client':
-              case 'access_denied':
-              case 'unsupported_response_type':
-              case 'invalid_scope':
-                message = authMessages.accessDenied;
-                break;
-              case 'server_error':
-              case 'temporarily_unavailable':
-              default:
-                message = authMessages.internalError;
-                break;
-            }
-
-            this._alert.danger({
-              message,
-              payload: error,
-            });
-          }
-        } else if (proxyLoaded) {
-          clearTimeout(this._retryTimeoutId);
-          this._retryTimeoutId = null;
-          this.store.dispatch({
-            type: this.actionTypes.proxyLoaded,
-          });
-        }
-      }
-    };
-    window.addEventListener('message', this._callbackHandler);
-    this._retryTimeoutId = setTimeout(() => {
-      this._retrySetupProxyFrame(onLogin);
-    }, this._defaultProxyRetry);
-  }
-  /**
-   * @function
-   * @description Create the proxy frame and append to document if available.
-   * @param {Function} onLogin - Function to be called when user successfully logged in
-   *  through oAuth.
-   */
-  async setupProxyFrame(onLogin) {
-    if (
-      !this._transport && // skip on proxy instance
-      typeof window !== 'undefined' &&
-      typeof document !== 'undefined' &&
-      this._proxyUri &&
-      this._proxyUri !== '' &&
-      !this._proxyFrame
-    ) {
-      this.store.dispatch({
-        type: this.actionTypes.proxySetup,
-      });
-      this._createProxyFrame(onLogin);
-    }
-  }
-  _retrySetupProxyFrame(onLogin) {
-    this._retryTimeoutId = null;
-    if (!this.proxyLoaded) {
-      this.store.dispatch({
-        type: this.actionTypes.proxyRetry,
-      });
-      this._destroyProxyFrame();
-      this._createProxyFrame(onLogin);
-    }
-  }
-  _destroyProxyFrame() {
-    document.body.removeChild(this._proxyFrame);
-    this._proxyFrame = null;
-    window.removeEventListener('message', this._callbackHandler);
-    this._callbackHandler = null;
-  }
-
-  async clearProxyFrame() {
-    if (this._proxyFrame) {
-      if (this._retryTimeoutId) {
-        clearTimeout(this._retryTimeoutId);
-        this._retryTimeoutId = null;
-      }
-      this._destroyProxyFrame();
-      this.store.dispatch({
-        type: this.actionTypes.proxyCleared,
-      });
-    }
-  }
-
-  @proxify
-  openOAuthPage() {
-    if (this.proxyLoaded) {
-      const extendedQuery = qs.stringify({
-        force: true,
-        localeId: this._locale.currentLocale,
-        ui_options: 'hide_remember_me hide_tos',
-      });
-      this._proxyFrame.contentWindow.postMessage({
-        oAuthUri: `${this.getLoginUrl({
-          redirectUri: this.redirectUri,
-          brandId: this._brand.id,
-          state: btoa(Date.now()),
-          display: 'page',
-        })}&${extendedQuery}`,
-      }, '*');
-    }
   }
 }

@@ -13,10 +13,9 @@ export default class ServerTransport extends TransportBase {
 
     // Keep active tabs up to date
     this._activeTabs = [];
+    this._getActiveTabs();
     chrome.tabs.onActivated.addListener(() => {
-      chrome.tabs.query({ active: true }, (tabs) => {
-        this._activeTabs = tabs;
-      });
+      this._getActiveTabs();
     });
     chrome.runtime.onConnect.addListener((port) => {
       if (port.name === 'transport') {
@@ -53,12 +52,28 @@ export default class ServerTransport extends TransportBase {
   }
   push({ payload }) {
     const message = { type: this._events.push, payload };
-    const isOnActiveTabs = port =>
-      !!this._activeTabs.find(tab => tab.id === port.sender.tab.id);
+    const isOnActiveTabs = (port) => {
+      // Ensure tabs are still accessible (may be closed)
+      // otherwise, give up pushing messages to that tab at this point
+      if (port.sender && port.sender.tab) {
+        return !!this._activeTabs.find(tab => tab && (tab.id === port.sender.tab.id));
+      }
+      return false;
+    };
     // Since postMessage is really expensive,
     // we only send messages to those ports on active tabs.
     Array.from(this._ports)
       .filter(port => isOnActiveTabs(port))
       .forEach(port => port.postMessage(message));
+  }
+
+  _getActiveTabs() {
+    try {
+      chrome.tabs.query({ active: true }, (tabs) => {
+        this._activeTabs = tabs;
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 }

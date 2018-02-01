@@ -94,7 +94,7 @@ export default class ConversationLogger extends LoggerBase {
         const mapping = {};
         messages.slice().sort(sortByDate)
           .forEach((message) => {
-            const conversationId = message.conversationId;
+            const { conversationId } = message;
             const date = this._formatDateTime({
               type: 'date',
               utcTimestamp: message.creationTime,
@@ -210,7 +210,7 @@ export default class ConversationLogger extends LoggerBase {
   }
 
   async _processQueue() {
-    const ownerId = this._auth.ownerId;
+    const { ownerId } = this._auth;
     await sleep(300);
     if (ownerId !== this._auth.ownerId) return;
     await Promise.all(
@@ -285,6 +285,7 @@ export default class ConversationLogger extends LoggerBase {
       // new entry
       const numbers = [];
       const numberMap = {};
+      /* eslint { "no-inner-declarations": 0 } */
       function addIfNotExist(contact) {
         const number = contact.phoneNumber || contact.extensionNumber;
         if (number && !numberMap[number]) {
@@ -372,7 +373,9 @@ export default class ConversationLogger extends LoggerBase {
   }
 
   @proxify
-  async logConversation({ conversationId, correspondentEntity, redirect, ...options }) {
+  async logConversation({
+    conversationId, correspondentEntity, redirect, ...options
+  }) {
     if (this.conversationLogMap[conversationId]) {
       await Promise.all(Object.keys(this.conversationLogMap[conversationId])
         .map(date => this.conversationLogMap[conversationId][date])
@@ -426,7 +429,7 @@ export default class ConversationLogger extends LoggerBase {
     return this._selectors.conversationLogIds();
   }
   getConversationLogId(message) {
-    const conversationId = message.conversationId;
+    const { conversationId } = message;
     const date = this._formatDateTime({
       type: 'date',
       utcTimestamp: message.creationTime,

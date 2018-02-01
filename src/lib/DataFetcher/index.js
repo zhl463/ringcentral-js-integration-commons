@@ -104,7 +104,13 @@ export default class DataFetcher extends Pollable {
       this.store.dispatch({
         type: this.actionTypes.init,
       });
-      await this._init();
+      if (this._hasPermission) {
+        await this._init();
+      } else {
+        this.store.dispatch({
+          type: this.actionTypes.initSuccess,
+        });
+      }
     } else if (this._isDataReady()) {
       this.store.dispatch({
         type: this.actionTypes.initSuccess,
@@ -173,6 +179,7 @@ export default class DataFetcher extends Pollable {
         await this.fetchData();
       } catch (e) {
         console.error('fetchData error:', e);
+        this._retry();
       }
     } else if (this._polling) {
       this._startPolling();
@@ -219,12 +226,16 @@ export default class DataFetcher extends Pollable {
     return this._timeToRetry;
   }
 
+  get _hasPermission() {
+    return true;
+  }
+
   @proxify
   async _fetchData() {
     this.store.dispatch({
       type: this.actionTypes.fetch,
     });
-    const ownerId = this._auth.ownerId;
+    const { ownerId } = this._auth;
     try {
       const data = await this._fetchFunction();
       if (this._auth.ownerId === ownerId) {

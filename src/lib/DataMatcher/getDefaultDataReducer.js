@@ -7,7 +7,7 @@ export default function getDefaultDataReducer(actionTypes) {
     ttl,
     timestamp,
     queries,
-   }) => {
+  }) => {
     switch (type) {
       case actionTypes.matchSuccess: {
         const newState = { ...state };

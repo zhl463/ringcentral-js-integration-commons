@@ -37,9 +37,22 @@ export function getSearchingReducer(types) {
           state.searchString === searchString &&
           state.searchOnSources.join(',') === searchOnSources.join(',')
         ) {
+          const resultMap = {};
+          const newResult = [];
+          state.result.forEach((item) => {
+            resultMap[item.id] = 1;
+            newResult.push(item);
+          });
+          entities.forEach((item) => {
+            if (resultMap[item.id]) {
+              return;
+            }
+            newResult.push(item);
+            resultMap[item.id] = 1;
+          });
           return {
             ...state,
-            result: state.result.concat(entities)
+            result: newResult,
           };
         }
         return {

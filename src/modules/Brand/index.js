@@ -24,8 +24,9 @@ export default class Brand extends RcModule {
     fullName,
     application,
     code,
+    brandConfig,
     ...options
-   }) {
+  }) {
     super(options);
     this._reducer = (state = {
       id,
@@ -33,6 +34,7 @@ export default class Brand extends RcModule {
       fullName,
       application,
       code,
+      brandConfig,
     }) => state;
   }
   get _actionTypes() {
@@ -63,6 +65,10 @@ export default class Brand extends RcModule {
   // eslint-disable-next-line class-methods-use-this
   get status() {
     return moduleStatuses.ready;
+  }
+
+  get brandConfig() {
+    return this.state.brandConfig;
   }
 
   // eslint-disable-next-line class-methods-use-this

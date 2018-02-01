@@ -19,7 +19,9 @@ export function getContactsReducer(types) {
 }
 
 export function getMessagesReducer(types) {
-  return (state = {}, { type, contact, messages, sessionId }) => {
+  return (state = {}, {
+    type, contact, messages, sessionId
+  }) => {
     const contactId = String(contact && contact.id);
     if (type === types.loadSuccess) {
       return {

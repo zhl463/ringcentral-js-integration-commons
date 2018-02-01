@@ -1,3 +1,4 @@
+import { combineReducers } from 'redux';
 import RcModule from '../../lib/RcModule';
 import { Module } from '../../lib/di';
 import callingModes from '../CallingSettings/callingModes';
@@ -5,7 +6,8 @@ import moduleStatuses from '../../enums/moduleStatuses';
 import proxify from '../../lib/proxy/proxify';
 import callActionTypes from './actionTypes';
 import getCallReducer, {
-  getLastCallNumberReducer,
+  getLastPhoneNumberReducer,
+  getLastRecipientReducer,
 } from './getCallReducer';
 
 import callStatus from './callStatus';
@@ -19,7 +21,6 @@ import ringoutErrors from '../Ringout/ringoutErrors';
 @Module({
   deps: [
     'Alert',
-    'Client',
     'Storage',
     'Softphone',
     'Ringout',
@@ -46,7 +47,6 @@ export default class Call extends RcModule {
    */
   constructor({
     alert,
-    client,
     storage,
     callingSettings,
     softphone,
@@ -62,9 +62,8 @@ export default class Call extends RcModule {
     });
 
     this._alert = alert;
-    this._client = client;
     this._storage = storage;
-    this._storageKey = 'lastCallNumber';
+    this._storageKey = 'callData';
     this._reducer = getCallReducer(this.actionTypes);
     this._callingSettings = callingSettings;
     this._ringout = ringout;
@@ -76,7 +75,10 @@ export default class Call extends RcModule {
 
     this._storage.registerReducer({
       key: this._storageKey,
-      reducer: getLastCallNumberReducer(this.actionTypes),
+      reducer: combineReducers({
+        lastPhoneNumber: getLastPhoneNumberReducer(this.actionTypes),
+        lastRecipient: getLastRecipientReducer(this.actionTypes),
+      }),
     });
   }
 
@@ -179,31 +181,22 @@ export default class Call extends RcModule {
   }
 
   @proxify
-  async call(number) {
-    this.onToNumberChange(number);
-    await this.onCall();
-  }
-
-  @proxify
-  async onCall() {
+  async call({ phoneNumber, recipient }) {
     if (this.isIdle) {
-      // last number check
-      if (`${this.toNumber}`.trim().length === 0) {
-        if (this.lastCallNumber) {
-          this.onToNumberChange(this.lastCallNumber);
-        } else {
-          this._alert.warning({
-            message: callErrors.noToNumber,
-          });
-        }
+      const toNumber = recipient && (recipient.phoneNumber || recipient.extension) || phoneNumber;
+      if (!toNumber || `${toNumber}`.trim().length === 0) {
+        this._alert.warning({
+          message: callErrors.noToNumber,
+        });
       } else {
         this.store.dispatch({
           type: this.actionTypes.connect,
-          number: this.toNumber,
+          phoneNumber,
+          recipient,
           callSettingMode: this._callSettingMode // for Track
         });
         try {
-          const validatedNumbers = await this._getValidatedNumbers();
+          const validatedNumbers = await this._getValidatedNumbers({ toNumber });
           if (validatedNumbers) {
             await this._makeCall(validatedNumbers);
             this.store.dispatch({
@@ -216,7 +209,14 @@ export default class Call extends RcModule {
             });
           }
         } catch (error) {
-          if (error.message === ringoutErrors.firstLegConnectFailed) {
+          if (!error.message) { // validate format error
+            this._alert.warning({
+              message: callErrors[error.type],
+              payload: {
+                phoneNumber: error.phoneNumber
+              }
+            });
+          } else if (error.message === ringoutErrors.firstLegConnectFailed) {
             this._alert.warning({
               message: callErrors.connectFailed,
               payload: error
@@ -235,23 +235,21 @@ export default class Call extends RcModule {
           this.store.dispatch({
             type: this.actionTypes.connectError
           });
+          throw error;
         }
       }
     }
   }
+
   @proxify
-  async _getValidatedNumbers() {
-    let fromNumber;
+  async _getValidatedNumbers({ toNumber }) {
     const isWebphone = (this._callingSettings.callingMode === callingModes.webphone);
-    if (isWebphone) {
-      fromNumber = this._callingSettings.fromNumber;
-      if (fromNumber === null || fromNumber === '') {
-        return null;
-      }
-    } else {
-      fromNumber = this._callingSettings.myLocation;
-    }
-    const waitingValidateNumbers = [this.toNumber];
+    const fromNumber = isWebphone ?
+      this._callingSettings.fromNumber :
+      this._callingSettings.myLocation;
+    if (isWebphone && (fromNumber === null || fromNumber === '')) return null;
+
+    const waitingValidateNumbers = [toNumber];
     if (
       fromNumber &&
       fromNumber.length > 0 &&
@@ -263,12 +261,13 @@ export default class Call extends RcModule {
       = await this._numberValidate.validateNumbers(waitingValidateNumbers);
     if (!validatedResult.result) {
       validatedResult.errors.forEach((error) => {
-        this._alert.warning({
-          message: callErrors[error.type],
-          payload: {
-            phoneNumber: error.phoneNumber
-          }
-        });
+        // this._alert.warning({
+        //   message: callErrors[error.type],
+        //   payload: {
+        //     phoneNumber: error.phoneNumber
+        //   }
+        // });
+        throw error;
       });
       return null;
     }
@@ -291,11 +290,13 @@ export default class Call extends RcModule {
     };
   }
   @proxify
-  async _makeCall({ toNumber, fromNumber }) {
-    const callingMode = this._callingSettings.callingMode;
-    const countryCode = this._regionSettings.countryCode;
+  async _makeCall({
+    toNumber,
+    fromNumber,
+    callingMode = this._callingSettings.callingMode,
+  }) {
     const homeCountry = this._regionSettings.availableCountries.find(
-      country => country.isoCode === countryCode
+      country => country.isoCode === this._regionSettings.countryCode
     );
     const homeCountryId = (homeCountry && homeCountry.callingCode) || '1';
     switch (callingMode) {
@@ -328,14 +329,6 @@ export default class Call extends RcModule {
     return this.state.status;
   }
 
-  get ready() {
-    return this.state.status === moduleStatuses.ready;
-  }
-
-  get pending() {
-    return this.state.status === moduleStatuses.pending;
-  }
-
   get callStatus() {
     return this.state.callStatus;
   }
@@ -344,8 +337,11 @@ export default class Call extends RcModule {
     return this.state.callStatus === callStatus.idle;
   }
 
-  get lastCallNumber() {
-    return this._storage.getItem(this._storageKey) || '';
+  get lastPhoneNumber() {
+    return this._storage.getItem(this._storageKey).lastPhoneNumber;
+  }
+  get lastRecipient() {
+    return this._storage.getItem(this._storageKey).lastRecipient;
   }
 
   get toNumber() {

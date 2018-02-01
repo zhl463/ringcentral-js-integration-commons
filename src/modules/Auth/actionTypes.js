@@ -15,8 +15,4 @@ export default new Enum([
   'beforeLogout',
   'cancelLogout',
   'tabSync',
-  'proxySetup',
-  'proxyRetry',
-  'proxyLoaded',
-  'proxyCleared',
 ], 'authActionTypes');

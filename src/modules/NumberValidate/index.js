@@ -107,8 +107,10 @@ export default class NumberValidate extends RcModule {
       number,
       isServiceNumber
     } = parseNumber(phoneNumber);
-    const countryCode = this._regionSettings.countryCode;
-    const areaCode = this._regionSettings.areaCode;
+    const {
+      countryCode,
+      areaCode,
+    } = this._regionSettings;
     if (
       !isServiceNumber &&
       !hasPlus &&
@@ -140,8 +142,10 @@ export default class NumberValidate extends RcModule {
   }
 
   isCompanyExtension(companyNumber, extensionNumber) {
-    const countryCode = this._regionSettings.countryCode;
-    const areaCode = this._regionSettings.areaCode;
+    const {
+      countryCode,
+      areaCode,
+    } = this._regionSettings;
     const normalizedCompanyNumber
       = normalizeNumber({ phoneNumber: companyNumber, countryCode, areaCode });
     if (normalizedCompanyNumber !== this._accountInfo.mainCompanyNumber) {
@@ -204,8 +208,10 @@ export default class NumberValidate extends RcModule {
 
   @proxify
   async _numberParser(phoneNumbers) {
-    const countryCode = this._regionSettings.countryCode;
-    const areaCode = this._regionSettings.areaCode;
+    const {
+      countryCode,
+      areaCode,
+    } = this._regionSettings;
     const homeCountry = countryCode ? { homeCountry: countryCode } : {};
     const normalizedNumbers = phoneNumbers.map(phoneNumber => (
       normalizeNumber({ phoneNumber, countryCode, areaCode })

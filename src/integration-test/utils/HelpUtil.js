@@ -14,5 +14,5 @@ export async function ensureLogin(auth, account) {
   auth.login({
     ...account,
   });
-  return await waitUntilNotNull(() => auth.state.ownerId, 'Login Success', 6);
+  return await waitUntilNotNull(() => auth.ownerId, 'Login Success', 6);
 }
